@@ -1,0 +1,22 @@
+declare namespace NodeJS {
+	interface ProcessEnv {
+		// Supabase
+		NEXT_PUBLIC_SUPABASE_URL: string;
+		NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
+		SUPABASE_SERVICE_ROLE_KEY: string;
+
+		// Google Gemini
+		NEXT_PUBLIC_GEMINI_API_KEY: string;
+
+		// App Config
+		NEXT_PUBLIC_APP_URL: string;
+		NEXT_PUBLIC_APP_NAME: string;
+		NEXT_PUBLIC_APP_DESCRIPTION: string;
+
+		// Session Config
+		NEXT_PUBLIC_SESSION_DURATION_MINUTES: string;
+		NEXT_PUBLIC_SHORT_BREAK_DURATION_MINUTES: string;
+		NEXT_PUBLIC_LONG_BREAK_DURATION_MINUTES: string;
+		NEXT_PUBLIC_SESSIONS_UNTIL_LONG_BREAK: string;
+	}
+}
