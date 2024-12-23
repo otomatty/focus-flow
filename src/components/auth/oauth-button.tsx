@@ -1,7 +1,7 @@
 "use client";
 
+import { signInWithOAuth } from "@/app/_actions/auth.action";
 import { Button } from "@/components/ui/button";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Github } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -15,20 +15,13 @@ interface OAuthButtonProps {
 
 export function OAuthButton({ provider, label }: OAuthButtonProps) {
 	const [isLoading, setIsLoading] = useState(false);
-	const supabase = createClientComponentClient();
 
-	const signInWithOAuth = async () => {
+	const handleSignIn = async () => {
 		try {
 			setIsLoading(true);
-			await supabase.auth.signInWithOAuth({
-				provider,
-				options: {
-					redirectTo: `${location.origin}/auth/callback`,
-				},
-			});
+			await signInWithOAuth(provider);
 		} catch (error) {
 			console.error("OAuth Error:", error);
-		} finally {
 			setIsLoading(false);
 		}
 	};
@@ -37,7 +30,7 @@ export function OAuthButton({ provider, label }: OAuthButtonProps) {
 		<Button
 			variant="outline"
 			className="w-full"
-			onClick={signInWithOAuth}
+			onClick={handleSignIn}
 			disabled={isLoading}
 		>
 			{isLoading ? (

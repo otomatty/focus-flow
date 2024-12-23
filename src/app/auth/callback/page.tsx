@@ -1,21 +1,29 @@
 "use client";
 
+import { createClient } from "@/lib/supabase/client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function AuthCallbackPage() {
 	const router = useRouter();
-	const supabase = createClientComponentClient();
+	const supabase = createClient();
 
 	useEffect(() => {
 		const handleAuthCallback = async () => {
-			const { error } = await supabase.auth.getSession();
-			if (error) {
-				console.error("Auth error:", error.message);
-				router.push("/auth/login?error=auth");
-			} else {
+			try {
+				const { error } = await supabase.auth.getSession();
+
+				if (error) {
+					console.error("Auth error:", error.message);
+					router.push("/auth/login?error=auth");
+					return;
+				}
+
+				// セッションが正常に取得できた場合
 				router.push("/webapp");
+			} catch (error) {
+				console.error("Callback error:", error);
+				router.push("/auth/login?error=auth");
 			}
 		};
 
