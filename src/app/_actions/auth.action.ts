@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 type Provider = "google" | "github";
 
@@ -24,7 +23,7 @@ export async function signInWithOAuth(provider: Provider) {
 		if (error) throw error;
 		if (!data?.url) throw new Error("リダイレクトURLが見つかりません");
 
-		redirect(data.url);
+		return { url: data.url };
 	} catch (error) {
 		console.error("OAuth Error:", error);
 		return {
@@ -41,7 +40,7 @@ export async function signOut() {
 		const { error } = await supabase.auth.signOut();
 		if (error) throw error;
 
-		redirect("/");
+		return { success: true };
 	} catch (error) {
 		console.error("Signout Error:", error);
 		return {

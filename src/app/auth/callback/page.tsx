@@ -11,10 +11,25 @@ export default function AuthCallbackPage() {
 	useEffect(() => {
 		const handleAuthCallback = async () => {
 			try {
-				const { error } = await supabase.auth.getSession();
+				// URLからエラーパラメータを確認
+				const params = new URLSearchParams(window.location.hash.substring(1));
+				const error = params.get("error");
+				const errorDescription = params.get("error_description");
 
 				if (error) {
-					console.error("Auth error:", error.message);
+					console.error("Auth error:", errorDescription);
+					router.push("/auth/login?error=auth");
+					return;
+				}
+
+				// セッションの取得を試みる
+				const {
+					data: { session },
+					error: sessionError,
+				} = await supabase.auth.getSession();
+
+				if (sessionError || !session) {
+					console.error("Session error:", sessionError?.message);
 					router.push("/auth/login?error=auth");
 					return;
 				}

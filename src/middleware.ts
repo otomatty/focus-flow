@@ -12,7 +12,9 @@ function isStaticPath(pathname: string): boolean {
 
 // 認証チェックが不要なパスかどうかをチェック
 function isPublicPath(pathname: string): boolean {
-	return pathname === "/" || isStaticPath(pathname);
+	return (
+		pathname === "/" || pathname.startsWith("/auth/") || isStaticPath(pathname)
+	);
 }
 
 export async function middleware(request: NextRequest) {
@@ -56,7 +58,7 @@ export async function middleware(request: NextRequest) {
 	}
 }
 
-// パスのマッチングルールを詳細に設定
+// パ���のマッチングルールを詳細に設定
 export const config = {
 	matcher: [
 		// 保護されたルート

@@ -4,6 +4,7 @@ import { signInWithOAuth } from "@/app/_actions/auth.action";
 import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type Provider = "google" | "github";
@@ -15,13 +16,24 @@ interface OAuthButtonProps {
 
 export function OAuthButton({ provider, label }: OAuthButtonProps) {
 	const [isLoading, setIsLoading] = useState(false);
+	const router = useRouter();
 
 	const handleSignIn = async () => {
 		try {
 			setIsLoading(true);
-			await signInWithOAuth(provider);
+			const result = await signInWithOAuth(provider);
+
+			if (result.error) {
+				console.error("OAuth Error:", result.error);
+				return;
+			}
+
+			if (result.url) {
+				router.push(result.url);
+			}
 		} catch (error) {
 			console.error("OAuth Error:", error);
+		} finally {
 			setIsLoading(false);
 		}
 	};
