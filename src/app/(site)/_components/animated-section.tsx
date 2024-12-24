@@ -2,10 +2,11 @@
 
 import { cn } from "@/lib/utils";
 import { motion, type Variants, type HTMLMotionProps } from "framer-motion";
+import type { ElementType } from "react";
 
 interface AnimatedSectionProps extends HTMLMotionProps<"div"> {
 	children: React.ReactNode;
-	as?: keyof JSX.IntrinsicElements;
+	as?: ElementType;
 	delay?: number;
 }
 
