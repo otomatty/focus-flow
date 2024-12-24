@@ -9,8 +9,9 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function LoginPage() {
+function LoginContent() {
 	const searchParams = useSearchParams();
 	const error = searchParams.get("error");
 
@@ -29,5 +30,13 @@ export default function LoginPage() {
 				<OAuthButton provider="github" />
 			</CardContent>
 		</Card>
+	);
+}
+
+export default function LoginPage() {
+	return (
+		<Suspense>
+			<LoginContent />
+		</Suspense>
 	);
 }

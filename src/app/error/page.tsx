@@ -1,5 +1,4 @@
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { ErrorActions } from "./_components/error-actions";
 
 export default function ErrorPage() {
 	return (
@@ -9,19 +8,7 @@ export default function ErrorPage() {
 				<p className="text-gray-600">
 					申し訳ありません。予期せぬエラーが発生しました。
 				</p>
-				<div className="space-y-4">
-					<Button asChild className="w-full">
-						<Link href="/">ホームに戻る</Link>
-					</Button>
-					<Button
-						variant="outline"
-						asChild
-						className="w-full"
-						onClick={() => window.location.reload()}
-					>
-						<Link href="#">ページを再読み込み</Link>
-					</Button>
-				</div>
+				<ErrorActions />
 			</div>
 		</div>
 	);
