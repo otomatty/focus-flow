@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { checkIsSystemAdmin } from "@/app/_actions/auth";
-import { AIAssistant } from "@/app/webapp/_components/AIAssistant";
 import { Button } from "@/components/ui/button";
 import { NotificationPopover } from "@/components/custom/NotificationPopover";
 import { Separator } from "@/components/ui/separator";
@@ -38,7 +37,6 @@ export function AppHeader() {
 				<Separator orientation="vertical" className="h-8" />
 
 				<div className="flex flex-1 items-center justify-end space-x-4">
-					<AIAssistant />
 					<NotificationPopover />
 					{isSystemAdmin && (
 						<TooltipProvider>

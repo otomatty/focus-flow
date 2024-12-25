@@ -625,13 +625,6 @@ export type Database = {
             referencedRelation: "schedules"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "schedule_tasks_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
         ]
       }
       schedules: {
@@ -673,6 +666,88 @@ export type Database = {
         }
         Relationships: []
       }
+      task_breakdowns: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          estimated_duration: unknown | null
+          id: string
+          order_index: number
+          parent_task_id: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          estimated_duration?: unknown | null
+          id?: string
+          order_index: number
+          parent_task_id?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          estimated_duration?: unknown | null
+          id?: string
+          order_index?: number
+          parent_task_id?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_breakdowns_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_experience: {
+        Row: {
+          base_exp: number
+          bonus_exp: number | null
+          created_at: string | null
+          difficulty_level: number | null
+          id: string
+          skill_category: string
+          task_id: string | null
+        }
+        Insert: {
+          base_exp: number
+          bonus_exp?: number | null
+          created_at?: string | null
+          difficulty_level?: number | null
+          id?: string
+          skill_category: string
+          task_id?: string | null
+        }
+        Update: {
+          base_exp?: number
+          bonus_exp?: number | null
+          created_at?: string | null
+          difficulty_level?: number | null
+          id?: string
+          skill_category?: string
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_experience_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_reminders: {
         Row: {
           created_at: string | null
@@ -698,24 +773,22 @@ export type Database = {
           task_id?: string | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "task_reminders_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       tasks: {
         Row: {
+          actual_duration: unknown | null
+          ai_generated: boolean | null
           category: string | null
+          completion_order: number | null
           created_at: string | null
           description: string | null
+          difficulty_level: number | null
           due_date: string | null
+          estimated_duration: unknown | null
           id: string
           is_recurring: boolean | null
+          parent_task_id: string | null
           priority: string | null
           recurring_pattern: Json | null
           status: string | null
@@ -724,12 +797,18 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          actual_duration?: unknown | null
+          ai_generated?: boolean | null
           category?: string | null
+          completion_order?: number | null
           created_at?: string | null
           description?: string | null
+          difficulty_level?: number | null
           due_date?: string | null
+          estimated_duration?: unknown | null
           id?: string
           is_recurring?: boolean | null
+          parent_task_id?: string | null
           priority?: string | null
           recurring_pattern?: Json | null
           status?: string | null
@@ -738,12 +817,18 @@ export type Database = {
           user_id: string
         }
         Update: {
+          actual_duration?: unknown | null
+          ai_generated?: boolean | null
           category?: string | null
+          completion_order?: number | null
           created_at?: string | null
           description?: string | null
+          difficulty_level?: number | null
           due_date?: string | null
+          estimated_duration?: unknown | null
           id?: string
           is_recurring?: boolean | null
+          parent_task_id?: string | null
           priority?: string | null
           recurring_pattern?: Json | null
           status?: string | null
@@ -751,7 +836,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_badges: {
         Row: {
@@ -966,6 +1059,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_skills: {
+        Row: {
+          created_at: string | null
+          current_level: number | null
+          id: string
+          skill_category: string
+          total_exp: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_level?: number | null
+          id?: string
+          skill_category: string
+          total_exp?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_level?: number | null
+          id?: string
+          skill_category?: string
+          total_exp?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -995,6 +1118,21 @@ export type Database = {
         }
         Returns: number
       }
+      calculate_required_exp: {
+        Args: {
+          level: number
+        }
+        Returns: number
+      }
+      calculate_task_experience: {
+        Args: {
+          p_difficulty_level: number
+          p_estimated_duration: unknown
+          p_actual_duration: unknown
+          p_current_level: number
+        }
+        Returns: number
+      }
       check_badge_conditions: {
         Args: {
           p_user_id: string
@@ -1014,6 +1152,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      delete_unused_profile_images: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       generate_recurring_tasks: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1030,6 +1172,11 @@ export type Database = {
           priority: string
           category: string
           status: string
+          difficulty_level: number
+          estimated_duration: unknown
+          actual_duration: unknown
+          ai_generated: boolean
+          parent_task_id: string
         }[]
       }
       get_focus_session_stats: {
@@ -1044,6 +1191,19 @@ export type Database = {
           total_bonus_points: number
           average_duration: unknown
           completion_rate: number
+        }[]
+      }
+      get_task_breakdowns: {
+        Args: {
+          p_task_id: string
+        }
+        Returns: {
+          id: string
+          title: string
+          description: string
+          estimated_duration: unknown
+          order_index: number
+          status: string
         }[]
       }
       has_role: {
@@ -1064,6 +1224,19 @@ export type Database = {
           p_progress: Json
         }
         Returns: undefined
+      }
+      update_user_skill: {
+        Args: {
+          p_user_id: string
+          p_skill_category: string
+          p_exp_gained: number
+        }
+        Returns: {
+          new_level: number
+          exp_to_next_level: number
+          total_exp: number
+          gained_exp: number
+        }[]
       }
     }
     Enums: {

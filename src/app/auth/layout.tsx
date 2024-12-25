@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
 
 export const metadata: Metadata = {
 	title: "認証 - Focus Flow",
@@ -12,10 +15,18 @@ export default function AuthLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
-			<div className="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
-				{children}
-			</div>
+		<div className="container relative min-h-screen grid place-items-center my-8">
+			<Button
+				variant="ghost"
+				className="absolute left-4 top-4 md:left-8 md:top-8 transition-colors duration-200"
+				asChild
+			>
+				<Link href="/">
+					<ChevronLeft className="mr-2 h-4 w-4" />
+					トップページ
+				</Link>
+			</Button>
+			{children}
 		</div>
 	);
 }

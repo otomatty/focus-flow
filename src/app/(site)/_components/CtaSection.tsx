@@ -20,7 +20,7 @@ export function CtaSection() {
 						今すぐ生産性を向上させましょう
 					</h2>
 					<p className="text-xl text-blue-100 max-w-2xl mx-auto">
-						Focus Flowを使って、より効率的な作業習慣を身につけまし���う。
+						Focus Flowを使って、より効率的な作業習慣を身につけましょう。
 						まずは無料で始めてみませんか？
 					</p>
 				</AnimatedSection>
@@ -35,9 +35,9 @@ export function CtaSection() {
 					</Button>
 					<Button
 						asChild
-						variant="outline"
 						size="lg"
-						className="text-white border-white hover:bg-blue-700 rounded-full px-8"
+						variant="ghost"
+						className="text-white hover:bg-transparent hover:text-white/80 rounded-full px-8"
 					>
 						<Link href="/contact">お問い合わせ</Link>
 					</Button>

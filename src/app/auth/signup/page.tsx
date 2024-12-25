@@ -1,71 +1,60 @@
+"use client";
+
+import { OAuthButton } from "../_components/OAuthButton";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function SignUpPage() {
+function SignupContent() {
+	const searchParams = useSearchParams();
+	const error = searchParams.get("error");
+
 	return (
-		<div className="space-y-6">
-			<div className="space-y-2 text-center">
-				<h1 className="text-3xl font-bold">アカウント作成</h1>
-				<p className="text-gray-500">
-					Focus Flowで生産性を向上させる旅を始めましょう
-				</p>
-			</div>
+		<Card className="border-none sm:border shadow-lg backdrop-blur-sm bg-white/95 dark:bg-gray-950/95">
+			<CardHeader className="space-y-3 pb-8">
+				<CardTitle className="text-3xl font-bold text-center bg-gradient-to-br from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
+					新規登録
+				</CardTitle>
+				<CardDescription className="text-center text-base">
+					{error === "auth" ? (
+						<span className="text-red-500">
+							認証エラーが発生しました。もう一度お試しください。
+						</span>
+					) : (
+						"お好みの方法で新規登録してください"
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-6 pb-8">
+				<OAuthButton provider="google" label="Googleで新規登録" />
+				<OAuthButton provider="github" label="GitHubで新規登録" />
+				<div className="text-center text-sm text-gray-500 pt-2">
+					すでにアカウントをお持ちの場合は{" "}
+					<Link
+						href="/auth/login"
+						className="text-primary hover:underline transition-colors duration-200"
+					>
+						ログイン
+					</Link>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
 
-			<form className="space-y-4">
-				<div className="space-y-2">
-					<Label htmlFor="name">お名前</Label>
-					<Input
-						id="name"
-						placeholder="山田 太郎"
-						type="text"
-						autoComplete="name"
-						required
-					/>
-				</div>
-				<div className="space-y-2">
-					<Label htmlFor="email">メールアドレス</Label>
-					<Input
-						id="email"
-						placeholder="your@email.com"
-						type="email"
-						autoCapitalize="none"
-						autoComplete="email"
-						autoCorrect="off"
-						required
-					/>
-				</div>
-				<div className="space-y-2">
-					<Label htmlFor="password">パスワード</Label>
-					<Input
-						id="password"
-						type="password"
-						autoComplete="new-password"
-						required
-					/>
-				</div>
-				<div className="space-y-2">
-					<Label htmlFor="confirmPassword">パスワード（確認）</Label>
-					<Input
-						id="confirmPassword"
-						type="password"
-						autoComplete="new-password"
-						required
-					/>
-				</div>
-
-				<Button type="submit" className="w-full">
-					アカウント作成
-				</Button>
-			</form>
-
-			<div className="text-center text-sm text-gray-500">
-				すでにアカウントをお持ちの場合は{" "}
-				<Link href="/auth/login" className="text-blue-600 hover:underline">
-					ログイン
-				</Link>
-			</div>
-		</div>
+export default function SignupPage() {
+	return (
+		<Suspense>
+			<SignupContent />
+		</Suspense>
 	);
 }
