@@ -1,20 +1,20 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { handleAuthCallback } from "@/app/_actions/auth";
+import { initializeUserProfile } from "@/app/_actions/user/userProfile.action";
 
 export default function AuthCallbackPage() {
 	const router = useRouter();
-	const supabase = createClient();
+	const searchParams = useSearchParams();
 
 	useEffect(() => {
-		const handleAuthCallback = async () => {
+		const processCallback = async () => {
 			try {
-				// URLからエラーパラメータを確認
-				const params = new URLSearchParams(window.location.hash.substring(1));
-				const error = params.get("error");
-				const errorDescription = params.get("error_description");
+				const code = searchParams.get("code");
+				const error = searchParams.get("error");
+				const errorDescription = searchParams.get("error_description");
 
 				if (error) {
 					console.error("Auth error:", errorDescription);
@@ -22,28 +22,38 @@ export default function AuthCallbackPage() {
 					return;
 				}
 
-				// セッションの取得を試みる
-				const {
-					data: { session },
-					error: sessionError,
-				} = await supabase.auth.getSession();
+				if (!code) {
+					console.error("No code provided");
+					router.push("/auth/login?error=no_code");
+					return;
+				}
 
-				if (sessionError || !session) {
-					console.error("Session error:", sessionError?.message);
+				// セードをセッションに交換
+				const { data, error: callbackError } = await handleAuthCallback(code);
+
+				if (callbackError || !data?.session) {
+					console.error("Session error:", callbackError?.message);
 					router.push("/auth/login?error=auth");
 					return;
 				}
 
-				// セッションが正常に取得できた場合
-				router.push("/webapp");
+				try {
+					// Server Actionを使用してユーザープロフィールを初期化
+					await initializeUserProfile(data.session.user.id);
+					// 認証成功
+					router.push("/webapp");
+				} catch (error) {
+					console.error("Failed to initialize user:", error);
+					router.push("/auth/login?error=init_failed");
+				}
 			} catch (error) {
 				console.error("Callback error:", error);
 				router.push("/auth/login?error=auth");
 			}
 		};
 
-		handleAuthCallback();
-	}, [router, supabase.auth]);
+		processCallback();
+	}, [router, searchParams]);
 
 	return (
 		<div className="min-h-screen flex items-center justify-center">

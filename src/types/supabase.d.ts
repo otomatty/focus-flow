@@ -786,30 +786,39 @@ export type Database = {
         Row: {
           cache_version: number | null
           created_at: string | null
+          display_name: string | null
+          email: string | null
           experience_points: number | null
           id: string
           last_activity_at: string | null
           level: number | null
+          profile_image: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           cache_version?: number | null
           created_at?: string | null
+          display_name?: string | null
+          email?: string | null
           experience_points?: number | null
           id?: string
           last_activity_at?: string | null
           level?: number | null
+          profile_image?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           cache_version?: number | null
           created_at?: string | null
+          display_name?: string | null
+          email?: string | null
           experience_points?: number | null
           id?: string
           last_activity_at?: string | null
           level?: number | null
+          profile_image?: string | null
           updated_at?: string | null
           user_id?: string
         }

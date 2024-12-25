@@ -1,4 +1,4 @@
-import { AnimatedSection } from "./animated-section";
+import { AnimatedSection } from "./AnimatedSection";
 import { Timer, ListTodo, BarChart3, Bell, Target, Trophy } from "lucide-react";
 
 const features = [

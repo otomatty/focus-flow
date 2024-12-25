@@ -1,6 +1,6 @@
 "use client";
 
-import { signInWithOAuth } from "@/app/_actions/auth.action";
+import { signInWithOAuth } from "@/app/_actions/auth";
 import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
 import Image from "next/image";
@@ -51,7 +51,7 @@ export function OAuthButton({ provider, label }: OAuthButtonProps) {
 				<Github className="mr-2 h-5 w-5" />
 			) : (
 				<Image
-					src="/google.svg"
+					src="/images/google.svg"
 					alt="Google"
 					width={20}
 					height={20}

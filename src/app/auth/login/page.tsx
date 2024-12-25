@@ -1,6 +1,6 @@
 "use client";
 
-import { OAuthButton } from "@/components/auth/oauth-button";
+import { OAuthButton } from "../_components/OAuthButton";
 import {
 	Card,
 	CardContent,

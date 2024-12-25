@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { AnimatedSection } from "./animated-section";
+import { AnimatedSection } from "./AnimatedSection";
 import Link from "next/link";
 
 export function CtaSection() {
