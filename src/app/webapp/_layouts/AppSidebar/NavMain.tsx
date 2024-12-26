@@ -44,6 +44,7 @@ interface NavMainItem {
 	items?: {
 		title: string;
 		url: string;
+		isActive?: boolean;
 		isInDevelopment?: boolean;
 	}[];
 }
@@ -62,7 +63,34 @@ const useMainMenuItems = (): NavMainItem[] => {
 			title: "タスク",
 			url: "/webapp/tasks",
 			icon: ListTodo,
-			isActive: pathname === "/webapp/tasks",
+			isActive: pathname.startsWith("/webapp/tasks"),
+			items: [
+				{
+					title: "タスク一覧",
+					url: "/webapp/tasks",
+					isActive: pathname === "/webapp/tasks",
+				},
+				{
+					title: "付箋ボード",
+					url: "/webapp/tasks/sticky-note",
+					isActive: pathname === "/webapp/tasks/sticky-note",
+				},
+				{
+					title: "カンバンボード",
+					url: "/webapp/tasks/kanban",
+					isInDevelopment: true,
+				},
+				{
+					title: "ガントチャート",
+					url: "/webapp/tasks/gantt",
+					isInDevelopment: true,
+				},
+				{
+					title: "マインドマップ",
+					url: "/webapp/tasks/mindmap",
+					isInDevelopment: true,
+				},
+			],
 		},
 		{
 			title: "スケジュール",

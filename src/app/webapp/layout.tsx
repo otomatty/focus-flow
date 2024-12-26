@@ -12,7 +12,8 @@ export default function WebAppLayout({ children }: WebAppLayoutProps) {
 			<AppSidebar />
 			<SidebarInset>
 				<AppHeader />
-				<main className="flex-1">{children}</main>
+
+				<main>{children}</main>
 			</SidebarInset>
 		</SidebarProvider>
 	);

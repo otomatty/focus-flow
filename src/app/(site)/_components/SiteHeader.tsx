@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { ThemeSwitcher } from "@/components/custom/ThemeSwitcher";
 
 export function SiteHeader() {
 	return (
@@ -26,6 +27,7 @@ export function SiteHeader() {
 					<Link href="/contact" className="text-gray-600 hover:text-gray-900">
 						お問い合わせ
 					</Link>
+					<ThemeSwitcher />
 					<Button asChild variant="outline">
 						<Link href="/auth/login">ログイン</Link>
 					</Button>

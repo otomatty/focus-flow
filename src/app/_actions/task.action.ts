@@ -24,7 +24,7 @@ export async function getTasks() {
 }
 
 // タスクの取得
-export async function getTask(id: string) {
+export async function getTask(id: string): Promise<Task> {
 	const supabase = await createClient();
 	const { data: task, error } = await supabase
 		.from("tasks")
@@ -34,6 +34,10 @@ export async function getTask(id: string) {
 
 	if (error) {
 		throw new Error(`タスクの取得に失敗しました: ${error.message}`);
+	}
+
+	if (!task) {
+		throw new Error("タスクが見つかりませんでした");
 	}
 
 	return task;
@@ -57,39 +61,42 @@ export async function createTask(task: TaskInsert) {
 }
 
 // タスクの更新
-export async function updateTask(id: string, task: TaskUpdate) {
+async function updateTask(id: string, data: Partial<Task>): Promise<Task> {
 	const supabase = await createClient();
-	const { data, error } = await supabase
+	const { data: task, error } = await supabase
 		.from("tasks")
-		.update(task)
+		.update(data)
 		.eq("id", id)
-		.select()
+		.select("*")
 		.single();
 
 	if (error) {
 		throw new Error(`タスクの更新に失敗しました: ${error.message}`);
 	}
 
-	revalidatePath("/webapp/tasks");
-	revalidatePath(`/webapp/tasks/${id}`);
-	return data;
+	if (!task) {
+		throw new Error("タスクが見つかりませんでした");
+	}
+
+	return task;
+}
+
+// タスクのステータス更新
+export async function updateTaskStatus(
+	id: string,
+	status: Task["status"],
+): Promise<Task> {
+	return updateTask(id, { status, updated_at: new Date().toISOString() });
 }
 
 // タスクの削除
-export async function deleteTask(id: string) {
+export async function deleteTask(id: string): Promise<void> {
 	const supabase = await createClient();
 	const { error } = await supabase.from("tasks").delete().eq("id", id);
 
 	if (error) {
 		throw new Error(`タスクの削除に失敗しました: ${error.message}`);
 	}
-
-	revalidatePath("/webapp/tasks");
-}
-
-// タスクのステータス更新
-export async function updateTaskStatus(id: string, status: Task["status"]) {
-	return updateTask(id, { status, updated_at: new Date().toISOString() });
 }
 
 // タスクの検索

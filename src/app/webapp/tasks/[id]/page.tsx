@@ -1,32 +1,23 @@
-"use client";
+import { TaskDetails } from "@/app/webapp/tasks/[id]/_components/TaskDetails";
+import { TaskBreakdowns } from "@/app/webapp/tasks/[id]/_components/TaskBreakdowns";
+import { TaskProgress } from "@/app/webapp/tasks/[id]/_components/TaskProgress";
+import { TaskActions } from "@/app/webapp/tasks/[id]/_components/TaskActions";
 
-import { PageHeader } from "@/components/custom/PageHeader";
-import { TaskDetails } from "./_components/TaskDetails";
-import { TaskBreakdowns } from "./_components/TaskBreakdowns";
-import { TaskProgress } from "./_components/TaskProgress";
-import { TaskActions } from "./_components/TaskActions";
+interface TasksPageProps {
+	params: {
+		id: string;
+	};
+}
 
-export default function TaskDetailPage({
-	params,
-}: {
-	params: { id: string };
-}) {
+export default function TasksPage({ params }: TasksPageProps) {
 	return (
-		<div className="flex flex-col gap-6">
-			<PageHeader
-				title="タスクの詳細"
-				description="タスクの詳細情報と進捗を確認できます。"
-			/>
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-				<div className="lg:col-span-2 space-y-6">
-					<TaskDetails id={params.id} />
-					<TaskBreakdowns id={params.id} />
-				</div>
-				<div className="space-y-6">
-					<TaskProgress id={params.id} />
-					<TaskActions id={params.id} />
-				</div>
+		<div className="container py-6 space-y-6">
+			<TaskDetails taskId={params.id} />
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+				<TaskProgress taskId={params.id} />
+				<TaskActions taskId={params.id} />
 			</div>
+			<TaskBreakdowns taskId={params.id} />
 		</div>
 	);
 }

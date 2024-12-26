@@ -32,7 +32,7 @@ import {
 import { cn } from "@/lib/utils";
 import { TaskBreakdownPreview } from "./TaskBreakdownPreview";
 import { analyzeTask } from "@/lib/gemini/task-analyzer";
-import type { AIAnalysis } from "@/lib/gemini/task-analyzer";
+import type { AIAnalysis } from "@/types/task";
 
 const taskFormSchema = z.object({
 	title: z.string().min(1, "タイトルを入力してください"),
@@ -97,6 +97,8 @@ export function TaskCreateForm({
 	});
 
 	const { watch } = form;
+	const title = watch("title");
+	const description = watch("description");
 
 	const handleAnalyze = async () => {
 		const title = form.getValues("title");
@@ -158,14 +160,37 @@ export function TaskCreateForm({
 
 		setIsLoading(true);
 		try {
-			const task = await createTask({
+			const taskData = {
 				...data,
 				user_id: user.id,
-				status: "not_started",
+				status: "not_started" as const,
 				priority: data.priority || "medium",
 				due_date: data.due_date ? new Date(data.due_date).toISOString() : null,
-				ai_generated: true,
-			});
+				ai_generated: analysis !== null,
+				ai_analysis: analysis
+					? {
+							suggestedPriority: analysis.suggestedPriority,
+							suggestedCategory: analysis.suggestedCategory,
+							suggestedDueDate: analysis.suggestedDueDate,
+							totalEstimatedDuration: analysis.totalEstimatedDuration,
+							totalExperiencePoints: analysis.totalExperiencePoints,
+							skillDistribution: analysis.skillDistribution,
+							breakdowns: analysis.breakdowns,
+						}
+					: null,
+				experience_points: analysis?.totalExperiencePoints || 0,
+				skill_distribution: analysis?.skillDistribution || {},
+				estimated_duration:
+					data.estimated_duration || analysis?.totalEstimatedDuration || null,
+				category: data.category || analysis?.suggestedCategory || null,
+			};
+
+			const task = await createTask(taskData);
+
+			if (analysis?.breakdowns) {
+				// サブタスクの作成処理を追加予定
+			}
+
 			toast({
 				title: "タスクを作成しました",
 				description: "タスクの詳細ページに移動します",
@@ -356,7 +381,12 @@ export function TaskCreateForm({
 				)}
 
 				<div className="space-y-8">
-					<TaskBreakdownPreview analysis={analysis} isLoading={isAnalyzing} />
+					<TaskBreakdownPreview
+						title={title || ""}
+						description={description || ""}
+						analysis={analysis}
+						isLoading={isAnalyzing}
+					/>
 				</div>
 
 				<div className="flex justify-end gap-4">

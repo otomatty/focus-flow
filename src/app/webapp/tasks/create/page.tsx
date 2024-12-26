@@ -8,9 +8,11 @@ import { useState } from "react";
 export default function CreateTaskPage() {
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
+	const [analysis, setAnalysis] = useState(null);
+	const [isLoading, setIsLoading] = useState(false);
 
 	return (
-		<div className="container max-w-4xl space-y-8">
+		<>
 			<PageHeader
 				title="タスクの作成"
 				description="タスクのタイトルを入力し、AIに分析させることで、タスクの詳細を自動的に設定できます。"
@@ -19,7 +21,12 @@ export default function CreateTaskPage() {
 				onTitleChange={setTitle}
 				onDescriptionChange={setDescription}
 			/>
-			<TaskBreakdownPreview title={title} description={description} />
-		</div>
+			<TaskBreakdownPreview
+				title={title}
+				description={description}
+				analysis={analysis}
+				isLoading={isLoading}
+			/>
+		</>
 	);
 }

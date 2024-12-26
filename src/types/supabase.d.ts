@@ -1,3 +1,6 @@
+Need to install the following packages:
+supabase@2.1.1
+Ok to proceed? (y) 
 export type Json =
   | string
   | number
@@ -778,6 +781,7 @@ export type Database = {
       tasks: {
         Row: {
           actual_duration: unknown | null
+          ai_analysis: Json | null
           ai_generated: boolean | null
           category: string | null
           completion_order: number | null
@@ -786,11 +790,13 @@ export type Database = {
           difficulty_level: number | null
           due_date: string | null
           estimated_duration: unknown | null
+          experience_points: number | null
           id: string
           is_recurring: boolean | null
           parent_task_id: string | null
           priority: string | null
           recurring_pattern: Json | null
+          skill_distribution: Json | null
           status: string | null
           title: string
           updated_at: string | null
@@ -798,6 +804,7 @@ export type Database = {
         }
         Insert: {
           actual_duration?: unknown | null
+          ai_analysis?: Json | null
           ai_generated?: boolean | null
           category?: string | null
           completion_order?: number | null
@@ -806,11 +813,13 @@ export type Database = {
           difficulty_level?: number | null
           due_date?: string | null
           estimated_duration?: unknown | null
+          experience_points?: number | null
           id?: string
           is_recurring?: boolean | null
           parent_task_id?: string | null
           priority?: string | null
           recurring_pattern?: Json | null
+          skill_distribution?: Json | null
           status?: string | null
           title: string
           updated_at?: string | null
@@ -818,6 +827,7 @@ export type Database = {
         }
         Update: {
           actual_duration?: unknown | null
+          ai_analysis?: Json | null
           ai_generated?: boolean | null
           category?: string | null
           completion_order?: number | null
@@ -826,11 +836,13 @@ export type Database = {
           difficulty_level?: number | null
           due_date?: string | null
           estimated_duration?: unknown | null
+          experience_points?: number | null
           id?: string
           is_recurring?: boolean | null
           parent_task_id?: string | null
           priority?: string | null
           recurring_pattern?: Json | null
+          skill_distribution?: Json | null
           status?: string | null
           title?: string
           updated_at?: string | null

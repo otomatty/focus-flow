@@ -1,25 +1,5 @@
 import { generateResponse } from "./client";
-
-export interface TaskBreakdown {
-	title: string;
-	description?: string;
-	estimatedDuration: string;
-	orderIndex: number;
-	experiencePoints: number;
-	skillCategory: string;
-}
-
-export interface AIAnalysis {
-	breakdowns: TaskBreakdown[];
-	suggestedPriority: "high" | "medium" | "low";
-	suggestedCategory: string;
-	suggestedDueDate: string;
-	totalExperiencePoints: number;
-	totalEstimatedDuration: string;
-	skillDistribution: {
-		[key: string]: number;
-	};
-}
+import type { AIAnalysis, TaskBreakdown } from "@/types/task";
 
 const ANALYSIS_PROMPT = `
 あなたはタスク分析AIアシスタントです。
@@ -36,7 +16,7 @@ const ANALYSIS_PROMPT = `
       "title": "サブタスクのタイトル",
       "description": "詳細な説明",
       "estimatedDuration": "予想所要時間（例: 30 minutes, 2 hours）",
-      "orderIndex": 順序（1から始ま��整数）,
+      "orderIndex": 順序（1から始まる整数）,
       "experiencePoints": 経験値（難易度や時間に応じて30-100の範囲）,
       "skillCategory": "必要なスキルカテゴリー"
     }
@@ -47,7 +27,7 @@ const ANALYSIS_PROMPT = `
   "totalExperiencePoints": 合計経験値,
   "totalEstimatedDuration": "合計予想時間",
   "skillDistribution": {
-    "スキルカテゴリー": 割合（%）
+    "スキルカテゴリー": 割合（0-100の数値、%記号なし）
   }
 }
 
@@ -57,8 +37,10 @@ const ANALYSIS_PROMPT = `
 3. スキルカテゴリーは分析、設計、開発、テスト、文書化などから適切なものを選択する
 4. 期限は現在時刻から適切な余裕を持って設定する
 5. 優先度は緊急性と重要性から判断する
+6. スキル分布の割合は合計が100になるようにする（%記号は不要）
 
 注意：回答は純粋なJSONのみとし、マークダウン記法（\`\`\`json など）は使用しないでください。
+数値を含む文字列（例：10.7%）は使用せず、純粋な数値（例：10.7）を使用してください。
 `;
 
 function cleanJsonResponse(response: string): string {
@@ -88,6 +70,7 @@ export async function analyzeTask(
 		);
 
 		const response = await generateResponse(prompt, "");
+
 		const cleanedResponse = cleanJsonResponse(response);
 
 		try {
@@ -103,12 +86,9 @@ export async function analyzeTask(
 
 			return analysis;
 		} catch (parseError) {
-			console.error("JSON解析エラー:", parseError);
-			console.error("解析対象の文字列:", cleanedResponse);
 			throw new Error("AIの応答を解析できませんでした");
 		}
 	} catch (error) {
-		console.error("タスク分析エラー:", error);
 		throw new Error("タスクの分析に失敗しました");
 	}
 }
