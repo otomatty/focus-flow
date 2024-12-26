@@ -19,19 +19,21 @@ export function PageHeader({
 	action,
 }: PageHeaderProps) {
 	return (
-		<div className="flex flex-col gap-4">
+		<div className="space-y-4 py-6">
 			<div className="flex items-center justify-between">
-				<div className="space-y-1">
-					{backHref && <BackLink href={backHref} />}
-					<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+				<div>
+					{backHref && <BackLink href={backHref} className="mb-2" />}
+					<h1 className="text-3xl font-bold tracking-tight">{title}</h1>
 					{description && (
-						<p className="text-sm text-muted-foreground">{description}</p>
+						<p className="text-muted-foreground">{description}</p>
 					)}
 				</div>
 				{action && (
-					<Button asChild>
-						<Link href={action.href}>{action.label}</Link>
-					</Button>
+					<div className="flex items-center gap-2">
+						<Button asChild>
+							<Link href={action.href}>{action.label}</Link>
+						</Button>
+					</div>
 				)}
 			</div>
 		</div>

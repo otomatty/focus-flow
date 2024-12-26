@@ -1,14 +1,13 @@
-"use client";
+import { getProjects } from "@/app/_actions/projects";
+import { TaskBoardClient } from "./_components/TaskBoardClient";
+import { convertToCamelCase } from "@/utils/caseConverter";
+import type { Project } from "@/types/project";
 
-import { TaskBoard } from "./_components/TaskBoard";
-import { ReactFlowProvider } from "reactflow";
+export default async function TaskBoardPage() {
+	const { projects } = await getProjects();
+	const convertedProjects = convertToCamelCase(
+		projects ?? [],
+	) as unknown as Project[];
 
-export default function StickyNotePage() {
-	return (
-		<div className="h-full w-full">
-			<ReactFlowProvider>
-				<TaskBoard />
-			</ReactFlowProvider>
-		</div>
-	);
+	return <TaskBoardClient initialProjects={convertedProjects} />;
 }

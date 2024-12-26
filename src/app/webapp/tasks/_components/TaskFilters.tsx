@@ -12,7 +12,6 @@ import {
 import { Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
-import { useDebounce } from "@/hooks/use-debounce";
 import type { Database } from "@/types/supabase";
 import { useAtom } from "jotai";
 import {
@@ -33,8 +32,6 @@ export function TaskFilters() {
 	const [priority, setPriority] = useAtom(priorityAtom);
 	const [, searchTasks] = useAtom(searchTasksAtom);
 	const [, filterTasks] = useAtom(filterTasksAtom);
-
-	const debouncedSearch = useDebounce(searchQuery, 300);
 
 	useEffect(() => {
 		void searchTasks();
@@ -84,14 +81,6 @@ export function TaskFilters() {
 						<SelectItem value="low">低</SelectItem>
 					</SelectContent>
 				</Select>
-				<div className="sm:ml-auto">
-					<Button asChild className="w-full sm:w-auto">
-						<Link href="/webapp/tasks/create">
-							<Plus className="mr-2 h-4 w-4" />
-							タスクを作成
-						</Link>
-					</Button>
-				</div>
 			</div>
 		</div>
 	);

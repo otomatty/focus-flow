@@ -18,6 +18,9 @@ import { TaskNote } from "./TaskNote";
 import { TaskGroup } from "./TaskGroup";
 import { TaskToolbar } from "./TaskToolbar";
 import { v4 as uuidv4 } from "uuid";
+import { useAtom } from "jotai";
+import { projectsAtom } from "@/stores/project";
+import { TaskBoardHeader } from "./TaskBoardHeader";
 
 interface TaskGroupData {
 	title: string;
@@ -42,6 +45,7 @@ interface TaskNoteData {
 }
 
 export const TaskBoard = () => {
+	const [projects] = useAtom(projectsAtom);
 	const [nodes, setNodes] = useNodesState<TaskNoteData | TaskGroupData>([]);
 	const [edges, setEdges] = useEdgesState([]);
 	const [showGrid, setShowGrid] = useState(true);
@@ -649,7 +653,7 @@ export const TaskBoard = () => {
 			style: { zIndex: 1 }, // 付箋を前面に表示
 		};
 
-		// 選択されているグループがあれば、その中に追加
+		// 選択されているグループがあれば、その中に��加
 		setNodes((nds) => {
 			const selectedGroup = nds.find(
 				(n) => n.selected && n.type === "taskGroup",
@@ -693,7 +697,7 @@ export const TaskBoard = () => {
 			);
 
 			if (selectedGroup) {
-				// グループ内の適切な位置に配置
+				// グループ内の���切な位置に配置
 				const groupData = selectedGroup.data as TaskGroupData;
 				newNode.position = {
 					x: selectedGroup.position.x + (groupData.width ?? 300) / 2 - 150,
@@ -856,31 +860,34 @@ export const TaskBoard = () => {
 	}, [nodes, edges]);
 
 	return (
-		<div className="w-full h-[calc(100vh-4rem)]">
-			<ReactFlow
-				nodes={nodes}
-				edges={edges}
-				onNodesChange={onNodesChange}
-				onConnect={onConnect}
-				nodeTypes={nodeTypes}
-				fitView
-				nodesDraggable
-				nodesConnectable
-				elementsSelectable
-				proOptions={{ hideAttribution: true }}
-			>
-				<TaskToolbar
-					onAddNote={handleAddNote}
-					onAddGroup={handleAddGroup}
-					onGroupSelected={handleGroupSelected}
-					onDeleteSelected={handleDeleteSelected}
-					onSave={handleSave}
-					onLoad={handleLoad}
-					onExport={handleExport}
-				/>
-				{showGrid && <Background />}
-				<Controls />
-			</ReactFlow>
+		<div className="flex flex-col h-[calc(100vh-4rem)]">
+			<TaskBoardHeader projects={projects} />
+			<div className="w-full h-[calc(100vh-4rem)]">
+				<ReactFlow
+					nodes={nodes}
+					edges={edges}
+					onNodesChange={onNodesChange}
+					onConnect={onConnect}
+					nodeTypes={nodeTypes}
+					fitView
+					nodesDraggable
+					nodesConnectable
+					elementsSelectable
+					proOptions={{ hideAttribution: true }}
+				>
+					<TaskToolbar
+						onAddNote={handleAddNote}
+						onAddGroup={handleAddGroup}
+						onGroupSelected={handleGroupSelected}
+						onDeleteSelected={handleDeleteSelected}
+						onSave={handleSave}
+						onLoad={handleLoad}
+						onExport={handleExport}
+					/>
+					{showGrid && <Background />}
+					<Controls />
+				</ReactFlow>
+			</div>
 		</div>
 	);
 };

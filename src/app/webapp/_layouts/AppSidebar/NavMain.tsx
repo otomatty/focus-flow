@@ -12,6 +12,7 @@ import {
 	Target,
 	Users,
 	Trophy,
+	Briefcase,
 	Repeat,
 	Clock,
 } from "lucide-react";
@@ -60,13 +61,19 @@ const useMainMenuItems = (): NavMainItem[] => {
 			isActive: pathname === "/webapp",
 		},
 		{
+			title: "プロジェクト",
+			url: "/webapp/projects",
+			icon: Briefcase,
+			isActive: pathname === "/webapp/projects",
+		},
+		{
 			title: "タスク",
 			url: "/webapp/tasks",
 			icon: ListTodo,
 			isActive: pathname.startsWith("/webapp/tasks"),
 			items: [
 				{
-					title: "タスク一覧",
+					title: "タスクリスト",
 					url: "/webapp/tasks",
 					isActive: pathname === "/webapp/tasks",
 				},
@@ -74,21 +81,6 @@ const useMainMenuItems = (): NavMainItem[] => {
 					title: "付箋ボード",
 					url: "/webapp/tasks/sticky-note",
 					isActive: pathname === "/webapp/tasks/sticky-note",
-				},
-				{
-					title: "カンバンボード",
-					url: "/webapp/tasks/kanban",
-					isInDevelopment: true,
-				},
-				{
-					title: "ガントチャート",
-					url: "/webapp/tasks/gantt",
-					isInDevelopment: true,
-				},
-				{
-					title: "マインドマップ",
-					url: "/webapp/tasks/mindmap",
-					isInDevelopment: true,
 				},
 			],
 		},

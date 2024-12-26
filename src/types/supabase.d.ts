@@ -1,6 +1,3 @@
-Need to install the following packages:
-supabase@2.1.1
-Ok to proceed? (y) 
 export type Json =
   | string
   | number
@@ -554,6 +551,128 @@ export type Database = {
           start_time?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      project_activities: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          project_id: string
+          type: Database["public"]["Enums"]["activity_type"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          project_id: string
+          type: Database["public"]["Enums"]["activity_type"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          project_id?: string
+          type?: Database["public"]["Enums"]["activity_type"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_activities_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_tasks: {
+        Row: {
+          created_at: string | null
+          position: number
+          project_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          position: number
+          project_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string | null
+          position?: number
+          project_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_archived: boolean | null
+          name: string
+          priority: string | null
+          start_date: string | null
+          status: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_archived?: boolean | null
+          name: string
+          priority?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_archived?: boolean | null
+          name?: string
+          priority?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1252,7 +1371,12 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      activity_type:
+        | "project_update"
+        | "task_create"
+        | "task_update"
+        | "task_delete"
+        | "member_update"
     }
     CompositeTypes: {
       [_ in never]: never

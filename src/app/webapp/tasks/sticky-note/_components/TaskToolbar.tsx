@@ -51,14 +51,14 @@ export const TaskToolbar = ({
 	const { zoomIn, zoomOut, fitView } = useReactFlow();
 
 	return (
-		<div className="absolute top-4 left-4 z-10 flex gap-2 bg-background/80 backdrop-blur-sm p-2 rounded-lg shadow-lg">
+		<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex gap-2 bg-background/80 backdrop-blur-sm p-2 rounded-lg shadow-lg">
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<Button variant="outline" size="icon" onClick={onAddNote}>
 						<Plus className="h-4 w-4" />
 					</Button>
 				</TooltipTrigger>
-				<TooltipContent>新しい付箋を追加</TooltipContent>
+				<TooltipContent side="bottom">新しい付箋を追加</TooltipContent>
 			</Tooltip>
 
 			<Tooltip>
@@ -67,7 +67,7 @@ export const TaskToolbar = ({
 						<FolderPlus className="h-4 w-4" />
 					</Button>
 				</TooltipTrigger>
-				<TooltipContent>新しいグループを追加</TooltipContent>
+				<TooltipContent side="bottom">新しいグループを追加</TooltipContent>
 			</Tooltip>
 
 			<Tooltip>
@@ -76,7 +76,7 @@ export const TaskToolbar = ({
 						<Group className="h-4 w-4" />
 					</Button>
 				</TooltipTrigger>
-				<TooltipContent>選択した付箋をグループ化</TooltipContent>
+				<TooltipContent side="bottom">選択した付箋をグループ化</TooltipContent>
 			</Tooltip>
 
 			<Tooltip>
@@ -85,7 +85,7 @@ export const TaskToolbar = ({
 						<Trash className="h-4 w-4" />
 					</Button>
 				</TooltipTrigger>
-				<TooltipContent>選択したアイテムを削除</TooltipContent>
+				<TooltipContent side="bottom">選択したアイテムを削除</TooltipContent>
 			</Tooltip>
 
 			<Separator orientation="vertical" className="h-6" />
@@ -96,7 +96,7 @@ export const TaskToolbar = ({
 						<ZoomIn className="h-4 w-4" />
 					</Button>
 				</TooltipTrigger>
-				<TooltipContent>拡大</TooltipContent>
+				<TooltipContent side="bottom">拡大</TooltipContent>
 			</Tooltip>
 
 			<Tooltip>
@@ -105,7 +105,7 @@ export const TaskToolbar = ({
 						<ZoomOut className="h-4 w-4" />
 					</Button>
 				</TooltipTrigger>
-				<TooltipContent>縮小</TooltipContent>
+				<TooltipContent side="bottom">縮小</TooltipContent>
 			</Tooltip>
 
 			<Tooltip>
@@ -114,7 +114,7 @@ export const TaskToolbar = ({
 						<LayoutGrid className="h-4 w-4" />
 					</Button>
 				</TooltipTrigger>
-				<TooltipContent>全体を表示</TooltipContent>
+				<TooltipContent side="bottom">全体を表示</TooltipContent>
 			</Tooltip>
 
 			<Separator orientation="vertical" className="h-6" />
@@ -125,7 +125,7 @@ export const TaskToolbar = ({
 						<Grid className="h-4 w-4" />
 					</Toggle>
 				</TooltipTrigger>
-				<TooltipContent>グリッド表示切替</TooltipContent>
+				<TooltipContent side="bottom">グリッド表示切替</TooltipContent>
 			</Tooltip>
 
 			<Separator orientation="vertical" className="h-6" />
@@ -137,7 +137,7 @@ export const TaskToolbar = ({
 							<Save className="h-4 w-4" />
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>保存</TooltipContent>
+					<TooltipContent side="bottom">保存</TooltipContent>
 				</Tooltip>
 			)}
 
@@ -148,7 +148,7 @@ export const TaskToolbar = ({
 							<Upload className="h-4 w-4" />
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>読み込み</TooltipContent>
+					<TooltipContent side="bottom">読み込み</TooltipContent>
 				</Tooltip>
 			)}
 
@@ -159,7 +159,7 @@ export const TaskToolbar = ({
 							<Download className="h-4 w-4" />
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>エクスポート</TooltipContent>
+					<TooltipContent side="bottom">エクスポート</TooltipContent>
 				</Tooltip>
 			)}
 
@@ -174,7 +174,7 @@ export const TaskToolbar = ({
 							</Button>
 						</DialogTrigger>
 					</TooltipTrigger>
-					<TooltipContent>ヘルプ</TooltipContent>
+					<TooltipContent side="bottom">ヘルプ</TooltipContent>
 				</Tooltip>
 				<DialogContent>
 					<DialogHeader>
