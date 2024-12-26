@@ -41,13 +41,12 @@ interface TaskNoteData {
 	parentId?: string;
 }
 
-type TaskNode = Node<TaskNoteData | TaskGroupData>;
-
 export const TaskBoard = () => {
 	const [nodes, setNodes] = useNodesState<TaskNoteData | TaskGroupData>([]);
 	const [edges, setEdges] = useEdgesState([]);
 	const [showGrid, setShowGrid] = useState(true);
 	const [isDragging, setIsDragging] = useState(false);
+	const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
 	const { getNode } = useReactFlow();
 
 	const handleNodeDataChange = useCallback(
@@ -156,7 +155,7 @@ export const TaskBoard = () => {
 									: false;
 							console.log("Node collapse state:", child.id, isCollapsed);
 
-							// 子ノードの表示状態を更新
+							// 子ノード表示状態を更新
 							result = result.map((n) =>
 								n.id === child.id
 									? {
@@ -332,15 +331,18 @@ export const TaskBoard = () => {
 	}, [setNodes]);
 
 	// グループの深さを計算するヘルパー関数
-	const getGroupDepth = (groupId: string, nodes: Node[]): number => {
-		const node = nodes.find((n) => n.id === groupId);
-		if (!node) return 0;
+	const getGroupDepth = useCallback(
+		(groupId: string, nodes: Node[]): number => {
+			const node = nodes.find((n) => n.id === groupId);
+			if (!node) return 0;
 
-		const parentId = (node.data as TaskNoteData & TaskGroupData).parentId;
-		if (!parentId) return 0;
+			const parentId = (node.data as TaskNoteData & TaskGroupData).parentId;
+			if (!parentId) return 0;
 
-		return 1 + getGroupDepth(parentId, nodes);
-	};
+			return 1 + getGroupDepth(parentId, nodes);
+		},
+		[],
+	);
 
 	const onNodesChange = useCallback(
 		(changes: NodeChange[]) => {
@@ -357,6 +359,13 @@ export const TaskBoard = () => {
 
 				if (dragStart) {
 					setIsDragging(true);
+					// ドラッグ開始時にノードIDを保存
+					const draggedNode = changes.find(
+						(change) => change.type === "position" && change.dragging === true,
+					) as { id: string } | undefined;
+					if (draggedNode) {
+						setDraggedNodeId(draggedNode.id);
+					}
 				}
 
 				// 位置の変更を処理
@@ -368,22 +377,41 @@ export const TaskBoard = () => {
 							const deltaX = change.position.x - node.position.x;
 							const deltaY = change.position.y - node.position.y;
 
-							// グループ内の付箋とグループも一緒に移動
-							updatedNodes = updatedNodes.map((n) => {
-								const data = n.data as (TaskNoteData | TaskGroupData) & {
-									parentId?: string;
-								};
-								if (data.parentId === node.id) {
-									return {
-										...n,
-										position: {
-											x: n.position.x + deltaX,
-											y: n.position.y + deltaY,
-										},
-									};
+							// 再帰的に子孫ノードを移動する関数
+							const moveDescendants = (
+								parentId: string,
+								nodes: Node[],
+							): Node[] => {
+								let result = [...nodes];
+								const children = result.filter(
+									(n) => (n.data as TaskNoteData).parentId === parentId,
+								);
+
+								for (const child of children) {
+									// 子ノードを移動
+									result = result.map((n) =>
+										n.id === child.id
+											? {
+													...n,
+													position: {
+														x: n.position.x + deltaX,
+														y: n.position.y + deltaY,
+													},
+												}
+											: n,
+									);
+
+									// グループの場合は、その子孫も移動
+									if (child.type === "taskGroup") {
+										result = moveDescendants(child.id, result);
+									}
 								}
-								return n;
-							});
+
+								return result;
+							};
+
+							// 子孫ノードを移動
+							updatedNodes = moveDescendants(node.id, updatedNodes);
 
 							// ドラッグ中のグループ自体がグループ内に入るかチェック
 							if (isDragging) {
@@ -404,12 +432,28 @@ export const TaskBoard = () => {
 											((parentGroup.data as TaskGroupData).height ?? 200),
 									};
 
-									if (
+									const isOverGroup =
 										change.position.x >= groupBounds.left &&
 										change.position.x <= groupBounds.right &&
 										change.position.y >= groupBounds.top &&
-										change.position.y <= groupBounds.bottom
-									) {
+										change.position.y <= groupBounds.bottom;
+
+									// グループのハイライト状態を更新
+									updatedNodes = updatedNodes.map((n) =>
+										n.id === parentGroup.id
+											? {
+													...n,
+													style: {
+														...n.style,
+														borderColor: isOverGroup ? "#3b82f6" : undefined,
+														borderWidth: isOverGroup ? 2 : undefined,
+														borderRadius: isOverGroup ? "0.5rem" : undefined,
+													},
+												}
+											: n,
+									);
+
+									if (isOverGroup) {
 										// 親グループ内に入った場合、parentIdを設定
 										updatedNodes = updatedNodes.map((n) =>
 											n.id === node.id
@@ -423,7 +467,6 @@ export const TaskBoard = () => {
 												: n,
 										);
 										foundParentGroup = true;
-										break;
 									}
 								}
 
@@ -451,6 +494,7 @@ export const TaskBoard = () => {
 								(n) => n.type === "taskGroup" && n.id !== node.id,
 							);
 							let foundGroup = false;
+							let deepestGroup: { group: Node; depth: number } | null = null;
 
 							for (const group of groups) {
 								const groupBounds = {
@@ -464,32 +508,58 @@ export const TaskBoard = () => {
 										((group.data as TaskGroupData).height ?? 200),
 								};
 
-								// 付箋がグループの範囲内にあるかチェック
-								if (
+								const isOverGroup =
 									change.position.x >= groupBounds.left &&
 									change.position.x <= groupBounds.right &&
 									change.position.y >= groupBounds.top &&
-									change.position.y <= groupBounds.bottom
-								) {
-									// グループ内に入った場合、parentIdを設定
-									updatedNodes = updatedNodes.map((n) =>
-										n.id === node.id
-											? {
-													...n,
-													data: {
-														...n.data,
-														parentId: group.id,
-													},
-												}
-											: n,
-									);
+									change.position.y <= groupBounds.bottom;
+
+								if (isOverGroup) {
+									const depth = getGroupDepth(group.id, updatedNodes);
+									if (!deepestGroup || depth > deepestGroup.depth) {
+										deepestGroup = { group, depth };
+									}
 									foundGroup = true;
-									break;
 								}
 							}
 
-							// どのグループにも属していない場合、parentIdを削除
-							if (!foundGroup) {
+							// 最も深いグループのみハイライト
+							updatedNodes = updatedNodes.map((n) =>
+								n.type === "taskGroup"
+									? {
+											...n,
+											style: {
+												...n.style,
+												borderColor:
+													deepestGroup?.group.id === n.id
+														? "#3b82f6"
+														: undefined,
+												borderWidth:
+													deepestGroup?.group.id === n.id ? 2 : undefined,
+												borderRadius:
+													deepestGroup?.group.id === n.id
+														? "0.5rem"
+														: undefined,
+											},
+										}
+									: n,
+							);
+
+							// 最も深いグループに付箋を追加
+							if (deepestGroup) {
+								updatedNodes = updatedNodes.map((n) =>
+									n.id === node.id
+										? {
+												...n,
+												data: {
+													...n.data,
+													parentId: deepestGroup.group.id,
+												},
+											}
+										: n,
+								);
+							} else if (!foundGroup) {
+								// どのグループにも属していない場合、parentIdを削除
 								updatedNodes = updatedNodes.map((n) =>
 									n.id === node.id
 										? {
@@ -509,16 +579,42 @@ export const TaskBoard = () => {
 				// 通常の変更を適用
 				updatedNodes = applyNodeChanges(changes, updatedNodes);
 
-				// ドラッグ終了時のみグループのサイズを更新
+				// ドラッグ終了時の処理
 				if (dragEnd) {
 					setIsDragging(false);
+					setDraggedNodeId(null);
+					// すべてのグループのハイライトを解除し、z-indexを再計算
+					updatedNodes = updatedNodes.map((n) => {
+						if (n.type === "taskGroup") {
+							const depth = getGroupDepth(n.id, updatedNodes);
+							return {
+								...n,
+								style: {
+									...n.style,
+									borderColor: undefined,
+									borderWidth: undefined,
+									borderRadius: undefined,
+									zIndex: depth,
+								},
+							};
+						}
+						return {
+							...n,
+							style: {
+								...n.style,
+								borderColor: undefined,
+								borderWidth: undefined,
+								borderRadius: undefined,
+							},
+						};
+					});
 					setTimeout(updateGroupDimensions, 0);
 				}
 
 				return updatedNodes;
 			});
 		},
-		[setNodes, updateGroupDimensions, isDragging],
+		[setNodes, updateGroupDimensions, isDragging, getGroupDepth],
 	);
 
 	const onConnect = useCallback(
@@ -604,11 +700,14 @@ export const TaskBoard = () => {
 					y: selectedGroup.position.y + 80, // ヘッダーの下に配置
 				};
 				newNode.data.parentId = selectedGroup.id;
+				// 親グループの深さに基づいてz-indexを設定
+				const parentDepth = getGroupDepth(selectedGroup.id, nds);
+				newNode.style = { zIndex: parentDepth + 1 };
 			}
 
 			return [...nds, newNode];
 		});
-	}, [setNodes]);
+	}, [setNodes, getGroupDepth]);
 
 	const handleDeleteSelected = useCallback(() => {
 		setNodes((nds) => {
@@ -702,7 +801,7 @@ export const TaskBoard = () => {
 				priority: "medium",
 				parentId, // 親グループのIDを引き継ぐ
 			},
-			style: { zIndex: 0 },
+			style: { zIndex: parentId ? getGroupDepth(parentId, nodes) + 1 : 0 },
 		};
 
 		setNodes((nds) => [
@@ -721,7 +820,7 @@ export const TaskBoard = () => {
 			),
 			groupNode,
 		]);
-	}, [nodes, setNodes]);
+	}, [nodes, setNodes, getGroupDepth]);
 
 	const handleSave = useCallback(() => {
 		const data = {
