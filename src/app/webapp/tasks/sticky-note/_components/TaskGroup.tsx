@@ -136,7 +136,7 @@ export const TaskGroup = ({
 				"hover:shadow-xl group",
 			)}
 			style={{
-				width: isCollapsed ? 200 : width,
+				width: isCollapsed ? 300 : width,
 				height: isCollapsed ? 60 : height,
 				minWidth: 200,
 				minHeight: 60,

@@ -28,6 +28,7 @@ interface TaskGroupData {
 	priority?: "high" | "medium" | "low";
 	status: "not_started" | "in_progress" | "completed";
 	progress?: number;
+	parentId?: string;
 }
 
 interface TaskNoteData {
@@ -52,6 +53,11 @@ export const TaskBoard = () => {
 	const handleNodeDataChange = useCallback(
 		(nodeId: string, data: Partial<TaskNoteData | TaskGroupData>) => {
 			setNodes((nds) => {
+				console.log("=== Node Data Change Start ===");
+				console.log("NodeId:", nodeId);
+				console.log("Update Data:", data);
+				console.log("Current Nodes:", nds);
+
 				const updatedNodes = nds.map((node) =>
 					node.id === nodeId
 						? {
@@ -67,25 +73,130 @@ export const TaskBoard = () => {
 				// グループが折りたたまれた場合、子ノードを非表示にする
 				const node = getNode(nodeId);
 				if (node?.type === "taskGroup" && (data as TaskGroupData).isCollapsed) {
-					return updatedNodes.map((n) =>
-						(n.data as TaskNoteData).parentId === nodeId
-							? { ...n, hidden: true }
-							: n,
-					);
+					console.log("Collapsing group:", nodeId);
+					// 再帰的に子孫ノードを非表示にする関数
+					const hideDescendants = (parentId: string, nodes: Node[]): Node[] => {
+						console.log("Hiding descendants of:", parentId);
+						let result = [...nodes];
+						const children = result.filter(
+							(n) => (n.data as TaskNoteData).parentId === parentId,
+						);
+
+						for (const child of children) {
+							console.log(
+								"Found child node:",
+								child.id,
+								"of parent:",
+								parentId,
+							);
+							// 子ノードを非表示にする（グループの場合は折りたたみ状態を保持）
+							result = result.map((n) =>
+								n.id === child.id
+									? {
+											...n,
+											hidden: true,
+											data: {
+												...n.data,
+												// グループの場合は元の折りたたみ状態を保持
+												...(n.type === "taskGroup" && {
+													isCollapsed: (n.data as TaskGroupData).isCollapsed,
+												}),
+											},
+										}
+									: n,
+							);
+
+							// グループの場合は、その子孫も処理（折りたたみ状態に関係なく全て非表示）
+							if (child.type === "taskGroup") {
+								console.log("Child is a group, hiding descendants:", child.id);
+								result = hideDescendants(child.id, result);
+							}
+						}
+
+						return result;
+					};
+
+					const result = hideDescendants(nodeId, updatedNodes);
+					console.log("Final nodes after hiding:", result);
+					return result;
 				}
+
 				if (
 					node?.type === "taskGroup" &&
 					!(data as TaskGroupData).isCollapsed
 				) {
-					return updatedNodes.map((n) =>
-						(n.data as TaskNoteData).parentId === nodeId
-							? { ...n, hidden: false }
-							: n,
-					);
+					console.log("Expanding group:", nodeId);
+					// 再帰的に子ノードを表示する関数（親が開いている場合のみ）
+					const showDescendants = (
+						parentId: string,
+						isParentVisible: boolean,
+						nodes: Node[],
+					): Node[] => {
+						console.log(
+							"Showing descendants of:",
+							parentId,
+							"Parent visible:",
+							isParentVisible,
+						);
+						let result = [...nodes];
+						const children = result.filter(
+							(n) => (n.data as TaskNoteData).parentId === parentId,
+						);
+
+						for (const child of children) {
+							console.log(
+								"Found child node:",
+								child.id,
+								"of parent:",
+								parentId,
+							);
+							const isCollapsed =
+								child.type === "taskGroup"
+									? (child.data as TaskGroupData).isCollapsed
+									: false;
+							console.log("Node collapse state:", child.id, isCollapsed);
+
+							// 子ノードの表示状態を更新
+							result = result.map((n) =>
+								n.id === child.id
+									? {
+											...n,
+											// 親が表示されている場合は表示する（グループの場合は折りたたみ状態に関係なく表示）
+											hidden: !isParentVisible,
+											data: {
+												...n.data,
+												// グループの場合は元の折りたたみ状態を保持
+												...(n.type === "taskGroup" && {
+													isCollapsed: isCollapsed,
+												}),
+											},
+										}
+									: n,
+							);
+
+							// グループの場合は、子孫も処理
+							if (child.type === "taskGroup") {
+								console.log("Processing group children:", child.id);
+								// 親が表示されていて、かつグループが開いている場合のみ子孫を表示
+								result = showDescendants(
+									child.id,
+									isParentVisible && !isCollapsed,
+									result,
+								);
+							}
+						}
+
+						return result;
+					};
+
+					const result = showDescendants(nodeId, true, updatedNodes);
+					console.log("Final nodes after showing:", result);
+					return result;
 				}
 
-				// タスクのス��ータスが変更された場合、親グループの���度状況を更新
+				// タスクのスタスが変更された場合、親グループの度状況を更新
 				if (node?.type === "taskNote" && "status" in data) {
+					console.log("Updating task status:", nodeId);
 					const parentId = (node.data as TaskNoteData).parentId;
 					if (parentId) {
 						const siblings = updatedNodes.filter(
@@ -100,6 +211,7 @@ export const TaskBoard = () => {
 							(completedCount / siblings.length) * 100,
 						);
 
+						console.log("Updating parent group progress:", parentId, progress);
 						return updatedNodes.map((n) =>
 							n.id === parentId
 								? {
@@ -120,6 +232,7 @@ export const TaskBoard = () => {
 					}
 				}
 
+				console.log("=== Node Data Change End ===");
 				return updatedNodes;
 			});
 		},
@@ -149,36 +262,67 @@ export const TaskBoard = () => {
 			const updatedNodes = [...nds];
 			const groups = updatedNodes.filter((node) => node.type === "taskGroup");
 
-			for (const group of groups) {
+			// グループを親から子の順に処理するために深さでソート
+			const sortedGroups = [...groups].sort((a, b) => {
+				const aDepth = getGroupDepth(a.id, updatedNodes);
+				const bDepth = getGroupDepth(b.id, updatedNodes);
+				return bDepth - aDepth; // 深い方（子）から処理
+			});
+
+			for (const group of sortedGroups) {
 				const childNodes = updatedNodes.filter(
 					(node) =>
-						node.type === "taskNote" &&
-						(node.data as TaskNoteData).parentId === group.id &&
+						(node.type === "taskNote" || node.type === "taskGroup") &&
+						(node.data as TaskNoteData & TaskGroupData).parentId === group.id &&
 						!node.hidden,
 				);
 
 				if (childNodes.length > 0) {
+					// 子要素の位置とサイズを考慮して親グループのサイズを計算
+					const PADDING = 40; // 左右の余白
+					const HEADER_HEIGHT = 60; // ヘッダーの高さ
+					const TOP_PADDING = 20; // 上部の余白
+					const BOTTOM_PADDING = 20; // 下部の余白
+
 					const minX = Math.min(...childNodes.map((node) => node.position.x));
 					const maxX = Math.max(
-						...childNodes.map((node) => node.position.x + 220),
-					); // 付箋の幅 + パディング
+						...childNodes.map((node) => {
+							const width =
+								node.type === "taskGroup"
+									? ((node.data as TaskGroupData).width ?? 300)
+									: 220;
+							return node.position.x + width + PADDING;
+						}),
+					);
+
 					const minY = Math.min(...childNodes.map((node) => node.position.y));
 					const maxY = Math.max(
-						...childNodes.map((node) => node.position.y + 200),
-					); // 付箋の高さ + パディング
+						...childNodes.map((node) => {
+							const height =
+								node.type === "taskGroup"
+									? ((node.data as TaskGroupData).height ?? 200)
+									: 200;
+							return node.position.y + height + BOTTOM_PADDING;
+						}),
+					);
 
-					const width = maxX - minX + 40; // 余白を追加
-					const height = maxY - minY + 40; // 余白を追加
+					// グループのサイズを設定
+					const width = Math.max(maxX - minX + PADDING * 2, 300); // 最小幅を確保
+					const height = Math.max(
+						maxY - minY + HEADER_HEIGHT + TOP_PADDING + BOTTOM_PADDING,
+						200,
+					); // 最小高さを確保
 
+					// グループの位置を設定（子要素を包括するように）
 					group.position = {
-						x: minX - 20,
-						y: minY - 60, // ヘッダーの高さを考慮
+						x: minX - PADDING,
+						y: minY - HEADER_HEIGHT - TOP_PADDING,
 					};
 
 					group.data = {
 						...group.data,
-						width: Math.max(width, 300), // 最小幅を設定
-						height: Math.max(height, 200), // 最小高さを設定
+						width,
+						height,
 					};
 				}
 			}
@@ -186,6 +330,17 @@ export const TaskBoard = () => {
 			return updatedNodes;
 		});
 	}, [setNodes]);
+
+	// グループの深さを計算するヘルパー関数
+	const getGroupDepth = (groupId: string, nodes: Node[]): number => {
+		const node = nodes.find((n) => n.id === groupId);
+		if (!node) return 0;
+
+		const parentId = (node.data as TaskNoteData & TaskGroupData).parentId;
+		if (!parentId) return 0;
+
+		return 1 + getGroupDepth(parentId, nodes);
+	};
 
 	const onNodesChange = useCallback(
 		(changes: NodeChange[]) => {
@@ -213,9 +368,12 @@ export const TaskBoard = () => {
 							const deltaX = change.position.x - node.position.x;
 							const deltaY = change.position.y - node.position.y;
 
-							// グループ内の付箋も一緒に移動
+							// グループ内の付箋とグループも一緒に移動
 							updatedNodes = updatedNodes.map((n) => {
-								if ((n.data as TaskNoteData).parentId === node.id) {
+								const data = n.data as (TaskNoteData | TaskGroupData) & {
+									parentId?: string;
+								};
+								if (data.parentId === node.id) {
 									return {
 										...n,
 										position: {
@@ -226,9 +384,72 @@ export const TaskBoard = () => {
 								}
 								return n;
 							});
-						} else if (node?.type === "taskNote" && isDragging) {
-							// 付箋がドラッグされている場合、グループとの関係をチェック
-							const groups = updatedNodes.filter((n) => n.type === "taskGroup");
+
+							// ドラッグ中のグループ自体がグループ内に入るかチェック
+							if (isDragging) {
+								const otherGroups = updatedNodes.filter(
+									(n) => n.type === "taskGroup" && n.id !== node.id,
+								);
+								let foundParentGroup = false;
+
+								for (const parentGroup of otherGroups) {
+									const groupBounds = {
+										left: parentGroup.position.x,
+										right:
+											parentGroup.position.x +
+											((parentGroup.data as TaskGroupData).width ?? 300),
+										top: parentGroup.position.y,
+										bottom:
+											parentGroup.position.y +
+											((parentGroup.data as TaskGroupData).height ?? 200),
+									};
+
+									if (
+										change.position.x >= groupBounds.left &&
+										change.position.x <= groupBounds.right &&
+										change.position.y >= groupBounds.top &&
+										change.position.y <= groupBounds.bottom
+									) {
+										// 親グループ内に入った場合、parentIdを設定
+										updatedNodes = updatedNodes.map((n) =>
+											n.id === node.id
+												? {
+														...n,
+														data: {
+															...n.data,
+															parentId: parentGroup.id,
+														},
+													}
+												: n,
+										);
+										foundParentGroup = true;
+										break;
+									}
+								}
+
+								// どのグループにも属していない場合、parentIdを削除
+								if (!foundParentGroup) {
+									updatedNodes = updatedNodes.map((n) =>
+										n.id === node.id
+											? {
+													...n,
+													data: {
+														...n.data,
+														parentId: undefined,
+													},
+												}
+											: n,
+									);
+								}
+							}
+						} else if (
+							(node?.type === "taskNote" || node?.type === "taskGroup") &&
+							isDragging
+						) {
+							// 付箋またはグループがドラッグされている場合、グループとの関係をチェック
+							const groups = updatedNodes.filter(
+								(n) => n.type === "taskGroup" && n.id !== node.id,
+							);
 							let foundGroup = false;
 
 							for (const group of groups) {
@@ -331,7 +552,25 @@ export const TaskBoard = () => {
 			},
 			style: { zIndex: 1 }, // 付箋を前面に表示
 		};
-		setNodes((nds) => [...nds, newNode]);
+
+		// 選択されているグループがあれば、その中に追加
+		setNodes((nds) => {
+			const selectedGroup = nds.find(
+				(n) => n.selected && n.type === "taskGroup",
+			);
+
+			if (selectedGroup) {
+				// グループ内の適切な位置に配置
+				const groupData = selectedGroup.data as TaskGroupData;
+				newNode.position = {
+					x: selectedGroup.position.x + (groupData.width ?? 300) / 2 - 110,
+					y: selectedGroup.position.y + 80, // ヘッダーの下に配置
+				};
+				newNode.data.parentId = selectedGroup.id;
+			}
+
+			return [...nds, newNode];
+		});
 	}, [setNodes]);
 
 	const handleAddGroup = useCallback(() => {
@@ -350,7 +589,25 @@ export const TaskBoard = () => {
 			},
 			style: { zIndex: 0 }, // グループを背面に表示
 		};
-		setNodes((nds) => [...nds, newNode]);
+
+		// 選択されているグループがあれば、その中に追加
+		setNodes((nds) => {
+			const selectedGroup = nds.find(
+				(n) => n.selected && n.type === "taskGroup",
+			);
+
+			if (selectedGroup) {
+				// グループ内の適切な位置に配置
+				const groupData = selectedGroup.data as TaskGroupData;
+				newNode.position = {
+					x: selectedGroup.position.x + (groupData.width ?? 300) / 2 - 150,
+					y: selectedGroup.position.y + 80, // ヘッダーの下に配置
+				};
+				newNode.data.parentId = selectedGroup.id;
+			}
+
+			return [...nds, newNode];
+		});
 	}, [setNodes]);
 
 	const handleDeleteSelected = useCallback(() => {
@@ -387,29 +644,53 @@ export const TaskBoard = () => {
 
 	const handleGroupSelected = useCallback(() => {
 		const selectedNodes = nodes.filter(
-			(node) => node.selected && node.type === "taskNote",
+			(node) =>
+				node.selected &&
+				(node.type === "taskNote" || node.type === "taskGroup"),
 		);
 		if (selectedNodes.length === 0) return;
 
+		// 選択されたノードの親グループを取得
+		const parentId = selectedNodes[0].data.parentId;
+		// すべての選択されたノードが同じ親グループに属しているか確認
+		const hasSameParent = selectedNodes.every(
+			(node) => node.data.parentId === parentId,
+		);
+		if (!hasSameParent) return; // 異なる親を持つノードは一緒にグループ化できない
+
 		const minX = Math.min(...selectedNodes.map((node) => node.position.x));
 		const maxX = Math.max(
-			...selectedNodes.map((node) => node.position.x + 220),
+			...selectedNodes.map((node) => {
+				const width =
+					node.type === "taskGroup"
+						? ((node.data as TaskGroupData).width ?? 300)
+						: 220;
+				return node.position.x + width;
+			}),
 		);
 		const minY = Math.min(...selectedNodes.map((node) => node.position.y));
 		const maxY = Math.max(
-			...selectedNodes.map((node) => node.position.y + 200),
+			...selectedNodes.map((node) => {
+				const height =
+					node.type === "taskGroup"
+						? ((node.data as TaskGroupData).height ?? 200)
+						: 200;
+				return node.position.y + height;
+			}),
 		);
 
-		const width = Math.max(maxX - minX + 40, 300);
-		const height = Math.max(maxY - minY + 40, 200);
+		const PADDING = 40;
+		const HEADER_HEIGHT = 60;
+		const width = Math.max(maxX - minX + PADDING * 2, 300);
+		const height = Math.max(maxY - minY + HEADER_HEIGHT + PADDING * 2, 200);
 
 		const groupId = uuidv4();
 		const groupNode: Node<TaskGroupData> = {
 			id: groupId,
 			type: "taskGroup",
 			position: {
-				x: minX - 20,
-				y: minY - 60,
+				x: minX - PADDING,
+				y: minY - HEADER_HEIGHT - PADDING,
 			},
 			data: {
 				title: "新しいグループ",
@@ -419,13 +700,14 @@ export const TaskBoard = () => {
 				status: "not_started",
 				progress: 0,
 				priority: "medium",
+				parentId, // 親グループのIDを引き継ぐ
 			},
 			style: { zIndex: 0 },
 		};
 
 		setNodes((nds) => [
 			...nds.map((node) =>
-				node.selected && node.type === "taskNote"
+				node.selected
 					? {
 							...node,
 							data: {
