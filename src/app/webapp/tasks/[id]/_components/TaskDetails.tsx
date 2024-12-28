@@ -114,7 +114,7 @@ export function TaskDetails({ taskId }: TaskDetailsProps) {
 					{task.estimated_duration && (
 						<div className="flex items-center gap-2">
 							<Clock className="h-4 w-4" />
-							<span>予定時間: {task.estimated_duration}</span>
+							<span>予定時間: {task.estimated_duration as string}</span>
 						</div>
 					)}
 				</div>

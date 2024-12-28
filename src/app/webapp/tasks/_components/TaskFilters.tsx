@@ -16,8 +16,8 @@ import type { Database } from "@/types/supabase";
 import { useAtom } from "jotai";
 import {
 	searchQueryAtom,
-	statusAtom,
-	priorityAtom,
+	statusFilterAtom,
+	priorityFilterAtom,
 	searchTasksAtom,
 	filterTasksAtom,
 } from "@/store/tasks";
@@ -28,8 +28,8 @@ type TaskPriority = NonNullable<Task["priority"]>;
 
 export function TaskFilters() {
 	const [searchQuery, setSearchQuery] = useAtom(searchQueryAtom);
-	const [status, setStatus] = useAtom(statusAtom);
-	const [priority, setPriority] = useAtom(priorityAtom);
+	const [status, setStatus] = useAtom(statusFilterAtom);
+	const [priority, setPriority] = useAtom(priorityFilterAtom);
 	const [, searchTasks] = useAtom(searchTasksAtom);
 	const [, filterTasks] = useAtom(filterTasksAtom);
 

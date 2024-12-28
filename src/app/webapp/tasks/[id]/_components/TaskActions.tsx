@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { updateTaskStatus, deleteTask } from "@/app/_actions/task.action";
+import { updateTaskStatus, deleteTask } from "@/app/_actions/tasks";
 import { toast } from "sonner";
 import type { Database } from "@/types/supabase";
 
@@ -47,9 +47,16 @@ export function TaskActions({ taskId }: TaskActionsProps) {
 	async function handleStatusChange(status: Task["status"]) {
 		try {
 			setIsUpdating(true);
-			const updatedTask = await updateTaskStatus(taskId, status);
-			if (updatedTask) {
-				setTask(updatedTask);
+			const data = await updateTaskStatus(taskId, status);
+			if (data) {
+				setTask({
+					...data,
+					estimated_duration: data.estimated_duration?.toString() ?? null,
+					ai_analysis: data.ai_analysis
+						? JSON.parse(JSON.stringify(data.ai_analysis))
+						: null,
+					experience_points: Number(data.experience_points ?? 0),
+				});
 				toast.success("タスクのステータスを更新しました");
 			}
 		} catch (error) {

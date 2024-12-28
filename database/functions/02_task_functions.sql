@@ -10,8 +10,6 @@ drop function if exists generate_recurring_tasks();
 create or replace function calculate_required_exp(level integer)
 returns integer as $$
 begin
-    -- レベルが上がるごとに必要経験値が増加
-    -- 計算式: 100 * (レベル ^ 1.5)
     return (100 * power(level, 1.5))::integer;
 end;
 $$ language plpgsql;
@@ -30,28 +28,57 @@ returns table (
     estimated_duration interval,
     actual_duration interval,
     ai_generated boolean,
-    parent_task_id uuid
+    project_id uuid,
+    group_ids uuid[],
+    dependency_count integer
 ) as $$
 begin
     return query
     select 
         t.id, t.title, t.description, t.due_date, t.priority, t.category, t.status,
         t.difficulty_level, t.estimated_duration, t.actual_duration, t.ai_generated,
-        t.parent_task_id
+        t.project_id,
+        array_agg(distinct tgm.group_id) as group_ids,
+        count(distinct td.prerequisite_task_id) as dependency_count
     from tasks t
+    left join task_group_memberships tgm on t.id = tgm.task_id
+    left join task_dependencies td on t.id = td.dependent_task_id
     where t.user_id = p_user_id
     and t.status != 'completed'
     and (t.due_date is null or t.due_date >= current_date)
+    group by t.id
     order by 
-        t.parent_task_id nulls first,
-        t.completion_order,
-        case when t.due_date is null then 1 else 0 end,
-        t.due_date,
+        t.due_date nulls last,
         case t.priority
             when 'high' then 1
             when 'medium' then 2
             when 'low' then 3
         end;
+end;
+$$ language plpgsql;
+
+-- サループ内のタスク取得関数
+create or replace function get_group_tasks(p_group_id uuid)
+returns table (
+    id uuid,
+    title text,
+    description text,
+    status text,
+    priority text,
+    position integer,
+    group_path ltree
+) as $$
+begin
+    return query
+    select 
+        t.id, t.title, t.description, t.status, t.priority,
+        tgm.position,
+        tg.path as group_path
+    from tasks t
+    join task_group_memberships tgm on t.id = tgm.task_id
+    join task_groups tg on tgm.group_id = tg.id
+    where tg.id = p_group_id
+    order by tgm.position;
 end;
 $$ language plpgsql;
 
@@ -81,7 +108,7 @@ create or replace function calculate_task_experience(
     p_difficulty_level integer,
     p_estimated_duration interval,
     p_actual_duration interval,
-    p_current_level integer -- 現在のレベルに基づいて経験値を調整
+    p_current_level integer
 )
 returns integer as $$
 declare
@@ -133,7 +160,7 @@ begin
     values (p_user_id, p_skill_category)
     on conflict (user_id, skill_category) do nothing;
     
-    -- 現在の経験値とレベルを取得
+    -- ��在の経験値とレベルを取得
     select us.total_exp, us.current_level
     into current_exp, current_level
     from user_skills us
@@ -196,12 +223,13 @@ begin
     loop
         -- recurring_patternに基づいて次回のタスクを生成
         insert into tasks (
-            user_id, title, description, due_date, priority, 
+            user_id, project_id, title, description, due_date, priority, 
             category, status, is_recurring, recurring_pattern,
             difficulty_level, estimated_duration, ai_generated
         )
         select
             task_record.user_id,
+            task_record.project_id,
             task_record.title,
             task_record.description,
             case (task_record.recurring_pattern->>'type')
