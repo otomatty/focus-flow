@@ -48,7 +48,7 @@ export function ImageUpload({
 		setPreview(value);
 	}, [value]);
 
-	// 認証プロバイダーのアバターURLを��得
+	// 認証プロバイダーのアバターURLを取得
 	useEffect(() => {
 		async function fetchProviderAvatars() {
 			if (!user) return;

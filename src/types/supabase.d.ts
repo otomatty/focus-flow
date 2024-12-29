@@ -622,13 +622,6 @@ export type Database = {
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "project_tasks_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
         ]
       }
       projects: {
@@ -822,10 +815,56 @@ export type Database = {
           title?: string
           updated_at?: string | null
         }
+        Relationships: []
+      }
+      task_dependencies: {
+        Row: {
+          conditions: Json | null
+          created_at: string | null
+          dependency_type: Database["public"]["Enums"]["dependency_type"]
+          dependent_task_id: string
+          lag_time: unknown | null
+          link_type: Database["public"]["Enums"]["dependency_link_type"]
+          metadata: Json | null
+          prerequisite_task_id: string
+          status: Database["public"]["Enums"]["dependency_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          conditions?: Json | null
+          created_at?: string | null
+          dependency_type: Database["public"]["Enums"]["dependency_type"]
+          dependent_task_id: string
+          lag_time?: unknown | null
+          link_type?: Database["public"]["Enums"]["dependency_link_type"]
+          metadata?: Json | null
+          prerequisite_task_id: string
+          status?: Database["public"]["Enums"]["dependency_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          conditions?: Json | null
+          created_at?: string | null
+          dependency_type?: Database["public"]["Enums"]["dependency_type"]
+          dependent_task_id?: string
+          lag_time?: unknown | null
+          link_type?: Database["public"]["Enums"]["dependency_link_type"]
+          metadata?: Json | null
+          prerequisite_task_id?: string
+          status?: Database["public"]["Enums"]["dependency_status"]
+          updated_at?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "task_breakdowns_parent_task_id_fkey"
-            columns: ["parent_task_id"]
+            foreignKeyName: "task_dependencies_dependent_task_id_fkey"
+            columns: ["dependent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_dependencies_prerequisite_task_id_fkey"
+            columns: ["prerequisite_task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
             referencedColumns: ["id"]
@@ -860,10 +899,171 @@ export type Database = {
           skill_category?: string
           task_id?: string | null
         }
+        Relationships: []
+      }
+      task_group_memberships: {
+        Row: {
+          created_at: string | null
+          group_id: string
+          position: number | null
+          task_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          group_id: string
+          position?: number | null
+          task_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string
+          position?: number | null
+          task_id?: string
+          updated_at?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "task_experience_task_id_fkey"
+            foreignKeyName: "task_group_memberships_task_id_fkey"
             columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_group_views: {
+        Row: {
+          created_at: string | null
+          group_id: string | null
+          id: string
+          is_enabled: boolean | null
+          last_used_at: string | null
+          settings: Json | null
+          updated_at: string | null
+          view_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          group_id?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          last_used_at?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+          view_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          last_used_at?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+          view_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_group_views_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "task_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_groups: {
+        Row: {
+          active_view_type: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          parent_group_id: string | null
+          path: unknown | null
+          project_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_view_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          parent_group_id?: string | null
+          path?: unknown | null
+          project_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_view_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          parent_group_id?: string | null
+          path?: unknown | null
+          project_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_groups_parent_group_id_fkey"
+            columns: ["parent_group_id"]
+            isOneToOne: false
+            referencedRelation: "task_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_groups_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_relationships: {
+        Row: {
+          created_at: string | null
+          metadata: Json | null
+          relationship_type: Database["public"]["Enums"]["task_relationship_type"]
+          source_task_id: string
+          target_task_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          metadata?: Json | null
+          relationship_type: Database["public"]["Enums"]["task_relationship_type"]
+          source_task_id: string
+          target_task_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          metadata?: Json | null
+          relationship_type?: Database["public"]["Enums"]["task_relationship_type"]
+          source_task_id?: string
+          target_task_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_relationships_source_task_id_fkey"
+            columns: ["source_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_relationships_target_task_id_fkey"
+            columns: ["target_task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
             referencedColumns: ["id"]
@@ -900,7 +1100,6 @@ export type Database = {
       tasks: {
         Row: {
           actual_duration: unknown | null
-          ai_analysis: Json | null
           ai_generated: boolean | null
           category: string | null
           completion_order: number | null
@@ -909,13 +1108,13 @@ export type Database = {
           difficulty_level: number | null
           due_date: string | null
           estimated_duration: unknown | null
-          experience_points: number | null
           id: string
           is_recurring: boolean | null
           parent_task_id: string | null
+          path: unknown | null
+          position: number | null
           priority: string | null
           recurring_pattern: Json | null
-          skill_distribution: Json | null
           status: string | null
           title: string
           updated_at: string | null
@@ -923,7 +1122,6 @@ export type Database = {
         }
         Insert: {
           actual_duration?: unknown | null
-          ai_analysis?: Json | null
           ai_generated?: boolean | null
           category?: string | null
           completion_order?: number | null
@@ -932,13 +1130,13 @@ export type Database = {
           difficulty_level?: number | null
           due_date?: string | null
           estimated_duration?: unknown | null
-          experience_points?: number | null
           id?: string
           is_recurring?: boolean | null
           parent_task_id?: string | null
+          path?: unknown | null
+          position?: number | null
           priority?: string | null
           recurring_pattern?: Json | null
-          skill_distribution?: Json | null
           status?: string | null
           title: string
           updated_at?: string | null
@@ -946,7 +1144,6 @@ export type Database = {
         }
         Update: {
           actual_duration?: unknown | null
-          ai_analysis?: Json | null
           ai_generated?: boolean | null
           category?: string | null
           completion_order?: number | null
@@ -955,13 +1152,13 @@ export type Database = {
           difficulty_level?: number | null
           due_date?: string | null
           estimated_duration?: unknown | null
-          experience_points?: number | null
           id?: string
           is_recurring?: boolean | null
           parent_task_id?: string | null
+          path?: unknown | null
+          position?: number | null
           priority?: string | null
           recurring_pattern?: Json | null
-          skill_distribution?: Json | null
           status?: string | null
           title?: string
           updated_at?: string | null
@@ -1225,6 +1422,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _ltree_compress: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      _ltree_gist_options: {
+        Args: {
+          "": unknown
+        }
+        Returns: undefined
+      }
       add_experience_points: {
         Args: {
           p_user_id: string
@@ -1308,7 +1517,16 @@ export type Database = {
           actual_duration: unknown
           ai_generated: boolean
           parent_task_id: string
+          path: unknown
+          position: number
+          depth: number
         }[]
+      }
+      get_default_view_settings: {
+        Args: {
+          p_view_type: string
+        }
+        Returns: Json
       }
       get_focus_session_stats: {
         Args: {
@@ -1322,6 +1540,22 @@ export type Database = {
           total_bonus_points: number
           average_duration: unknown
           completion_rate: number
+        }[]
+      }
+      get_subtasks: {
+        Args: {
+          p_task_id: string
+        }
+        Returns: {
+          id: string
+          title: string
+          description: string
+          due_date: string
+          priority: string
+          status: string
+          position: number
+          path: unknown
+          depth: number
         }[]
       }
       get_task_breakdowns: {
@@ -1343,6 +1577,132 @@ export type Database = {
           p_role_name: string
         }
         Returns: boolean
+      }
+      lca: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: unknown
+      }
+      lquery_in: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      lquery_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      lquery_recv: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      lquery_send: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      ltree_compress: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ltree_decompress: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ltree_gist_in: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ltree_gist_options: {
+        Args: {
+          "": unknown
+        }
+        Returns: undefined
+      }
+      ltree_gist_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ltree_in: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ltree_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ltree_recv: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ltree_send: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      ltree2text: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      ltxtq_in: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ltxtq_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ltxtq_recv: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ltxtq_send: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      nlevel: {
+        Args: {
+          "": unknown
+        }
+        Returns: number
+      }
+      text2ltree: {
+        Args: {
+          "": string
+        }
+        Returns: unknown
       }
       update_overdue_tasks: {
         Args: Record<PropertyKey, never>
@@ -1377,6 +1737,20 @@ export type Database = {
         | "task_update"
         | "task_delete"
         | "member_update"
+      dependency_link_type:
+        | "finish_to_start"
+        | "start_to_start"
+        | "finish_to_finish"
+        | "start_to_finish"
+      dependency_status: "pending" | "satisfied" | "blocked" | "skipped"
+      dependency_type: "required" | "optional" | "conditional"
+      task_relationship_type:
+        | "related"
+        | "references"
+        | "derived_from"
+        | "blocks"
+        | "duplicates"
+      task_type: "task" | "milestone" | "summary"
     }
     CompositeTypes: {
       [_ in never]: never

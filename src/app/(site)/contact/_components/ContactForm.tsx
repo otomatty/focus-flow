@@ -35,7 +35,7 @@ export function ContactForm() {
 	});
 
 	function onSubmit(values: z.infer<typeof formSchema>) {
-		// TODO: お問��合わせフォームの送信処理を実装
+		// TODO: お問い合わせフォームの送信処理を実装
 		console.log(values);
 	}
 

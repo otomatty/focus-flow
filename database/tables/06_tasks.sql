@@ -1,10 +1,3 @@
--- タスクの種類を定義
-create type task_type as enum (
-    'task',           -- 通常タスク
-    'milestone',      -- マイルストーン
-    'summary'         -- サマリータスク
-);
-
 -- タスクテーブル
 create table if not exists tasks (
     id uuid primary key default uuid_generate_v4(),
@@ -12,7 +5,6 @@ create table if not exists tasks (
     project_id uuid references projects(id) on delete cascade,
     title text not null,
     description text,
-    task_type task_type not null default 'task',
     start_date timestamp with time zone,
     due_date timestamp with time zone,
     priority text check (priority in ('high', 'medium', 'low')),

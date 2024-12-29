@@ -294,7 +294,7 @@ export const TaskNote = ({
 										<SelectContent>
 											<SelectItem value="high">高</SelectItem>
 											<SelectItem value="medium">中</SelectItem>
-											<SelectItem value="low">��</SelectItem>
+											<SelectItem value="low">低</SelectItem>
 										</SelectContent>
 									</Select>
 									<FormMessage />

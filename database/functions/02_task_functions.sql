@@ -160,7 +160,7 @@ begin
     values (p_user_id, p_skill_category)
     on conflict (user_id, skill_category) do nothing;
     
-    -- ��在の経験値とレベルを取得
+    -- 現在の経験値とレベルを取得
     select us.total_exp, us.current_level
     into current_exp, current_level
     from user_skills us

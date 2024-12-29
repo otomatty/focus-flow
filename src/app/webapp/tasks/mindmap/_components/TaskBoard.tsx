@@ -653,7 +653,7 @@ export const TaskBoard = () => {
 			style: { zIndex: 1 }, // 付箋を前面に表示
 		};
 
-		// 選択されているグループがあれば、その中に��加
+		// 選択されているグループがあれば、その中に追加
 		setNodes((nds) => {
 			const selectedGroup = nds.find(
 				(n) => n.selected && n.type === "taskGroup",
@@ -697,7 +697,7 @@ export const TaskBoard = () => {
 			);
 
 			if (selectedGroup) {
-				// グループ内の���切な位置に配置
+				// グループ内の適切な位置に配置
 				const groupData = selectedGroup.data as TaskGroupData;
 				newNode.position = {
 					x: selectedGroup.position.x + (groupData.width ?? 300) / 2 - 150,

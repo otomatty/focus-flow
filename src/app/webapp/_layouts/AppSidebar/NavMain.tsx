@@ -73,14 +73,19 @@ const useMainMenuItems = (): NavMainItem[] => {
 			isActive: pathname.startsWith("/webapp/tasks"),
 			items: [
 				{
-					title: "タスクリスト",
+					title: "タスクを表示する",
 					url: "/webapp/tasks",
 					isActive: pathname === "/webapp/tasks",
 				},
 				{
-					title: "付箋ボード",
-					url: "/webapp/tasks/sticky-note",
-					isActive: pathname === "/webapp/tasks/sticky-note",
+					title: "タスクを整理する",
+					url: "/webapp/tasks/mindmap",
+					isActive: pathname === "/webapp/tasks/mindmap",
+				},
+				{
+					title: "タスクを作成する",
+					url: "/webapp/tasks/create",
+					isActive: pathname === "/webapp/tasks/create",
 				},
 			],
 		},
@@ -223,11 +228,11 @@ export function NavMain() {
 												<ChevronRight className="ml-1 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
 											</div>
 										) : (
-											<Link href={item.url}>
+											<div className="flex w-full items-center">
 												{item.icon && <item.icon className="h-4 w-4" />}
 												<span>{item.title}</span>
 												<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-											</Link>
+											</div>
 										)}
 									</SidebarMenuButton>
 								</CollapsibleTrigger>

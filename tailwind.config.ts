@@ -91,10 +91,40 @@ const config: Config = {
 						height: "0",
 					},
 				},
+				"collapsible-down": {
+					from: {
+						height: "0",
+					},
+					to: {
+						height: "var(--radix-collapsible-content-height)",
+					},
+				},
+				"collapsible-up": {
+					from: {
+						height: "var(--radix-collapsible-content-height)",
+					},
+					to: {
+						height: "0",
+					},
+				},
+				shimmer: {
+					"100%": {
+						transform: "translateX(100%)",
+					},
+				},
+				shine: {
+					from: { transform: "translateX(-100%)" },
+					to: { transform: "translateX(100%)" },
+				},
 			},
 			animation: {
 				"accordion-down": "accordion-down 0.2s ease-out",
 				"accordion-up": "accordion-up 0.2s ease-out",
+				"collapsible-down": "collapsible-down 0.2s ease-out",
+				"collapsible-up": "collapsible-up 0.2s ease-out",
+				shimmer: "shimmer 2s linear infinite",
+				"shine-slow": "shine 4s ease-in-out infinite",
+				"ping-slow": "ping 3s cubic-bezier(0, 0, 0.2, 1) infinite",
 			},
 		},
 	},

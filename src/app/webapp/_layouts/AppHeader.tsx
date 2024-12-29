@@ -10,6 +10,7 @@ import { NotificationPopover } from "@/components/custom/NotificationPopover";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeSwitcher } from "@/components/custom/ThemeSwitcher";
+import { UserLevelDisplay } from "@/components/custom/UserLevelDisplay";
 import {
 	Tooltip,
 	TooltipContent,
@@ -37,6 +38,7 @@ export function AppHeader() {
 				<Separator orientation="vertical" className="h-8" />
 
 				<div className="flex flex-1 items-center justify-end space-x-4">
+					<UserLevelDisplay />
 					<NotificationPopover />
 					{isSystemAdmin && (
 						<TooltipProvider>

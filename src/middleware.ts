@@ -58,7 +58,7 @@ export async function middleware(request: NextRequest) {
 	}
 }
 
-// パ���のマッチングルールを詳細に設定
+// マッチングルールを詳細に設定
 export const config = {
 	matcher: [
 		// 保護されたルート

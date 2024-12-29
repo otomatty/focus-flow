@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 						gap: "2rem",
 					}}
 				>
-					{/* ロゴ���ーク（シンプル化したバージョン） */}
+					{/* ロゴマーク（シンプル化したバージョン） */}
 					<div
 						style={{
 							background: "#24BAB8",
