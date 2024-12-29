@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
-import type { FormData } from "../CreateTaskForm";
+import type { TaskFormData } from "@/types/task";
 
 type Dependency = {
 	task_id: string;
@@ -34,7 +34,7 @@ type Dependency = {
 };
 
 type Props = {
-	control: Control<FormData>;
+	control: Control<TaskFormData>;
 };
 
 export function DependencySection({ control }: Props) {

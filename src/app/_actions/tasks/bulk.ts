@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { TaskUpdate } from "./utils/converters";
+import type { TaskUpdate } from "@/types/task";
 
 // タスクの一括更新
 export async function bulkUpdateTasks(
@@ -11,6 +11,7 @@ export async function bulkUpdateTasks(
 ): Promise<void> {
 	const supabase = await createClient();
 	const { error } = await supabase
+		.schema("ff_tasks")
 		.from("tasks")
 		.update({
 			...data,
@@ -28,7 +29,11 @@ export async function bulkUpdateTasks(
 // タスクの一括削除
 export async function bulkDeleteTasks(taskIds: string[]): Promise<void> {
 	const supabase = await createClient();
-	const { error } = await supabase.from("tasks").delete().in("id", taskIds);
+	const { error } = await supabase
+		.schema("ff_tasks")
+		.from("tasks")
+		.delete()
+		.in("id", taskIds);
 
 	if (error) {
 		throw new Error(`タスクの一括削除に失敗しました: ${error.message}`);
@@ -98,6 +103,7 @@ export async function bulkMoveTasksToGroup(
 
 	// 現在の最大position値を取得
 	const { data: maxPositionRow } = await supabase
+		.schema("ff_tasks")
 		.from("task_group_memberships")
 		.select("position")
 		.eq("group_id", groupId)
@@ -115,6 +121,7 @@ export async function bulkMoveTasksToGroup(
 	}));
 
 	const { error } = await supabase
+		.schema("ff_tasks")
 		.from("task_group_memberships")
 		.insert(memberships);
 
@@ -132,6 +139,7 @@ export async function bulkRemoveTasksFromGroup(
 ): Promise<void> {
 	const supabase = await createClient();
 	const { error } = await supabase
+		.schema("ff_tasks")
 		.from("task_group_memberships")
 		.delete()
 		.in("task_id", taskIds)

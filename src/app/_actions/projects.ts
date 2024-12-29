@@ -25,6 +25,7 @@ export async function createProject(data: ProjectCreate) {
 		}
 
 		const { data: project, error } = await supabase
+			.schema("ff_tasks")
 			.from("projects")
 			.insert({
 				...convertToSnakeCase(data),
@@ -52,6 +53,7 @@ export async function updateProject(id: string, data: ProjectUpdate) {
 	try {
 		const supabase = await createClient();
 		const { data: project, error } = await supabase
+			.schema("ff_tasks")
 			.from("projects")
 			.update(convertToSnakeCase(data))
 			.eq("id", id)
@@ -74,7 +76,11 @@ export async function updateProject(id: string, data: ProjectUpdate) {
 export async function deleteProject(id: string) {
 	try {
 		const supabase = await createClient();
-		const { error } = await supabase.from("projects").delete().eq("id", id);
+		const { error } = await supabase
+			.schema("ff_tasks")
+			.from("projects")
+			.delete()
+			.eq("id", id);
 
 		if (error) throw error;
 
@@ -93,6 +99,7 @@ export async function getProject(id: string) {
 	try {
 		const supabase = await createClient();
 		const { data: project, error } = await supabase
+			.schema("ff_tasks")
 			.from("projects")
 			.select(`
         *,
@@ -119,7 +126,10 @@ export async function getProject(id: string) {
 export async function getProjects(filter?: ProjectFilter, sort?: ProjectSort) {
 	try {
 		const supabase = await createClient();
-		let query = supabase.from("projects").select(`
+		let query = supabase
+			.schema("ff_tasks")
+			.from("projects")
+			.select(`
       *,
       project_tasks (
         task_id,
@@ -175,11 +185,14 @@ export async function addTaskToProject(
 ) {
 	try {
 		const supabase = await createClient();
-		const { error } = await supabase.from("project_tasks").insert({
-			project_id: projectId,
-			task_id: taskId,
-			position,
-		});
+		const { error } = await supabase
+			.schema("ff_tasks")
+			.from("project_tasks")
+			.insert({
+				project_id: projectId,
+				task_id: taskId,
+				position,
+			});
 
 		if (error) throw error;
 
@@ -198,6 +211,7 @@ export async function removeTaskFromProject(projectId: string, taskId: string) {
 	try {
 		const supabase = await createClient();
 		const { error } = await supabase
+			.schema("ff_tasks")
 			.from("project_tasks")
 			.delete()
 			.match({ project_id: projectId, task_id: taskId });
@@ -223,6 +237,7 @@ export async function updateTaskPosition(
 	try {
 		const supabase = await createClient();
 		const { error } = await supabase
+			.schema("ff_tasks")
 			.from("project_tasks")
 			.update({ position: newPosition })
 			.match({ project_id: projectId, task_id: taskId });

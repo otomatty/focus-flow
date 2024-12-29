@@ -11,6 +11,7 @@ async function fetchUserProfile(
 	userId: string,
 ): Promise<UserProfile | null> {
 	const { data: rawData, error } = await supabase
+		.schema("ff_users")
 		.from("user_profiles")
 		.select()
 		.eq("user_id", userId)
@@ -65,6 +66,7 @@ export async function initializeUserProfile(
 
 	// 初期プロフィールを作成
 	const { data: rawData, error } = await supabase
+		.schema("ff_users")
 		.from("user_profiles")
 		.insert([
 			{
@@ -100,6 +102,7 @@ export async function updateUserProfile(
 	try {
 		// 現在のプロフィールを取得
 		const { data: currentProfile, error: fetchError } = await supabase
+			.schema("ff_users")
 			.from("user_profiles")
 			.select("profile_image")
 			.eq("user_id", userId)
@@ -112,6 +115,7 @@ export async function updateUserProfile(
 
 		// プロフィールを更新
 		const { data: rawData, error } = await supabase
+			.schema("ff_users")
 			.from("user_profiles")
 			.update({
 				display_name: profile.displayName,

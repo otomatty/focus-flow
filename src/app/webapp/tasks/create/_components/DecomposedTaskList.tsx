@@ -1,23 +1,21 @@
 // src/app/_components/task/DecomposedTaskList.tsx
 "use client";
 
-import { useAtom } from "jotai";
+import type React from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useAtom, useAtomValue } from "jotai";
 import { taskCreationAtom } from "@/store/taskCreation";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, RefreshCcw, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { editingTaskIdAtom, taskUpdateAtom } from "@/store/dialog";
 import {
 	analyzeTaskAction,
 	breakdownTaskAction,
 } from "@/app/_actions/tasks/creation";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import type { TaskWithParent } from "@/types/task";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DecomposedTaskTable } from "./DecomposedTaskTable";
+
+import { TaskCardList } from "./TaskCardList";
+import { TaskStats } from "./TaskStats";
 
 export function DecomposedTaskList() {
 	const [taskCreation, setTaskCreation] = useAtom(taskCreationAtom);
@@ -25,6 +23,7 @@ export function DecomposedTaskList() {
 	const [breakingDownTaskId, setBreakingDownTaskId] = useState<string | null>(
 		null,
 	);
+	const updatedTask = useAtomValue(taskUpdateAtom);
 
 	const getTaskAnalysis = useCallback(
 		(taskTitle: string) => {
@@ -55,7 +54,7 @@ export function DecomposedTaskList() {
 			);
 			const isComplex =
 				(task.description?.length ?? 0) > 200 || // 説明が長い
-				estimatedHours > 4 || // 4時間以上かかる
+				estimatedHours > 2 || // 2時間以上かかる
 				task.priority === "high"; // 優先度が高い
 
 			return isComplex;
@@ -67,7 +66,22 @@ export function DecomposedTaskList() {
 		async (task: (typeof taskCreation.decomposedTasks)[0]) => {
 			setAnalyzingTaskId(task.title);
 			try {
-				const result = await analyzeTaskAction(task);
+				const taskWithFormattedDeps = {
+					...task,
+					style: {
+						color: task.style?.color ?? undefined,
+						icon: task.style?.icon ?? undefined,
+					},
+					dependencies: task.dependencies?.map((dep) => ({
+						task_id: dep.prerequisite_task_title,
+						type: dep.dependency_type,
+						link_type: dep.link_type,
+						id: `${dep.prerequisite_task_title}-${task.title}`,
+						lag_time: undefined,
+						conditions: undefined,
+					})),
+				};
+				const result = await analyzeTaskAction(taskWithFormattedDeps);
 				if (result.success && result.data) {
 					setTaskCreation((prev) => ({
 						...prev,
@@ -86,62 +100,144 @@ export function DecomposedTaskList() {
 		[setTaskCreation],
 	);
 
-	const handleBreakdown = useCallback(
-		async (task: (typeof taskCreation.decomposedTasks)[0]) => {
+	const handleManualBreakdown = useCallback(
+		async (task: TaskWithParent) => {
+			console.log("=== 手動細分化処理開始 ===");
+			console.log("対象タスク:", task);
+
 			setBreakingDownTaskId(task.title);
 			try {
 				const analysis = getTaskAnalysis(task.title);
-				if (!analysis) return;
+				console.log("タスク分析結果:", analysis);
+
+				if (!analysis) {
+					console.log("分析結果なし - 分析を実行します");
+					await handleAnalyze(task);
+					return;
+				}
+
+				console.log("細分化リクエストを送信:", {
+					task: task,
+					analysis: analysis.analysis,
+				});
 
 				const result = await breakdownTaskAction({
 					...task,
-					...analysis.analysis,
+					style: {
+						color: task.style?.color ?? undefined,
+						icon: task.style?.icon ?? undefined,
+					},
+					analysis: analysis.analysis,
+					dependencies: task.dependencies?.map((dep) => ({
+						task_id: dep.prerequisite_task_title,
+						type: dep.dependency_type,
+						link_type: dep.link_type,
+						id: `${dep.prerequisite_task_title}-${task.title}`,
+						lag_time: undefined,
+						conditions: undefined,
+					})),
 				});
 
+				console.log("細分化結果:", result);
+
 				if (result.success && result.data) {
-					setTaskCreation((prev) => ({
-						...prev,
-						breakdowns: [
+					console.log("細分化成功 - 新しいタスク:", result.data);
+					setTaskCreation((prev) => {
+						const newBreakdowns = [
 							...prev.breakdowns.filter((b) => b.taskId !== task.title),
 							{ taskId: task.title, items: result.data },
-						],
-					}));
+						];
+						console.log("更新後のbreakdowns:", newBreakdowns);
+						return {
+							...prev,
+							breakdowns: newBreakdowns,
+						};
+					});
 				}
 			} catch (error) {
 				console.error("タスク細分化エラー:", error);
 			} finally {
 				setBreakingDownTaskId(null);
+				console.log("=== 手動細分化処理完了 ===");
 			}
 		},
-		[getTaskAnalysis, setTaskCreation],
+		[getTaskAnalysis, handleAnalyze, setTaskCreation],
 	);
-
-	type TaskWithParent = (typeof taskCreation.decomposedTasks)[0] & {
-		parentTask?: string;
-		analysis?: (typeof taskCreation.analyzedTasks)[0]["analysis"];
-	};
 
 	// 表示するタスクのリストを生成
-	const tasksToDisplay = useMemo(
-		() =>
-			taskCreation.decomposedTasks.flatMap((task) => {
-				const breakdown = getTaskBreakdown(task.title);
-				// 細分化されたタスクがある場合は、それらを表示
-				if (breakdown) {
-					return breakdown.items.map((item) => ({
+	const tasksToDisplay = useMemo(() => {
+		// 再帰的にタスクを展開する関数
+		const expandTask = (
+			task: TaskWithParent,
+			parentChain: string[] = [],
+		): TaskWithParent[] => {
+			const breakdown = getTaskBreakdown(task.title);
+			console.log("タスク展開処理:", {
+				taskTitle: task.title,
+				hasBreakdown: !!breakdown,
+				breakdownItems: breakdown?.items.length,
+				parentChain,
+			});
+
+			// 循環参照を防ぐ
+			if (parentChain.includes(task.title)) {
+				console.warn("循環参照を検出:", task.title);
+				return [task];
+			}
+
+			// 細分化されたタスクがある場合は、それらを展開
+			if (breakdown) {
+				const breakdownTasks = breakdown.items.map((item, index, array) => {
+					const dependencies =
+						index > 0
+							? [
+									{
+										prerequisite_task_title: array[index - 1].title,
+										dependency_type: "required" as const,
+										link_type: "finish_to_start" as const,
+									},
+								]
+							: [];
+
+					const newTask = {
 						...item,
-						type: task.type,
 						priority: task.priority,
 						parentTask: task.title,
-						analysis: getTaskAnalysis(task.title)?.analysis,
-					}));
-				}
-				// 細分化されていないタスクは、そのまま表示
-				return [task];
-			}) as TaskWithParent[],
-		[taskCreation.decomposedTasks, getTaskBreakdown, getTaskAnalysis],
-	);
+						analysis: getTaskAnalysis(item.title)?.analysis,
+						description: item.description || "",
+						dependencies,
+						tags: [],
+						type: "task" as const,
+						status: "not_started" as const,
+						progress_percentage: 0,
+						style: {
+							color: item.style?.color || null,
+							icon: item.style?.icon || null,
+						},
+					};
 
+					// 再帰的に展開
+					return expandTask(newTask, [...parentChain, task.title]);
+				});
+
+				console.log("展開された細分化タスク:", {
+					parentTask: task.title,
+					breakdownTasks: breakdownTasks.flat().map((t) => t.title),
+				});
+
+				return breakdownTasks.flat();
+			}
+
+			return [task];
+		};
+
+		// すべてのルートタスクを展開
+		return taskCreation.decomposedTasks.flatMap((task) =>
+			expandTask(task as TaskWithParent),
+		);
+	}, [taskCreation.decomposedTasks, getTaskBreakdown, getTaskAnalysis]);
+
+	// 細分化後のタスクの自動分析を行う
 	useEffect(() => {
 		const startAnalysis = async () => {
 			if (taskCreation.decomposedTasks.length === 0) return;
@@ -153,18 +249,38 @@ export function DecomposedTaskList() {
 			);
 
 			if (nextTask && !analyzingTaskId) {
+				console.log("新しいタスクの分析開始:", nextTask.title);
 				await handleAnalyze(nextTask);
 			}
 		};
 
 		startAnalysis();
 	}, [
-		taskCreation.decomposedTasks.length,
+		taskCreation.decomposedTasks,
 		taskCreation.analyzedTasks,
 		analyzingTaskId,
 		tasksToDisplay,
 		handleAnalyze,
 	]);
+
+	// 親タスクを細分化後に非表示にする
+	const filteredTasks = useMemo(() => {
+		const tasks = tasksToDisplay.filter((task) => {
+			// 細分化されたタスクの親タスクを非表示にする
+			const isParentTask = taskCreation.breakdowns.some(
+				(b) => b.taskId === task.title,
+			);
+			return !isParentTask || "parentTask" in task;
+		});
+
+		console.log("フィルタリング後のタスク:", {
+			before: tasksToDisplay.length,
+			after: tasks.length,
+			tasks: tasks.map((t) => t.title),
+		});
+
+		return tasks;
+	}, [tasksToDisplay, taskCreation.breakdowns]);
 
 	useEffect(() => {
 		const startBreakdown = async () => {
@@ -180,7 +296,7 @@ export function DecomposedTaskList() {
 			});
 
 			if (nextTask && !breakingDownTaskId && !analyzingTaskId) {
-				await handleBreakdown(nextTask);
+				await handleManualBreakdown(nextTask);
 			}
 		};
 
@@ -192,8 +308,20 @@ export function DecomposedTaskList() {
 		tasksToDisplay,
 		getTaskAnalysis,
 		needsBreakdown,
-		handleBreakdown,
+		handleManualBreakdown,
 	]);
+
+	// タスクが更新されたときの処理
+	useEffect(() => {
+		if (updatedTask) {
+			setTaskCreation((prev) => ({
+				...prev,
+				decomposedTasks: prev.decomposedTasks.map((task) =>
+					task.title === updatedTask.title ? updatedTask : task,
+				),
+			}));
+		}
+	}, [updatedTask, setTaskCreation]);
 
 	if (taskCreation.decomposedTasks.length === 0) {
 		return null;
@@ -202,75 +330,23 @@ export function DecomposedTaskList() {
 	return (
 		<div className="space-y-4">
 			<h3 className="text-lg font-semibold">分解されたタスク</h3>
-			<div className="grid gap-4 md:grid-cols-2">
-				{tasksToDisplay.map((task) => {
-					const isBreakdownTask = "parentTask" in task;
-					const taskAnalysis = getTaskAnalysis(task.title);
-					const analysis = isBreakdownTask
-						? task.analysis
-						: taskAnalysis?.analysis;
-					const requiresBreakdown = !isBreakdownTask && needsBreakdown(task);
-
-					return (
-						<Card
-							key={`${task.title}-${task.estimated_duration}`}
-							className="relative"
-						>
-							<CardHeader>
-								<div className="flex items-start justify-between">
-									<div className="flex-1">
-										<CardTitle className="text-base">
-											{task.title}
-											{isBreakdownTask && (
-												<Badge variant="secondary" className="ml-2">
-													{task.parentTask}
-												</Badge>
-											)}
-										</CardTitle>
-										<CardDescription>{task.description}</CardDescription>
-									</div>
-									{taskAnalysis ? (
-										requiresBreakdown ? (
-											breakingDownTaskId === task.title ? (
-												<Loader2 className="h-5 w-5 animate-spin text-yellow-500" />
-											) : (
-												<RefreshCcw className="h-5 w-5 text-yellow-500" />
-											)
-										) : (
-											<CheckCircle2 className="h-5 w-5 text-green-500" />
-										)
-									) : (
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={() => handleAnalyze(task)}
-											disabled={analyzingTaskId === task.title}
-										>
-											{analyzingTaskId === task.title ? (
-												<>
-													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-													分析中...
-												</>
-											) : (
-												"分析"
-											)}
-										</Button>
-									)}
-								</div>
-							</CardHeader>
-							<CardContent>
-								<div className="flex flex-wrap gap-2">
-									<Badge variant="outline">{task.priority}</Badge>
-									{task.estimated_duration && (
-										<Badge variant="outline">{task.estimated_duration}</Badge>
-									)}
-									{analysis?.category && <Badge>{analysis.category}</Badge>}
-								</div>
-							</CardContent>
-						</Card>
-					);
-				})}
-			</div>
+			<TaskStats tasks={filteredTasks} />
+			<Tabs defaultValue="cards" className="w-full">
+				<TabsList>
+					<TabsTrigger value="cards">カード表示</TabsTrigger>
+					<TabsTrigger value="table">テーブル表示</TabsTrigger>
+				</TabsList>
+				<TabsContent value="cards" className="w-full">
+					<TaskCardList
+						tasks={filteredTasks}
+						analyzingTaskId={analyzingTaskId}
+						breakingDownTaskId={breakingDownTaskId}
+					/>
+				</TabsContent>
+				<TabsContent value="table">
+					<DecomposedTaskTable tasks={tasksToDisplay} />
+				</TabsContent>
+			</Tabs>
 		</div>
 	);
 }

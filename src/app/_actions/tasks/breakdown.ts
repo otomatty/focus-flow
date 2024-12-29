@@ -15,6 +15,7 @@ export async function createTaskBreakdown(data: {
 }) {
 	const supabase = await createClient();
 	const { data: breakdown, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_breakdowns")
 		.insert({
 			...data,
@@ -49,6 +50,7 @@ export async function updateTaskBreakdown(
 ) {
 	const supabase = await createClient();
 	const { data: breakdown, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_breakdowns")
 		.update(data)
 		.eq("id", id)
@@ -67,6 +69,7 @@ export async function updateTaskBreakdown(
 export async function deleteTaskBreakdown(id: string) {
 	const supabase = await createClient();
 	const { error } = await supabase
+		.schema("ff_tasks")
 		.from("task_breakdowns")
 		.delete()
 		.eq("id", id);
@@ -84,14 +87,17 @@ export async function updateTaskBreakdownOrder(
 	orderUpdates: { id: string; order_index: number; title: string }[],
 ) {
 	const supabase = await createClient();
-	const { error } = await supabase.from("task_breakdowns").upsert(
-		orderUpdates.map((update) => ({
-			id: update.id,
-			parent_task_id: parentTaskId,
-			order_index: update.order_index,
-			title: update.title,
-		})),
-	);
+	const { error } = await supabase
+		.schema("ff_tasks")
+		.from("task_breakdowns")
+		.upsert(
+			orderUpdates.map((update) => ({
+				id: update.id,
+				parent_task_id: parentTaskId,
+				order_index: update.order_index,
+				title: update.title,
+			})),
+		);
 
 	if (error) {
 		throw new Error(`タスク分解の順序更新に失敗しました: ${error.message}`);
@@ -116,14 +122,17 @@ export async function bulkUpdateTaskBreakdowns(
 	}[],
 ) {
 	const supabase = await createClient();
-	const { error } = await supabase.from("task_breakdowns").upsert(
-		updates.map((update) => ({
-			...update,
-			parent_task_id: parentTaskId,
-			order_index: update.order_index ?? 0,
-			title: update.title ?? "未設定",
-		})),
-	);
+	const { error } = await supabase
+		.schema("ff_tasks")
+		.from("task_breakdowns")
+		.upsert(
+			updates.map((update) => ({
+				...update,
+				parent_task_id: parentTaskId,
+				order_index: update.order_index ?? 0,
+				title: update.title ?? "未設定",
+			})),
+		);
 
 	if (error) {
 		throw new Error(`タスク分解の一括更新に失敗しました: ${error.message}`);
@@ -136,6 +145,7 @@ export async function bulkUpdateTaskBreakdowns(
 export async function getTaskBreakdowns(parentTaskId: string) {
 	const supabase = await createClient();
 	const { data: breakdowns, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_breakdowns")
 		.select("*")
 		.eq("parent_task_id", parentTaskId)
@@ -152,6 +162,7 @@ export async function getTaskBreakdowns(parentTaskId: string) {
 export async function getTaskBreakdown(id: string) {
 	const supabase = await createClient();
 	const { data: breakdown, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_breakdowns")
 		.select("*")
 		.eq("id", id)

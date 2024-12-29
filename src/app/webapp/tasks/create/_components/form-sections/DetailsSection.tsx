@@ -13,10 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
-import type { FormData } from "../CreateTaskForm";
+import type { TaskFormData } from "@/types/task";
 
 type Props = {
-	control: Control<FormData>;
+	control: Control<TaskFormData>;
 };
 
 export function DetailsSection({ control }: Props) {

@@ -2,32 +2,30 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { Database } from "@/types/supabase";
-
-type DependencyType = "required" | "optional" | "conditional";
-type LinkType =
-	| "finish_to_start"
-	| "start_to_start"
-	| "finish_to_finish"
-	| "start_to_finish";
-type DependencyStatus = "blocked" | "pending" | "satisfied" | "skipped";
-type TaskDependencyUpdate =
-	Database["public"]["Tables"]["task_dependencies"]["Update"];
+import type {
+	TaskDependencyType,
+	TaskDependencyLinkType,
+	TaskDependencyStatus,
+	TaskDependencyUpdate,
+} from "@/types/task";
 
 // タスク依存関係の作成
 export async function createTaskDependency(data: {
 	dependent_task_id: string;
 	prerequisite_task_id: string;
-	dependency_type?: DependencyType;
-	link_type?: LinkType;
+	dependency_type?: TaskDependencyType;
+	link_type?: TaskDependencyLinkType;
 	lag_time?: string;
 }) {
 	const supabase = await createClient();
-	const { error } = await supabase.from("task_dependencies").insert({
-		...data,
-		dependency_type: data.dependency_type || "required",
-		link_type: data.link_type || "finish_to_start",
-	});
+	const { error } = await supabase
+		.schema("ff_tasks")
+		.from("task_dependencies")
+		.insert({
+			...data,
+			dependency_type: data.dependency_type || "required",
+			link_type: data.link_type || "finish_to_start",
+		});
 
 	if (error) {
 		throw new Error(`タスク依存関係の作成に失敗しました: ${error.message}`);
@@ -41,14 +39,15 @@ export async function updateTaskDependency(
 	dependentTaskId: string,
 	prerequisiteTaskId: string,
 	data: {
-		dependency_type?: DependencyType;
-		link_type?: LinkType;
+		dependency_type?: TaskDependencyType;
+		link_type?: TaskDependencyLinkType;
 		lag_time?: string;
-		status?: DependencyStatus;
+		status?: TaskDependencyStatus;
 	},
 ) {
 	const supabase = await createClient();
 	const { error } = await supabase
+		.schema("ff_tasks")
 		.from("task_dependencies")
 		.update(data)
 		.eq("dependent_task_id", dependentTaskId)
@@ -68,6 +67,7 @@ export async function deleteTaskDependency(
 ) {
 	const supabase = await createClient();
 	const { error } = await supabase
+		.schema("ff_tasks")
 		.from("task_dependencies")
 		.delete()
 		.eq("dependent_task_id", dependentTaskId)
@@ -84,6 +84,7 @@ export async function deleteTaskDependency(
 export async function getTaskDependencies(taskId: string) {
 	const supabase = await createClient();
 	const { data: dependencies, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_dependencies")
 		.select("*")
 		.or(`dependent_task_id.eq.${taskId},prerequisite_task_id.eq.${taskId}`);
@@ -99,7 +100,7 @@ export async function getTaskDependencies(taskId: string) {
 export async function updateDependencyStatus(
 	dependentTaskId: string,
 	prerequisiteTaskId: string,
-	status: DependencyStatus,
+	status: TaskDependencyStatus,
 ) {
 	return updateTaskDependency(dependentTaskId, prerequisiteTaskId, { status });
 }
@@ -110,14 +111,17 @@ export async function bulkUpdateDependencies(
 	updates: Omit<TaskDependencyUpdate, "dependent_task_id">[],
 ) {
 	const supabase = await createClient();
-	const { error } = await supabase.from("task_dependencies").upsert(
-		updates.map((update) => ({
-			...update,
-			dependent_task_id: dependentTaskId,
-			dependency_type: update.dependency_type || "required",
-			prerequisite_task_id: update.prerequisite_task_id as string,
-		})),
-	);
+	const { error } = await supabase
+		.schema("ff_tasks")
+		.from("task_dependencies")
+		.upsert(
+			updates.map((update) => ({
+				...update,
+				dependent_task_id: dependentTaskId,
+				dependency_type: update.dependency_type || "required",
+				prerequisite_task_id: update.prerequisite_task_id as string,
+			})),
+		);
 
 	if (error) {
 		throw new Error(`タスク依存関係の一括更新に失敗しました: ${error.message}`);

@@ -73,7 +73,7 @@ const useMainMenuItems = (): NavMainItem[] => {
 			isActive: pathname.startsWith("/webapp/tasks"),
 			items: [
 				{
-					title: "タスクを表示する",
+					title: "タスクを確認する",
 					url: "/webapp/tasks",
 					isActive: pathname === "/webapp/tasks",
 				},

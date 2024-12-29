@@ -2,40 +2,13 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { Database } from "@/types/supabase";
-import type { Json } from "@/types/supabase";
+
 import type {
 	TaskStatus,
 	TaskPriority,
 	TaskType,
-	TaskStyle,
+	TaskGroupRow,
 } from "@/types/task";
-
-type TaskGroupRow = Database["public"]["Tables"]["task_groups"]["Row"] & {
-	task_group_memberships?: {
-		task_id: string;
-		position: number;
-		tasks?: {
-			id: string;
-			title: string;
-			description?: string;
-			status: TaskStatus;
-			priority: TaskPriority;
-			due_date?: string;
-			progress_percentage: number;
-			task_type: TaskType;
-			style?: TaskStyle;
-			experience_points?: number;
-			skill_distribution?: Record<string, number>;
-		} | null;
-	}[];
-	task_group_views?: {
-		view_type: string;
-		settings: Json;
-		last_used_at: string;
-	}[];
-	children?: TaskGroupRow[];
-};
 
 // タスクグループの作成
 export async function createTaskGroup(data: {
@@ -48,6 +21,7 @@ export async function createTaskGroup(data: {
 }) {
 	const supabase = await createClient();
 	const { data: group, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_groups")
 		.insert({
 			...data,
@@ -78,6 +52,7 @@ export async function updateTaskGroup(
 ) {
 	const supabase = await createClient();
 	const { data: group, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_groups")
 		.update(data)
 		.eq("id", id)
@@ -95,7 +70,11 @@ export async function updateTaskGroup(
 // タスクグループの削除
 export async function deleteTaskGroup(id: string) {
 	const supabase = await createClient();
-	const { error } = await supabase.from("task_groups").delete().eq("id", id);
+	const { error } = await supabase
+		.schema("ff_tasks")
+		.from("task_groups")
+		.delete()
+		.eq("id", id);
 
 	if (error) {
 		throw new Error(`タスクグループの削除に失敗しました: ${error.message}`);
@@ -111,11 +90,14 @@ export async function addTaskToGroup(
 	position?: number,
 ) {
 	const supabase = await createClient();
-	const { error } = await supabase.from("task_group_memberships").insert({
-		task_id: taskId,
-		group_id: groupId,
-		position: position || 0,
-	});
+	const { error } = await supabase
+		.schema("ff_tasks")
+		.from("task_group_memberships")
+		.insert({
+			task_id: taskId,
+			group_id: groupId,
+			position: position || 0,
+		});
 
 	if (error) {
 		throw new Error(`タスクのグループ追加に失敗しました: ${error.message}`);
@@ -128,6 +110,7 @@ export async function addTaskToGroup(
 export async function removeTaskFromGroup(taskId: string, groupId: string) {
 	const supabase = await createClient();
 	const { error } = await supabase
+		.schema("ff_tasks")
 		.from("task_group_memberships")
 		.delete()
 		.eq("task_id", taskId)
@@ -148,6 +131,7 @@ export async function updateTaskPosition(
 ) {
 	const supabase = await createClient();
 	const { error } = await supabase
+		.schema("ff_tasks")
 		.from("task_group_memberships")
 		.update({ position })
 		.eq("task_id", taskId)
@@ -164,6 +148,7 @@ export async function updateTaskPosition(
 export async function getTaskGroupsByProject(projectId: string) {
 	const supabase = await createClient();
 	const { data: groups, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_groups")
 		.select(`
       *,
@@ -191,6 +176,7 @@ export async function getTaskGroupsByProject(projectId: string) {
 export async function getTaskGroupsByParent(parentGroupId: string) {
 	const supabase = await createClient();
 	const { data: groups, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_groups")
 		.select(`
       *,
@@ -218,6 +204,7 @@ export async function getTaskGroupsByParent(parentGroupId: string) {
 export async function getTaskGroup(id: string) {
 	const supabase = await createClient();
 	const { data: group, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_groups")
 		.select(`
       *,
@@ -262,6 +249,7 @@ export async function getTaskGroup(id: string) {
 export async function getRootTaskGroups() {
 	const supabase = await createClient();
 	const { data: groups, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_groups")
 		.select(`
       *,
@@ -289,6 +277,7 @@ export async function getRootTaskGroups() {
 export async function searchTaskGroups(query: string) {
 	const supabase = await createClient();
 	const { data: groups, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_groups")
 		.select(`
       *,
@@ -326,7 +315,10 @@ export async function updateTaskGroupOrder(
 		name: "", // 必須フィールドを追加
 	}));
 
-	const { error } = await supabase.from("task_groups").upsert(updates);
+	const { error } = await supabase
+		.schema("ff_tasks")
+		.from("task_groups")
+		.upsert(updates);
 
 	if (error) {
 		throw new Error(`グループの並び順更新に失敗しました: ${error.message}`);
@@ -354,7 +346,10 @@ export async function getFilteredTaskGroups({
 	has_tasks?: boolean;
 }): Promise<TaskGroupRow[]> {
 	const supabase = await createClient();
-	let query = supabase.from("task_groups").select(`
+	let query = supabase
+		.schema("ff_tasks")
+		.from("task_groups")
+		.select(`
     *,
     task_group_memberships(
       task_id,

@@ -35,13 +35,16 @@ export async function createActivity(data: {
 		} = await supabase.auth.getUser();
 		if (!user) throw new Error("認証されていません");
 
-		const { error } = await supabase.from("project_activities").insert({
-			project_id: data.projectId,
-			type: data.type,
-			action: data.action,
-			details: data.details,
-			user_id: user.id,
-		});
+		const { error } = await supabase
+			.schema("ff_tasks")
+			.from("project_activities")
+			.insert({
+				project_id: data.projectId,
+				type: data.type,
+				action: data.action,
+				details: data.details,
+				user_id: user.id,
+			});
 
 		if (error) throw error;
 
@@ -64,6 +67,7 @@ export async function getProjectActivities(projectId: string): Promise<{
 
 		// アクティビティを取得
 		const { data: activities, error } = await supabase
+			.schema("ff_tasks")
 			.from("project_activities")
 			.select()
 			.eq("project_id", projectId)

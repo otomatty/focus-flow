@@ -17,10 +17,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { FormData } from "../CreateTaskForm";
+import type { TaskFormData } from "@/types/task";
 
 type Props = {
-	control: Control<FormData>;
+	control: Control<TaskFormData>;
 };
 
 export function ProgressSection({ control }: Props) {

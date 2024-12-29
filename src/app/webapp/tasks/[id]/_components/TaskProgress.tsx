@@ -55,7 +55,7 @@ export function TaskProgress({ taskId }: TaskProgressProps) {
 			<CardContent className="space-y-4">
 				<Progress value={progressPercentage} />
 				<div className="flex justify-between text-sm text-muted-foreground">
-					<div>経験値: {task.experience_points ?? 0} XP</div>
+					<div>経験値: {task.experience?.base_exp ?? 0} XP</div>
 					<div>進捗: {progressPercentage}%</div>
 				</div>
 			</CardContent>

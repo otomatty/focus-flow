@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { projectAtom } from "@/stores/project";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getProjectActivities } from "@/app/_actions/activities.action";
+import { getProjectActivities } from "@/app/_actions/activities";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import {
@@ -18,13 +18,13 @@ import {
 import type { Activity } from "@/types/activity";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const activityIconMap = {
+const activityIconMap: Record<Activity["type"], JSX.Element> = {
 	project_update: <FileEdit className="h-4 w-4" />,
 	task_create: <ListTodo className="h-4 w-4" />,
 	task_update: <CheckCircle2 className="h-4 w-4" />,
 	task_delete: <Trash2 className="h-4 w-4" />,
 	member_update: <Users className="h-4 w-4" />,
-} as const;
+};
 
 function ActivitySkeleton() {
 	return (

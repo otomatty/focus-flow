@@ -11,12 +11,15 @@ export async function updateTaskGroupView(
 	settings: Record<string, unknown>,
 ) {
 	const supabase = await createClient();
-	const { error } = await supabase.from("task_group_views").upsert({
-		group_id: groupId,
-		view_type: viewType,
-		settings: settings as Json,
-		last_used_at: new Date().toISOString(),
-	});
+	const { error } = await supabase
+		.schema("ff_tasks")
+		.from("task_group_views")
+		.upsert({
+			group_id: groupId,
+			view_type: viewType,
+			settings: settings as Json,
+			last_used_at: new Date().toISOString(),
+		});
 
 	if (error) {
 		throw new Error(`タスクビューの更新に失敗しました: ${error.message}`);
@@ -29,6 +32,7 @@ export async function updateTaskGroupView(
 export async function getTaskGroupViews(groupId: string) {
 	const supabase = await createClient();
 	const { data: views, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_group_views")
 		.select("*")
 		.eq("group_id", groupId)
@@ -45,6 +49,7 @@ export async function getTaskGroupViews(groupId: string) {
 export async function deleteTaskGroupView(groupId: string, viewType: string) {
 	const supabase = await createClient();
 	const { error } = await supabase
+		.schema("ff_tasks")
 		.from("task_group_views")
 		.delete()
 		.eq("group_id", groupId)
@@ -66,14 +71,17 @@ export async function bulkUpdateTaskGroupViews(
 	}[],
 ) {
 	const supabase = await createClient();
-	const { error } = await supabase.from("task_group_views").upsert(
-		updates.map((update) => ({
-			group_id: groupId,
-			view_type: update.view_type,
-			settings: update.settings as Json,
-			last_used_at: new Date().toISOString(),
-		})),
-	);
+	const { error } = await supabase
+		.schema("ff_tasks")
+		.from("task_group_views")
+		.upsert(
+			updates.map((update) => ({
+				group_id: groupId,
+				view_type: update.view_type,
+				settings: update.settings as Json,
+				last_used_at: new Date().toISOString(),
+			})),
+		);
 
 	if (error) {
 		throw new Error(`タスクビューの一括更新に失敗しました: ${error.message}`);
@@ -86,6 +94,7 @@ export async function bulkUpdateTaskGroupViews(
 export async function updateActiveViewType(groupId: string, viewType: string) {
 	const supabase = await createClient();
 	const { error } = await supabase
+		.schema("ff_tasks")
 		.from("task_groups")
 		.update({ active_view_type: viewType })
 		.eq("id", groupId);
@@ -103,6 +112,7 @@ export async function updateActiveViewType(groupId: string, viewType: string) {
 export async function getViewSettings(groupId: string, viewType: string) {
 	const supabase = await createClient();
 	const { data: view, error } = await supabase
+		.schema("ff_tasks")
 		.from("task_group_views")
 		.select("settings")
 		.eq("group_id", groupId)

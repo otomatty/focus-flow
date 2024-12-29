@@ -24,7 +24,7 @@ import {
 	CommandInput,
 	CommandItem,
 } from "@/components/ui/command";
-import type { FormData } from "../CreateTaskForm";
+import type { TaskFormData } from "@/types/task";
 import { useState } from "react";
 
 const icons = [
@@ -39,7 +39,7 @@ const icons = [
 ];
 
 type Props = {
-	control: Control<FormData>;
+	control: Control<TaskFormData>;
 };
 
 export function StyleSection({ control }: Props) {

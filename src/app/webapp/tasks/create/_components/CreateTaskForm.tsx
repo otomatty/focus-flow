@@ -1,37 +1,15 @@
 // src/app/_components/task/CreateTaskForm.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAtom } from "jotai";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-	Form,
-	FormControl,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Form } from "@/components/ui/form";
 import { TaskAnalysisProgress } from "./TaskAnalysisProgress";
 import { taskSchema } from "@/schemas/taskSchema";
 import { taskCreationAtom, setCurrentStepAtom } from "@/store/taskCreation";
-import { decomposeTaskAction } from "@/app/_actions/tasks/creation";
-import { Loader2 } from "lucide-react";
+import { analyzeTaskAction } from "@/app/_actions/tasks/creation";
 import {
 	Accordion,
 	AccordionContent,
@@ -46,82 +24,21 @@ import { ExperienceSection } from "./form-sections/ExperienceSection";
 import { StyleSection } from "./form-sections/StyleSection";
 import { GroupSection } from "./form-sections/GroupSection";
 import { PrioritySelect } from "./form-sections/PrioritySelect";
-
-export type FormData = {
-	// 基本情報
-	title: string;
-	priority: "high" | "medium" | "low";
-
-	// スケジュール
-	start_date?: Date;
-	due_date?: Date;
-	estimated_duration?: string;
-	is_recurring?: boolean;
-	recurring_pattern?: {
-		type: "daily" | "weekly" | "monthly";
-		interval: number;
-		end_date?: Date;
-	};
-
-	// 進捗
-	status?:
-		| "not_started"
-		| "in_progress"
-		| "in_review"
-		| "blocked"
-		| "completed"
-		| "cancelled";
-	progress_percentage?: number;
-	actual_duration?: string;
-
-	// タスク詳細
-	description?: string;
-	category?: string;
-	difficulty_level?: number;
-	tags?: string[];
-
-	// 依存関係
-	dependencies?: {
-		task_id: string;
-		type: "required" | "optional" | "conditional";
-		link_type:
-			| "finish_to_start"
-			| "start_to_start"
-			| "finish_to_finish"
-			| "start_to_finish";
-		lag_time?: string;
-		conditions?: string;
-		id: string;
-	}[];
-
-	// 経験値・スキル
-	experience_points?: number;
-	skill_category?: string;
-	skill_distribution?: Record<string, number>;
-
-	// スタイル
-	style?: {
-		color?: string;
-		icon?: string;
-	};
-
-	// グループ設定
-	project_id?: string;
-	parent_group_id?: string;
-	view_type?: "list" | "kanban" | "gantt" | "mindmap";
-};
+import { TaskPromptField } from "./TaskPromptField";
+import type { TaskFormData } from "@/types/task";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 export function CreateTaskForm() {
-	const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 	const [taskCreation, setTaskCreation] = useAtom(taskCreationAtom);
-	const [, setCurrentStep] = useAtom(setCurrentStepAtom);
+	const setCurrentStep = useAtom(setCurrentStepAtom)[1];
 	const [analyzingTaskId, setAnalyzingTaskId] = useState<string | null>(null);
 	const [breakingDownTaskId, setBreakingDownTaskId] = useState<string | null>(
 		null,
 	);
 
-	const form = useForm<FormData>({
+	const form = useForm<TaskFormData>({
 		resolver: zodResolver(taskSchema),
 		defaultValues: {
 			title: "",
@@ -133,23 +50,55 @@ export function CreateTaskForm() {
 	});
 
 	const onAnalyze = async () => {
-		const title = form.getValues("title");
-		if (!title) {
-			form.setError("title", {
+		const description = form.getValues("description");
+
+		console.log("=== タスク分析開始 ===");
+		console.log("入力内容:", { description });
+
+		if (!description) {
+			console.log("エラー: タスクの内容が入力されていません");
+			form.setError("description", {
 				type: "manual",
-				message: "タイトルを入力してください",
+				message: "タスクの内容を入力してください",
 			});
 			return;
 		}
 
 		setIsAnalyzing(true);
 		try {
-			const result = await decomposeTaskAction(title);
+			console.log("analyzeTaskAction呼び出し:", {
+				title: "",
+				description,
+				priority: form.getValues("priority"),
+			});
+
+			const result = await analyzeTaskAction({
+				title: "",
+				description,
+				priority: form.getValues("priority"),
+			});
+
+			console.log("分析結果:", result);
+
 			if (result.success && result.data) {
-				const formattedTasks = result.data.map((task) => ({
-					...task,
-					tags: [],
+				console.log("分解されたタスク:", result.data.breakdowns);
+
+				const formattedTasks = result.data.breakdowns.map((task) => ({
+					title: task.title,
+					description: task.description || "",
+					estimated_duration: task.estimated_duration,
+					priority: form.getValues("priority"),
+					type: "task" as const,
+					skill_category: task.skill_category,
+					experience_points: task.experience_points,
+					status: "not_started" as const,
+					progress_percentage: 0,
+					difficulty_level: 1,
+					style: { color: null, icon: null },
 				}));
+
+				console.log("フォーマット済みタスク:", formattedTasks);
+
 				setTaskCreation((prev) => ({
 					...prev,
 					decomposedTasks: formattedTasks,
@@ -157,6 +106,7 @@ export function CreateTaskForm() {
 				}));
 				setCurrentStep("decompose");
 			} else {
+				console.error("エラー:", result.error);
 				throw new Error(result.error);
 			}
 		} catch (error) {
@@ -170,41 +120,28 @@ export function CreateTaskForm() {
 		<div className="space-y-6">
 			<Form {...form}>
 				<form className="space-y-4">
-					<div className="flex items-start gap-4">
-						<FormField
-							control={form.control}
-							name="title"
-							render={({ field }) => (
-								<FormItem className="flex-1">
-									<FormLabel>タスクのタイトル</FormLabel>
-									<FormControl>
-										<Input placeholder="タスクのタイトルを入力" {...field} />
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<Button
-							type="button"
-							variant="outline"
-							className="mt-8"
-							onClick={onAnalyze}
-							disabled={isAnalyzing}
-						>
-							{isAnalyzing ? (
-								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-									分析中...
-								</>
-							) : (
-								"AIで分析"
-							)}
-						</Button>
-					</div>
+					<TaskPromptField control={form.control} isAnalyzing={isAnalyzing} />
 
 					<div className="space-y-6">
 						<PrioritySelect control={form.control} />
 					</div>
+
+					<Button
+						type="button"
+						variant="outline"
+						className="w-full"
+						disabled={isAnalyzing}
+						onClick={onAnalyze}
+					>
+						{isAnalyzing ? (
+							<>
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								分析中...
+							</>
+						) : (
+							"AIで分析"
+						)}
+					</Button>
 
 					<Accordion type="multiple" className="w-full">
 						<AccordionItem value="schedule">

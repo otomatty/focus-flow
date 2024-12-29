@@ -26,6 +26,7 @@ export async function checkIsSystemAdmin() {
 	}
 
 	const { data: userRole, error } = await supabase
+		.schema("ff_users")
 		.from("user_role_mappings")
 		.select(`
 			user_roles!inner (
@@ -79,6 +80,7 @@ async function checkUserProfileExists(userId: string): Promise<boolean> {
 	try {
 		const supabase = await createClient();
 		const { data, error } = await supabase
+			.schema("ff_users")
 			.from("user_profiles")
 			.select("user_id")
 			.eq("user_id", userId)

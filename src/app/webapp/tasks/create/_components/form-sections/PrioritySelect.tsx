@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import { Rocket, Clock, Calendar } from "lucide-react";
-import type { FormData } from "../CreateTaskForm";
+import type { TaskFormData } from "@/types/task";
 
 const priorities = [
 	{
@@ -34,7 +34,7 @@ const priorities = [
 ] as const;
 
 type Props = {
-	control: Control<FormData>;
+	control: Control<TaskFormData>;
 };
 
 export function PrioritySelect({ control }: Props) {

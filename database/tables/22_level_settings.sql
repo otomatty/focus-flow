@@ -45,8 +45,8 @@ level_exp as (
   select 
     1 as level,
     0 as required_exp,
-    50 as base_exp_for_next_tier, -- 1-10レベルの基本経験値増分
-    1 as tier_multiplier -- 現在の階層の経験値倍率
+    50::numeric as base_exp_for_next_tier, -- 1-10レベルの基本経験値増分
+    1::numeric as tier_multiplier -- 現在の階層の経験値倍率
   
   union all
   

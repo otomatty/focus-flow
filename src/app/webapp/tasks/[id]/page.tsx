@@ -2,6 +2,7 @@ import { TaskDetails } from "@/app/webapp/tasks/[id]/_components/TaskDetails";
 import { TaskBreakdowns } from "@/app/webapp/tasks/[id]/_components/TaskBreakdowns";
 import { TaskProgress } from "@/app/webapp/tasks/[id]/_components/TaskProgress";
 import { TaskActions } from "@/app/webapp/tasks/[id]/_components/TaskActions";
+import { TaskDependencies } from "@/app/webapp/tasks/[id]/_components/TaskDependencies";
 
 interface TasksPageProps {
 	params: {
@@ -17,6 +18,7 @@ export default function TasksPage({ params }: TasksPageProps) {
 				<TaskProgress taskId={params.id} />
 				<TaskActions taskId={params.id} />
 			</div>
+			<TaskDependencies taskId={params.id} />
 			<TaskBreakdowns taskId={params.id} />
 		</div>
 	);

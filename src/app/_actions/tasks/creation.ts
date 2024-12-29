@@ -1,61 +1,51 @@
 "use server";
+import { processTaskDecomposition, processTaskAnalysis } from "./processor";
+import type { AIAnalysis, TaskFormData } from "@/types/task";
 
-import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
-import {
-	processTaskDecomposition,
-	processTaskAnalysis,
-	processTaskBreakdown,
-} from "./processor";
-import type { TaskFormData } from "@/app/_components/task/TaskForm";
+export async function analyzeTaskAction(task: TaskFormData) {
+	console.log("=== analyzeTaskAction開始 ===");
+	console.log("入力タスク:", task);
 
-export async function decomposeTaskAction(taskTitle: string) {
 	try {
-		const decomposedTasks = await processTaskDecomposition(taskTitle);
-		return { success: true, data: decomposedTasks };
-	} catch (error) {
-		console.error("タスク分解アクションでエラーが発生しました:", error);
+		console.log("processTaskAnalysis呼び出し");
+		const analysis = await processTaskAnalysis(task);
+		console.log("分析結果:", analysis);
+
 		return {
-			success: false,
-			error:
-				error instanceof Error ? error.message : "不明なエラーが発生しました",
+			success: true,
+			data: analysis,
 		};
-	}
-}
-
-export async function analyzeTaskAction(taskData: TaskFormData) {
-	try {
-		const analyzedTask = await processTaskAnalysis({
-			title: taskData.title,
-			description: taskData.description || "",
-			estimated_duration: taskData.estimated_duration || "PT1H",
-			priority: taskData.priority,
-		});
-		return { success: true, data: analyzedTask };
 	} catch (error) {
 		console.error("タスク分析アクションでエラーが発生しました:", error);
 		return {
 			success: false,
 			error:
-				error instanceof Error ? error.message : "不明なエラーが発生しました",
+				error instanceof Error ? error.message : "タスクの分析に失敗しました",
 		};
 	}
 }
 
-export async function breakdownTaskAction(taskData: TaskFormData) {
+export async function breakdownTaskAction(
+	task: TaskFormData & { analysis: AIAnalysis },
+) {
+	console.log("=== breakdownTaskAction開始 ===");
+	console.log("入力タスク:", task);
+
 	try {
-		const taskBreakdowns = await processTaskBreakdown({
-			...taskData,
-			description: taskData.description || "",
-			estimated_duration: taskData.estimated_duration || "PT1H",
-		});
-		return { success: true, data: taskBreakdowns };
+		console.log("processTaskDecomposition呼び出し");
+		const decomposedTasks = await processTaskDecomposition(task, task.analysis);
+		console.log("分解結果:", decomposedTasks);
+
+		return {
+			success: true,
+			data: decomposedTasks,
+		};
 	} catch (error) {
-		console.error("タスク細分化アクションでエラーが発生しました:", error);
+		console.error("タスク分解アクションでエラーが発生しました:", error);
 		return {
 			success: false,
 			error:
-				error instanceof Error ? error.message : "不明なエラーが発生しました",
+				error instanceof Error ? error.message : "タスクの分解に失敗しました",
 		};
 	}
 }
