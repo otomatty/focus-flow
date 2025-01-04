@@ -5,6 +5,7 @@ import { projectAtom } from "@/stores/project";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { BackLink } from "@/components/custom/BackLink";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -73,6 +74,7 @@ export function ProjectHeader() {
 
 	return (
 		<div className="space-y-6 p-6">
+			<BackLink href="/webapp/projects" />
 			<div className="flex items-start justify-between">
 				<div className="space-y-2">
 					<h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>

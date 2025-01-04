@@ -90,19 +90,20 @@ const useMainMenuItems = (): NavMainItem[] => {
 			],
 		},
 		{
+			title: "タイムテーブル",
+			url: "/webapp/time-table",
+			icon: Clock,
+			isActive: pathname === "/webapp/time-table",
+			isInDevelopment: false,
+		},
+		{
 			title: "スケジュール",
 			url: "/webapp/schedule",
 			icon: Calendar,
 			isActive: pathname === "/webapp/schedule",
 			isInDevelopment: true,
 		},
-		{
-			title: "タイムテーブル",
-			url: "/webapp/timetable",
-			icon: Clock,
-			isActive: pathname === "/webapp/timetable",
-			isInDevelopment: true,
-		},
+
 		{
 			title: "集中モード",
 			url: "/webapp/focus",
@@ -136,7 +137,7 @@ const useMainMenuItems = (): NavMainItem[] => {
 			url: "/webapp/quests",
 			icon: Trophy,
 			isActive: pathname === "/webapp/quests",
-			isInDevelopment: true,
+			isInDevelopment: false,
 		},
 		{
 			title: "設定",

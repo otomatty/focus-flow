@@ -13,14 +13,14 @@ export type TaskRelationshipType =
 	Database["public"]["Enums"]["task_relationship_type"];
 
 // スタイル関連の型
-export interface TaskStyle {
-	color: string | null;
-	icon: string | null;
-}
+export type TaskStyle =
+	| {
+			color?: string | null;
+			icon?: string | null;
+	  }
+	| Record<string, unknown>;
 
-export type TaskStyleJson = {
-	[K in keyof TaskStyle]: TaskStyle[K];
-};
+export type TaskStyleJson = TaskStyle;
 
 // データベースの型定義
 export type TaskRow = Database["ff_tasks"]["Tables"]["tasks"]["Row"];
@@ -144,8 +144,8 @@ export interface AIAnalysis {
 
 // 拡張された型定義
 export interface Task extends TaskRow {
-	style: TaskStyle;
-	ai_analysis: AIAnalysisResult | null;
+	style: TaskStyle | null;
+	ai_analysis?: AIAnalysisResult | null;
 	breakdowns?: TaskBreakdownRow[];
 	dependencies?: TaskDependencyRow[];
 	experience?: TaskExperienceRow;
@@ -245,71 +245,6 @@ export interface TaskDependencyActionResult {
 	message: string;
 	data?: TaskDependencyRow;
 	error?: string;
-}
-
-// フォーム関連の型
-export interface TaskFormData {
-	// 基本情報
-	title: string;
-	priority: "high" | "medium" | "low";
-
-	// スケジュール
-	start_date?: Date;
-	due_date?: Date;
-	estimated_duration?: string;
-	is_recurring?: boolean;
-	recurring_pattern?: {
-		type: "daily" | "weekly" | "monthly";
-		interval: number;
-		end_date?: Date;
-	};
-
-	// 進捗
-	status?:
-		| "not_started"
-		| "in_progress"
-		| "in_review"
-		| "blocked"
-		| "completed"
-		| "cancelled";
-	progress_percentage?: number;
-	actual_duration?: string;
-
-	// タスク詳細
-	description?: string;
-	category?: string;
-	difficulty_level?: number;
-	tags?: string[];
-
-	// 依存関係
-	dependencies?: {
-		task_id: string;
-		type: "required" | "optional" | "conditional";
-		link_type:
-			| "finish_to_start"
-			| "start_to_start"
-			| "finish_to_finish"
-			| "start_to_finish";
-		lag_time?: string;
-		conditions?: string;
-		id: string;
-	}[];
-
-	// 経験値・スキル
-	experience_points?: number;
-	skill_category?: string;
-	skill_distribution?: Record<string, number>;
-
-	// スタイル
-	style?: {
-		color?: string;
-		icon?: string;
-	};
-
-	// グループ設定
-	project_id?: string;
-	parent_group_id?: string;
-	view_type?: "list" | "kanban" | "gantt" | "mindmap";
 }
 
 export interface TaskWithParent extends DecomposedTask {
@@ -435,4 +370,99 @@ export interface TaskTemplate {
 	skillCategory?: string;
 	experiencePoints?: number;
 	style?: TaskStyle;
+}
+
+// タスクの経験値計算用の入力型
+export interface TaskExperienceInput {
+	title: string;
+	description?: string;
+	estimatedDuration?: string;
+	category?: string;
+	skillCategory?: string;
+}
+
+// タスクの依存関係の型
+export interface TaskDependency {
+	prerequisite_task_id: string;
+	type?: "required" | "optional" | "conditional";
+	link_type?:
+		| "finish_to_start"
+		| "start_to_start"
+		| "finish_to_finish"
+		| "start_to_finish";
+}
+
+// 共通のプロパティ型
+export interface WithPriority {
+	priority: "high" | "medium" | "low";
+}
+
+export interface WithSchedule {
+	start_date?: string;
+	due_date?: string;
+}
+
+export interface WithStyle {
+	style?: {
+		color?: string;
+		icon?: string;
+	};
+}
+
+export interface WithRecurring {
+	is_recurring: boolean;
+	recurring_pattern?: {
+		frequency: "daily" | "weekly" | "monthly";
+		interval: number;
+		end_date?: string;
+	};
+}
+
+// AIタスク作成用のフォームデータ型
+export interface AITaskFormData extends WithPriority, WithSchedule, WithStyle {
+	title: string;
+	description?: string;
+	estimated_duration?: string;
+	status?:
+		| "not_started"
+		| "in_progress"
+		| "in_review"
+		| "blocked"
+		| "completed"
+		| "cancelled";
+	progress_percentage?: number;
+	actual_duration?: string;
+	category?: string;
+	difficulty_level?: number;
+	dependencies?: {
+		task_id: string;
+		type: "required" | "optional" | "conditional";
+		link_type:
+			| "finish_to_start"
+			| "start_to_start"
+			| "finish_to_finish"
+			| "start_to_finish";
+		lag_time?: string;
+		conditions?: string;
+		id: string;
+	}[];
+	experience_points?: number;
+	skill_category?: string;
+	skill_distribution?: Record<string, number>;
+	project_id?: string;
+	parent_group_id?: string;
+	view_type?: "list" | "kanban" | "gantt" | "mindmap";
+}
+
+// 通常のタスク作成用のフォームデータ型
+export interface StandardTaskFormData
+	extends WithPriority,
+		WithSchedule,
+		WithStyle,
+		WithRecurring {
+	title: string;
+	description: string;
+	project_id?: string;
+	category?: string;
+	estimated_duration?: number; // 分単位
 }

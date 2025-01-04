@@ -9,37 +9,30 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search } from "lucide-react";
-import Link from "next/link";
+import { Search } from "lucide-react";
 import { useEffect } from "react";
-import type { Database } from "@/types/supabase";
 import { useAtom } from "jotai";
 import {
 	searchQueryAtom,
 	statusFilterAtom,
 	priorityFilterAtom,
 	searchTasksAtom,
-	filterTasksAtom,
 } from "@/store/tasks";
-
-type Task = Database["public"]["Tables"]["tasks"]["Row"];
-type TaskStatus = NonNullable<Task["status"]>;
-type TaskPriority = NonNullable<Task["priority"]>;
+import type { TaskStatus, TaskPriority } from "@/types/task";
 
 export function TaskFilters() {
 	const [searchQuery, setSearchQuery] = useAtom(searchQueryAtom);
 	const [status, setStatus] = useAtom(statusFilterAtom);
 	const [priority, setPriority] = useAtom(priorityFilterAtom);
 	const [, searchTasks] = useAtom(searchTasksAtom);
-	const [, filterTasks] = useAtom(filterTasksAtom);
 
+	// 検索クエリが変更されたときのみサーバーに問い合わせ
 	useEffect(() => {
-		void searchTasks();
+		const timer = setTimeout(() => {
+			void searchTasks();
+		}, 500);
+		return () => clearTimeout(timer);
 	}, [searchTasks]);
-
-	useEffect(() => {
-		void filterTasks();
-	}, [filterTasks]);
 
 	return (
 		<div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:gap-4">
@@ -55,7 +48,9 @@ export function TaskFilters() {
 			<div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
 				<Select
 					value={status ?? "all"}
-					onValueChange={(value: TaskStatus | "all") => setStatus(value)}
+					onValueChange={(value: TaskStatus | "all") =>
+						setStatus(value === "all" ? null : value)
+					}
 				>
 					<SelectTrigger className="w-full sm:w-[180px]">
 						<SelectValue placeholder="ステータス" />
@@ -69,7 +64,9 @@ export function TaskFilters() {
 				</Select>
 				<Select
 					value={priority ?? "all"}
-					onValueChange={(value: TaskPriority | "all") => setPriority(value)}
+					onValueChange={(value: TaskPriority | "all") =>
+						setPriority(value === "all" ? null : value)
+					}
 				>
 					<SelectTrigger className="w-full sm:w-[180px]">
 						<SelectValue placeholder="優先度" />

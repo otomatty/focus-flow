@@ -1,10 +1,10 @@
-import type { Database } from "@/types/supabase";
-import type { CamelCase } from "@/utils/caseConverter";
+import type { Database } from "./supabase";
+import type { CamelCase } from "../utils/caseConverter";
 
 // Supabaseのプロジェクトテーブルの型
-type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
-type ProjectInsert = Database["public"]["Tables"]["projects"]["Insert"];
-type ProjectUpdateRow = Database["public"]["Tables"]["projects"]["Update"];
+type ProjectRow = Database["ff_tasks"]["Tables"]["projects"]["Row"];
+type ProjectInsert = Database["ff_tasks"]["Tables"]["projects"]["Insert"];
+type ProjectUpdateRow = Database["ff_tasks"]["Tables"]["projects"]["Update"];
 
 // プロジェクトの状態の型
 export type ProjectStatus = ProjectRow["status"];
@@ -26,7 +26,7 @@ export type ProjectUpdate = {
 };
 
 // プロジェクトとタスクの関連の型
-type ProjectTaskRow = Database["public"]["Tables"]["project_tasks"]["Row"];
+type ProjectTaskRow = Database["ff_tasks"]["Tables"]["project_tasks"]["Row"];
 export type ProjectTask = {
 	[K in keyof ProjectTaskRow as CamelCase<K & string>]: ProjectTaskRow[K];
 };
@@ -61,3 +61,53 @@ export interface ProjectSort {
 	key: ProjectSortKey;
 	direction: SortDirection;
 }
+
+// export interface Project {
+// 	id: string;
+// 	name: string;
+// 	description?: string;
+// 	status: "not_started" | "in_progress" | "completed" | "on_hold";
+// 	priority: "high" | "medium" | "low";
+// 	startDate?: string;
+// 	endDate?: string;
+// 	color?: string;
+// 	isArchived?: boolean;
+// 	createdAt: string;
+// 	updatedAt: string;
+// }
+
+// export interface ProjectFormValues {
+// 	name: string;
+// 	description?: string;
+// 	status: "not_started" | "in_progress" | "completed" | "on_hold";
+// 	priority: "high" | "medium" | "low";
+// 	startDate?: Date;
+// 	endDate?: Date;
+// 	color?: string;
+// 	isArchived?: boolean;
+// }
+
+// export interface ProjectCreate {
+// 	name: string;
+// 	description?: string;
+// 	status?: "not_started" | "in_progress" | "completed" | "on_hold";
+// 	priority?: "high" | "medium" | "low";
+// 	startDate?: string;
+// 	endDate?: string;
+// 	color?: string;
+// 	isArchived?: boolean;
+// }
+
+// export interface ProjectUpdate extends Partial<ProjectCreate> {}
+
+// export interface ProjectFilter {
+// 	status?: "not_started" | "in_progress" | "completed" | "on_hold";
+// 	priority?: "high" | "medium" | "low";
+// 	search?: string;
+// 	isArchived?: boolean;
+// }
+
+// export interface ProjectSort {
+// 	key: keyof Project;
+// 	direction: "asc" | "desc";
+// }

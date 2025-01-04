@@ -18,23 +18,10 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
-import type { TaskFormData } from "@/types/task";
-
-type Dependency = {
-	task_id: string;
-	type: "required" | "optional" | "conditional";
-	link_type:
-		| "finish_to_start"
-		| "start_to_start"
-		| "finish_to_finish"
-		| "start_to_finish";
-	lag_time?: string;
-	conditions?: string;
-	id: string;
-};
+import type { AITaskFormData } from "@/types/task";
 
 type Props = {
-	control: Control<TaskFormData>;
+	control: Control<AITaskFormData>;
 };
 
 export function DependencySection({ control }: Props) {

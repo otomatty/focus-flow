@@ -7,7 +7,7 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
-		"gen:types": "bunx supabase gen types typescript --project-id uivglzrnyfjuysvpqprf --schema public,ff_users,ff_skills,ff_learning,ff_tasks,ff_gamification,ff_achievements,ff_focus > src/types/supabase.d.ts && bunx @biomejs/biome format src/types/supabase.d.ts --write"
+		"gen:types": "bunx supabase gen types typescript --project-id uivglzrnyfjuysvpqprf --schema public,auth,ff_users,ff_skills,ff_learning,ff_tasks,ff_gamification,ff_achievements,ff_focus,ff_goals,ff_habits,ff_logs,ff_party,ff_quest,ff_schedules,ff_social,ff_time_table > src/types/supabase.d.ts && bunx @biomejs/biome format src/types/supabase.d.ts --write"
 	},
 	"dependencies": {
 		"@dnd-kit/core": "^6.3.1",
@@ -22,6 +22,7 @@
 		"@radix-ui/react-collapsible": "^1.1.2",
 		"@radix-ui/react-dialog": "^1.1.4",
 		"@radix-ui/react-dropdown-menu": "^2.1.4",
+		"@radix-ui/react-hover-card": "^1.1.4",
 		"@radix-ui/react-label": "^2.1.1",
 		"@radix-ui/react-popover": "^1.1.4",
 		"@radix-ui/react-progress": "^1.1.1",
@@ -41,6 +42,7 @@
 		"@t3-oss/env-nextjs": "^0.11.1",
 		"@tanstack/react-query": "^5.62.8",
 		"@tanstack/react-query-devtools": "^5.62.8",
+		"@tanstack/react-table": "^8.20.6",
 		"browser-image-compression": "^2.0.2",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
@@ -65,6 +67,7 @@
 		"react-hook-form": "^7.54.2",
 		"react-textarea-autosize": "^8.5.6",
 		"reactflow": "^11.11.4",
+		"recharts": "^2.15.0",
 		"sonner": "^1.7.1",
 		"tailwind-merge": "^2.5.5",
 		"tailwindcss-animate": "^1.0.7",

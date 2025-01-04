@@ -1,5 +1,5 @@
 import type {
-	TaskFormData,
+	AITaskFormData,
 	TaskComplexity,
 	TaskRisk,
 	TaskQualityMetrics,
@@ -7,7 +7,7 @@ import type {
 } from "@/types/task";
 
 export function evaluateComplexity(
-	task: TaskFormData,
+	task: AITaskFormData,
 	context?: TaskAnalysisContext,
 ): TaskComplexity {
 	// 基本的な複雑性スコアの計算
@@ -62,7 +62,7 @@ export function evaluateComplexity(
 }
 
 export function analyzeRisks(
-	task: TaskFormData,
+	task: AITaskFormData,
 	context?: TaskAnalysisContext,
 ): TaskRisk[] {
 	const risks: TaskRisk[] = [];
@@ -115,7 +115,7 @@ export function analyzeRisks(
 }
 
 export function calculateQualityMetrics(
-	task: TaskFormData,
+	task: AITaskFormData,
 	context?: TaskAnalysisContext,
 ): TaskQualityMetrics {
 	let clarity = 1;

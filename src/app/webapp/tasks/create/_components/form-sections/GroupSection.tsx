@@ -15,10 +15,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { TaskFormData } from "@/types/task";
+import type { AITaskFormData } from "@/types/task";
 
 type Props = {
-	control: Control<TaskFormData>;
+	control: Control<AITaskFormData>;
 };
 
 export function GroupSection({ control }: Props) {

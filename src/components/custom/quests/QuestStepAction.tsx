@@ -60,6 +60,7 @@ export function QuestStepAction({
 				case "focus_session": {
 					// フォーカスセッションの確認
 					const { data: sessions } = await supabase
+						.schema("ff_focus")
 						.from("focus_sessions")
 						.select("id")
 						.eq("user_id", userId)
@@ -71,6 +72,7 @@ export function QuestStepAction({
 				case "task": {
 					// タスクの作成確認
 					const { data: tasks } = await supabase
+						.schema("ff_tasks")
 						.from("tasks")
 						.select("id")
 						.eq("user_id", userId)

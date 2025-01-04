@@ -206,7 +206,6 @@ export function DecomposedTaskList() {
 						analysis: getTaskAnalysis(item.title)?.analysis,
 						description: item.description || "",
 						dependencies,
-						tags: [],
 						type: "task" as const,
 						status: "not_started" as const,
 						progress_percentage: 0,

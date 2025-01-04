@@ -1,5 +1,5 @@
 import type {
-	TaskFormData,
+	AITaskFormData,
 	TaskAnalysisContext,
 	EnhancedAIAnalysis,
 	TaskRecommendation,
@@ -12,7 +12,7 @@ import {
 } from "./utils";
 
 function generateTaskPrompt(
-	task: TaskFormData,
+	task: AITaskFormData,
 	context?: TaskAnalysisContext,
 ): string {
 	return `
@@ -73,7 +73,7 @@ ${
 }
 
 async function generateRecommendations(
-	task: TaskFormData,
+	task: AITaskFormData,
 	context?: TaskAnalysisContext,
 ): Promise<TaskRecommendation> {
 	const complexity = evaluateComplexity(task, context);
@@ -122,7 +122,7 @@ async function generateRecommendations(
 }
 
 export async function enhancedTaskAnalysis(
-	task: TaskFormData,
+	task: AITaskFormData,
 	context?: TaskAnalysisContext,
 ): Promise<EnhancedAIAnalysis> {
 	try {

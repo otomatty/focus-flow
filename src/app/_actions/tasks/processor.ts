@@ -2,7 +2,7 @@
 
 import { generateResponse } from "@/lib/gemini/client";
 import type {
-	TaskFormData,
+	AITaskFormData,
 	AIAnalysis,
 	AnalyzedTask,
 	TaskBreakdown,
@@ -40,7 +40,7 @@ export interface DecomposedTask {
 }
 
 export async function processTaskDecomposition(
-	task: TaskFormData,
+	task: AITaskFormData,
 	analysis: AIAnalysis,
 ): Promise<DecomposedTask[]> {
 	// 分解されたタスクに自動入力する情報を追加
@@ -128,7 +128,7 @@ function generateTaskStyle(skillCategory?: string): {
 	};
 }
 
-export async function processTaskAnalysis(task: TaskFormData) {
+export async function processTaskAnalysis(task: AITaskFormData) {
 	// コンテキスト情報の収集
 	const context: TaskAnalysisContext = {
 		projectContext: await getProjectContext(task),
@@ -141,7 +141,7 @@ export async function processTaskAnalysis(task: TaskFormData) {
 	return analysis;
 }
 
-async function getProjectContext(task: TaskFormData) {
+async function getProjectContext(task: AITaskFormData) {
 	if (!task.project_id) return undefined;
 
 	const supabase = await createClient();

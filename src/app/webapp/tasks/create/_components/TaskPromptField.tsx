@@ -24,12 +24,12 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Sparkles, FileText } from "lucide-react";
 import type { Control } from "react-hook-form";
-import type { TaskFormData } from "@/types/task";
 import { enhancePromptAction } from "@/app/_actions/tasks/enhance";
 import { TASK_TEMPLATES } from "@/constants/taskTemplates";
+import type { AITaskFormData } from "@/types/task";
 
 interface TaskPromptFieldProps {
-	control: Control<TaskFormData>;
+	control: Control<AITaskFormData>;
 	isAnalyzing: boolean;
 }
 
@@ -70,6 +70,24 @@ export function TaskPromptField({
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-col gap-4">
+				<FormField
+					control={control}
+					name="description"
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>タスクのプロンプト</FormLabel>
+							<FormControl>
+								<TextareaAutosize
+									placeholder="実現したいタスクの内容を詳しく記述してください。目的、要件、制約条件などを含めることで、より正確な分析と分解が可能になります。"
+									className="min-h-[150px] resize-y"
+									{...field}
+									disabled={isAnalyzing}
+								/>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
 				<div className="flex gap-2">
 					<FormField
 						control={control}
@@ -95,15 +113,15 @@ export function TaskPromptField({
 													<SelectValue placeholder="テンプレートを選択" />
 												</SelectTrigger>
 												<SelectContent>
-													<SelectItem value="開発">新機能開発</SelectItem>
-													<SelectItem value="レビュー">
-														コードレビュー
+													<SelectItem value="development">
+														新機能開発
 													</SelectItem>
-													<SelectItem value="学習">新技術の学習</SelectItem>
-													<SelectItem value="プロジェクト管理">
+													<SelectItem value="review">コードレビュー</SelectItem>
+													<SelectItem value="learning">新技術の学習</SelectItem>
+													<SelectItem value="project_management">
 														スプリント計画
 													</SelectItem>
-													<SelectItem value="ドキュメント">
+													<SelectItem value="documentation">
 														技術文書作成
 													</SelectItem>
 												</SelectContent>
@@ -143,24 +161,6 @@ export function TaskPromptField({
 						)}
 					/>
 				</div>
-				<FormField
-					control={control}
-					name="description"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>タスクのプロンプト</FormLabel>
-							<FormControl>
-								<TextareaAutosize
-									placeholder="実現したいタスクの内容を詳しく記述してください。目的、要件、制約条件などを含めることで、より正確な分析と分解が可能になります。"
-									className="min-h-[150px] resize-y"
-									{...field}
-									disabled={isAnalyzing}
-								/>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
 			</div>
 		</div>
 	);

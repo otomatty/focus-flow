@@ -1,4 +1,4 @@
-import type { UserProfile, UserProfileRow } from "@/types/users/userProfile";
+import type { UserProfile, UserProfileRow } from "@/types/users/profiles";
 
 export const convertToUserProfile = (row: UserProfileRow): UserProfile => {
 	return {
@@ -7,8 +7,6 @@ export const convertToUserProfile = (row: UserProfileRow): UserProfile => {
 		displayName: row.display_name,
 		email: row.email,
 		profileImage: row.profile_image,
-		level: row.level,
-		experiencePoints: row.experience_points,
 		cacheVersion: row.cache_version,
 		lastActivityAt: row.last_activity_at,
 		createdAt: row.created_at,

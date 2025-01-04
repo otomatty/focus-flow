@@ -1,5 +1,5 @@
 -- 集中セッション統計取得関数
-create or replace function get_focus_session_stats(
+create or replace function ff_focus.get_focus_session_stats(
     p_user_id uuid,
     p_start_date timestamp with time zone,
     p_end_date timestamp with time zone
@@ -19,14 +19,14 @@ begin
         sum(bonus_points) as total_bonus_points,
         avg(duration) as average_duration,
         (sum(case when is_completed then 1 else 0 end)::numeric / count(*)::numeric * 100) as completion_rate
-    from focus_sessions
+    from ff_focus.focus_sessions
     where user_id = p_user_id
     and start_time between p_start_date and p_end_date;
 end;
 $$ language plpgsql;
 
 -- 集中セッション完了時の経験値計算関数
-create or replace function calculate_focus_session_exp(
+create or replace function ff_focus.calculate_focus_session_exp(
     p_duration interval,
     p_bonus_points integer
 )
@@ -41,8 +41,8 @@ begin
 end;
 $$ language plpgsql;
 
--- 新しいパーティション作成関数
-create or replace function create_focus_session_partition(
+-- 新しいパーティション作成関数（非推奨 - 代わりにcreate_focus_sessions_partitionを使用）
+create or replace function ff_focus.create_focus_session_partition(
     p_year integer,
     p_month integer
 )
@@ -52,7 +52,7 @@ declare
     start_date text;
     end_date text;
 begin
-    partition_name := format('focus_sessions_y%sm%s', 
+    partition_name := format('ff_focus.focus_sessions_y%sm%s', 
         p_year,
         lpad(p_month::text, 2, '0')
     );
@@ -71,7 +71,7 @@ begin
     end;
     
     execute format(
-        'create table if not exists %I partition of focus_sessions
+        'create table if not exists %s partition of ff_focus.focus_sessions
         for values from (%L) to (%L)',
         partition_name,
         start_date,
@@ -80,14 +80,14 @@ begin
     
     -- パーティションテーブル用のインデックスを作成
     execute format(
-        'create index if not exists idx_%s_user_id on %I (user_id)',
-        partition_name,
+        'create index if not exists idx_%s_user_id on %s (user_id)',
+        replace(partition_name, 'ff_focus.', ''),
         partition_name
     );
     
     execute format(
-        'create index if not exists idx_%s_start_time on %I (start_time)',
-        partition_name,
+        'create index if not exists idx_%s_start_time on %s (start_time)',
+        replace(partition_name, 'ff_focus.', ''),
         partition_name
     );
 end;

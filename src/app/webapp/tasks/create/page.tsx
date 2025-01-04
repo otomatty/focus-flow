@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/custom/PageHeader";
-import { CreateTaskForm } from "./_components/CreateTaskForm";
 import { DecomposedTaskList } from "./_components/DecomposedTaskList";
+import { TaskCreationTabs } from "./_components/TaskCreationTabs";
 
 export default function CreateTaskPage() {
 	return (
@@ -8,9 +8,10 @@ export default function CreateTaskPage() {
 			<PageHeader
 				title="タスクの作成"
 				description="タスクのタイトルを入力し、AIに分析させることで、タスクの詳細を自動的に設定できます。"
+				backHref="/webapp/tasks"
 			/>
 			<div className="space-y-8">
-				<CreateTaskForm />
+				<TaskCreationTabs />
 				<DecomposedTaskList />
 			</div>
 		</div>

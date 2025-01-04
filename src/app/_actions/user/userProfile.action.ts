@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { UserProfile } from "@/types/users/userProfile";
+import type { UserProfile } from "@/types/users/profiles";
 import { convertToUserProfile } from "@/utils/userProfile";
 import { revalidatePath, unstable_cache } from "next/cache";
 
@@ -73,8 +73,6 @@ export async function initializeUserProfile(
 				user_id: userId,
 				display_name: user.email?.split("@")[0] || "ユーザー",
 				email: user.email,
-				level: 1,
-				experience_points: 0,
 				cache_version: 1,
 				last_activity_at: new Date().toISOString(),
 				created_at: new Date().toISOString(),

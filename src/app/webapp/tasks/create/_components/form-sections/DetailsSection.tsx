@@ -1,131 +1,112 @@
 "use client";
 
-import type { Control } from "react-hook-form";
 import {
 	FormControl,
 	FormField,
 	FormItem,
 	FormLabel,
-	FormMessage,
 } from "@/components/ui/form";
+import { Switch } from "@/components/ui/switch";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
-import type { TaskFormData } from "@/types/task";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import type { Control } from "react-hook-form";
+import type { StandardTaskFormData } from "@/types/task";
 
-type Props = {
-	control: Control<TaskFormData>;
-};
+interface DetailsSectionProps {
+	control: Control<StandardTaskFormData>;
+}
 
-export function DetailsSection({ control }: Props) {
+export function DetailsSection({ control }: DetailsSectionProps) {
 	return (
 		<div className="space-y-4">
 			<FormField
 				control={control}
-				name="description"
+				name="is_recurring"
 				render={({ field }) => (
-					<FormItem>
-						<FormLabel>説明</FormLabel>
+					<FormItem className="flex items-center justify-between rounded-lg border p-4">
+						<div className="space-y-0.5">
+							<FormLabel>繰り返し</FormLabel>
+						</div>
 						<FormControl>
-							<Textarea
-								placeholder="タスクの詳細な説明を入力"
-								className="min-h-[100px]"
-								{...field}
-							/>
+							<Switch checked={field.value} onCheckedChange={field.onChange} />
 						</FormControl>
-						<FormMessage />
 					</FormItem>
 				)}
 			/>
 
-			<FormField
-				control={control}
-				name="category"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>カテゴリ</FormLabel>
-						<FormControl>
-							<Input placeholder="カテゴリを入力" {...field} />
-						</FormControl>
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+			{control._formValues.is_recurring && (
+				<div className="space-y-4">
+					<FormField
+						control={control}
+						name="recurring_pattern.frequency"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>繰り返しパターン</FormLabel>
+								<Select
+									onValueChange={field.onChange}
+									defaultValue={field.value}
+								>
+									<FormControl>
+										<SelectTrigger>
+											<SelectValue placeholder="繰り返しパターンを選択" />
+										</SelectTrigger>
+									</FormControl>
+									<SelectContent>
+										<SelectItem value="daily">毎日</SelectItem>
+										<SelectItem value="weekly">毎週</SelectItem>
+										<SelectItem value="monthly">毎月</SelectItem>
+									</SelectContent>
+								</Select>
+							</FormItem>
+						)}
+					/>
 
-			<FormField
-				control={control}
-				name="difficulty_level"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>難易度</FormLabel>
-						<FormControl>
-							<RadioGroup
-								onValueChange={(value) => field.onChange(Number(value))}
-								defaultValue={field.value?.toString()}
-								className="flex space-x-4"
-							>
-								{[1, 2, 3, 4, 5].map((level) => (
-									<FormItem key={level} className="flex items-center space-x-2">
-										<FormControl>
-											<RadioGroupItem value={level.toString()} />
-										</FormControl>
-										<FormLabel className="font-normal">{level}</FormLabel>
-									</FormItem>
-								))}
-							</RadioGroup>
-						</FormControl>
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<FormField
-				control={control}
-				name="tags"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>タグ</FormLabel>
-						<FormControl>
-							<div className="space-y-2">
-								<Input
-									placeholder="タグを入力してEnterで追加"
-									onKeyDown={(e) => {
-										if (e.key === "Enter") {
-											e.preventDefault();
-											const input = e.currentTarget;
-											const value = input.value.trim();
-											if (value && !field.value?.includes(value)) {
-												field.onChange([...(field.value || []), value]);
-												input.value = "";
-											}
+					<FormField
+						control={control}
+						name="recurring_pattern.interval"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>間隔</FormLabel>
+								<FormControl>
+									<Input
+										type="number"
+										min={1}
+										{...field}
+										onChange={(e) =>
+											field.onChange(Number.parseInt(e.target.value))
 										}
-									}}
-								/>
-								<div className="flex flex-wrap gap-2">
-									{field.value?.map((tag) => (
-										<Badge
-											key={tag}
-											variant="secondary"
-											className="flex items-center gap-1"
-										>
-											{tag}
-											<X
-												className="h-3 w-3 cursor-pointer"
-												onClick={() =>
-													field.onChange(field.value?.filter((t) => t !== tag))
-												}
-											/>
-										</Badge>
-									))}
-								</div>
-							</div>
-						</FormControl>
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+									/>
+								</FormControl>
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={control}
+						name="recurring_pattern.end_date"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>繰り返し終了日</FormLabel>
+								<FormControl>
+									<DateTimePicker
+										value={field.value ? new Date(field.value) : undefined}
+										onChange={(date) =>
+											field.onChange(date ? date.toISOString() : undefined)
+										}
+									/>
+								</FormControl>
+							</FormItem>
+						)}
+					/>
+				</div>
+			)}
 		</div>
 	);
 }

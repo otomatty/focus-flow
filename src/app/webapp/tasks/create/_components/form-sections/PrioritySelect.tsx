@@ -1,6 +1,6 @@
 "use client";
 
-import type { Control } from "react-hook-form";
+import type { Control, Path } from "react-hook-form";
 import {
 	FormControl,
 	FormField,
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import { Rocket, Clock, Calendar } from "lucide-react";
-import type { TaskFormData } from "@/types/task";
+import type { WithPriority } from "@/types/task";
 
 const priorities = [
 	{
@@ -33,15 +33,17 @@ const priorities = [
 	},
 ] as const;
 
-type Props = {
-	control: Control<TaskFormData>;
-};
+interface PrioritySelectProps<T extends WithPriority> {
+	control: Control<T>;
+}
 
-export function PrioritySelect({ control }: Props) {
+export function PrioritySelect<T extends WithPriority>({
+	control,
+}: PrioritySelectProps<T>) {
 	return (
 		<FormField
 			control={control}
-			name="priority"
+			name={"priority" as Path<T>}
 			render={({ field }) => (
 				<FormItem>
 					<FormLabel>優先度</FormLabel>

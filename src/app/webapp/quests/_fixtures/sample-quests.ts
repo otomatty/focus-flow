@@ -1,0 +1,628 @@
+import type { QuestWithUserQuest } from "@/types/quests";
+
+export const sampleQuests: QuestWithUserQuest[] = [
+	{
+		quest: {
+			id: "1",
+			title: "タスクマスター",
+			description:
+				"10個のタスクを完了しよう。毎日コツコツとタスクをこなして、生産性を高めましょう！",
+			quest_type: "TASK_COMPLETION" as const,
+			requirements: [
+				{
+					type: "task_count",
+					target: 10,
+					current: 3,
+				},
+			],
+			reward_exp: 100,
+			reward_badge_id: "badge-1",
+			created_at: new Date().toISOString(),
+			duration_type: "weekly",
+			is_pickup: true,
+			background_image: "/images/quests/task-master-bg.jpg",
+			layout_size: "large",
+			layout_position: {
+				row_span: 2,
+				col_span: 8,
+			},
+			theme: {
+				color: "#3b82f6",
+				gradient: {
+					from: "#3b82f6",
+					to: "#1d4ed8",
+				},
+				text: "#eff6ff",
+				badge: "#dbeafe",
+			},
+		},
+		userQuest: {
+			id: "uq-1",
+			user_id: "user-1",
+			quest_id: "1",
+			status: "IN_PROGRESS",
+			progress: {
+				current: 3,
+				target: 10,
+				percentage: 30,
+			},
+			start_date: new Date().toISOString(),
+			end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+			completed_at: null,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		},
+	},
+	{
+		quest: {
+			id: "2",
+			title: "フォーカスマスター",
+			description:
+				"合計3時間の集中作業を達成しよう。深い集中状態で効率的に作業を進めましょう！",
+			quest_type: "TIME_MANAGEMENT" as const,
+			requirements: [
+				{
+					type: "time_spent",
+					target: 180,
+					current: 90,
+				},
+			],
+			reward_exp: 150,
+			reward_badge_id: null,
+			created_at: new Date().toISOString(),
+			duration_type: "daily",
+			is_pickup: true,
+			background_image: "/images/quests/focus-master-bg.jpg",
+			layout_size: "medium",
+			layout_position: {
+				row_span: 2,
+				col_span: 4,
+			},
+			theme: {
+				color: "#a855f7",
+				gradient: {
+					from: "#a855f7",
+					to: "#7e22ce",
+				},
+				text: "#f3e8ff",
+				badge: "#f3e8ff",
+			},
+		},
+		userQuest: {
+			id: "uq-2",
+			user_id: "user-1",
+			quest_id: "2",
+			status: "IN_PROGRESS",
+			progress: {
+				current: 90,
+				target: 180,
+				percentage: 50,
+			},
+			start_date: new Date().toISOString(),
+			end_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+			completed_at: null,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		},
+	},
+	{
+		quest: {
+			id: "3",
+			title: "継続の達人",
+			description:
+				"3日連続でタスクを完了しよう。継続は力なり、習慣化を目指しましょう！",
+			quest_type: "STREAK" as const,
+			requirements: [
+				{
+					type: "task_streak",
+					target: 3,
+					current: 3,
+				},
+			],
+			reward_exp: 200,
+			reward_badge_id: "badge-2",
+			created_at: new Date().toISOString(),
+			duration_type: "weekly",
+			is_pickup: true,
+			background_image: "/images/quests/streak-master-bg.jpg",
+			layout_size: "medium",
+			layout_position: {
+				row_span: 1,
+				col_span: 6,
+			},
+			theme: {
+				color: "#f59e0b",
+				gradient: {
+					from: "#f59e0b",
+					to: "#d97706",
+				},
+				text: "#fffbeb",
+				badge: "#fef3c7",
+			},
+		},
+		userQuest: {
+			id: "uq-3",
+			user_id: "user-1",
+			quest_id: "3",
+			status: "IN_PROGRESS",
+			progress: {
+				current: 3,
+				target: 3,
+				percentage: 100,
+			},
+			start_date: new Date().toISOString(),
+			end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+			completed_at: new Date().toISOString(),
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		},
+	},
+	{
+		quest: {
+			id: "4",
+			title: "朝活チャレンジ",
+			description:
+				"1週間連続で朝7時までに1つタスクを完了しよう。早起きで生産性を高めましょう！",
+			quest_type: "STREAK" as const,
+			requirements: [
+				{
+					type: "morning_task_streak",
+					target: 7,
+					current: 2,
+				},
+			],
+			reward_exp: 300,
+			reward_badge_id: "badge-3",
+			created_at: new Date().toISOString(),
+			duration_type: "weekly",
+			is_pickup: true,
+			background_image: "/images/quests/morning-challenge-bg.jpg",
+			layout_size: "medium",
+			layout_position: {
+				row_span: 1,
+				col_span: 6,
+			},
+			theme: {
+				color: "#ec4899",
+				gradient: {
+					from: "#ec4899",
+					to: "#be185d",
+				},
+				text: "#fce7f3",
+				badge: "#fbcfe8",
+			},
+		},
+		userQuest: {
+			id: "uq-4",
+			user_id: "user-1",
+			quest_id: "4",
+			status: "IN_PROGRESS",
+			progress: {
+				current: 2,
+				target: 7,
+				percentage: 29,
+			},
+			start_date: new Date().toISOString(),
+			end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+			completed_at: null,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		},
+	},
+	{
+		quest: {
+			id: "5",
+			title: "集中力の極み",
+			description:
+				"1日のうちに2時間以上の集中タイムを3回達成しよう。深い集中で大きな成果を！",
+			quest_type: "TIME_MANAGEMENT" as const,
+			requirements: [
+				{
+					type: "deep_focus_sessions",
+					target: 3,
+					current: 1,
+				},
+			],
+			reward_exp: 250,
+			reward_badge_id: "badge-4",
+			created_at: new Date().toISOString(),
+			duration_type: "daily",
+			is_pickup: true,
+			background_image: "/images/quests/deep-focus-bg.jpg",
+			layout_size: "small",
+			layout_position: {
+				row_span: 1,
+				col_span: 3,
+			},
+			theme: {
+				color: "#06b6d4",
+				gradient: {
+					from: "#06b6d4",
+					to: "#0891b2",
+				},
+				text: "#ecfeff",
+				badge: "#cffafe",
+			},
+		},
+		userQuest: {
+			id: "uq-5",
+			user_id: "user-1",
+			quest_id: "5",
+			status: "IN_PROGRESS",
+			progress: {
+				current: 1,
+				target: 3,
+				percentage: 33,
+			},
+			start_date: new Date().toISOString(),
+			end_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+			completed_at: null,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		},
+	},
+	{
+		quest: {
+			id: "7",
+			title: "週末の振り返り",
+			description:
+				"週末に1週間の振り返りと次週の計画を立てよう。PDCAサイクルを回して成長しましょう！",
+			quest_type: "TASK_COMPLETION" as const,
+			requirements: [
+				{
+					type: "weekly_review",
+					target: 4,
+					current: 1,
+				},
+			],
+			reward_exp: 200,
+			reward_badge_id: "badge-5",
+			created_at: new Date().toISOString(),
+			duration_type: "weekly",
+			is_pickup: true,
+			background_image: "/images/quests/weekly-review-bg.jpg",
+			layout_size: "medium",
+			layout_position: {
+				row_span: 1,
+				col_span: 4,
+			},
+			theme: {
+				color: "#10b981",
+				gradient: {
+					from: "#10b981",
+					to: "#059669",
+				},
+				text: "#ecfdf5",
+				badge: "#d1fae5",
+			},
+		},
+		userQuest: {
+			id: "uq-7",
+			user_id: "user-1",
+			quest_id: "7",
+			status: "IN_PROGRESS",
+			progress: {
+				current: 1,
+				target: 4,
+				percentage: 25,
+			},
+			start_date: new Date().toISOString(),
+			end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+			completed_at: null,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		},
+	},
+	{
+		quest: {
+			id: "8",
+			title: "ナイトルーティン",
+			description:
+				"就寝前の1時間を自己投資の時間に。明日への準備を整えましょう！",
+			quest_type: "STREAK" as const,
+			requirements: [
+				{
+					type: "night_routine",
+					target: 5,
+					current: 2,
+				},
+			],
+			reward_exp: 150,
+			reward_badge_id: "badge-6",
+			created_at: new Date().toISOString(),
+			duration_type: "weekly",
+			is_pickup: true,
+			background_image: "/images/quests/night-routine-bg.jpg",
+			layout_size: "small",
+			layout_position: {
+				row_span: 1,
+				col_span: 4,
+			},
+			theme: {
+				color: "#6366f1",
+				gradient: {
+					from: "#6366f1",
+					to: "#4f46e5",
+				},
+				text: "#eef2ff",
+				badge: "#e0e7ff",
+			},
+		},
+		userQuest: {
+			id: "uq-8",
+			user_id: "user-1",
+			quest_id: "8",
+			status: "IN_PROGRESS",
+			progress: {
+				current: 2,
+				target: 5,
+				percentage: 40,
+			},
+			start_date: new Date().toISOString(),
+			end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+			completed_at: null,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		},
+	},
+	{
+		quest: {
+			id: "9",
+			title: "ポモドーロマスター",
+			description:
+				"ポモドーロテクニックを使って5回の集中セッションを達成しよう。25分の集中と5分の休憩で効率的に作業を進めましょう！",
+			quest_type: "TIME_MANAGEMENT",
+			requirements: [
+				{
+					type: "pomodoro_sessions",
+					target: 5,
+					current: 2,
+				},
+			],
+			reward_exp: 200,
+			reward_badge_id: "badge-7",
+			created_at: new Date().toISOString(),
+			duration_type: "daily",
+			is_pickup: true,
+			background_image: "/images/quests/pomodoro-bg.jpg",
+			layout_size: "medium",
+			layout_position: {
+				row_span: 1,
+				col_span: 4,
+			},
+			theme: {
+				color: "#f43f5e",
+				gradient: {
+					from: "#f43f5e",
+					to: "#e11d48",
+				},
+				text: "#fff1f2",
+				badge: "#ffe4e6",
+			},
+		},
+		userQuest: {
+			id: "uq-9",
+			user_id: "user-1",
+			quest_id: "9",
+			status: "IN_PROGRESS",
+			progress: {
+				current: 2,
+				target: 5,
+				percentage: 40,
+			},
+			start_date: new Date().toISOString(),
+			end_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+			completed_at: null,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		},
+	},
+	{
+		quest: {
+			id: "10",
+			title: "マインドフルネス瞑想",
+			description:
+				"1日10分の瞑想を1週間続けよう。心を落ち着かせ、集中力を高めましょう。",
+			quest_type: "STREAK",
+			requirements: [
+				{
+					type: "meditation_sessions",
+					target: 7,
+					current: 3,
+				},
+			],
+			reward_exp: 250,
+			reward_badge_id: "badge-8",
+			created_at: new Date().toISOString(),
+			duration_type: "weekly",
+			is_pickup: true,
+			background_image: "/images/quests/mindfulness-bg.jpg",
+			layout_size: "medium",
+			layout_position: {
+				row_span: 1,
+				col_span: 6,
+			},
+			theme: {
+				color: "#8b5cf6",
+				gradient: {
+					from: "#8b5cf6",
+					to: "#6d28d9",
+				},
+				text: "#f5f3ff",
+				badge: "#ede9fe",
+			},
+		},
+		userQuest: {
+			id: "uq-10",
+			user_id: "user-1",
+			quest_id: "10",
+			status: "IN_PROGRESS",
+			progress: {
+				current: 3,
+				target: 7,
+				percentage: 43,
+			},
+			start_date: new Date().toISOString(),
+			end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+			completed_at: null,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		},
+	},
+	{
+		quest: {
+			id: "11",
+			title: "知識の探求者",
+			description:
+				"学習用のタスクを10個完了しよう。新しい知識やスキルの習得に挑戦しましょう！",
+			quest_type: "TASK_COMPLETION",
+			requirements: [
+				{
+					type: "learning_tasks",
+					target: 10,
+					current: 4,
+				},
+			],
+			reward_exp: 300,
+			reward_badge_id: "badge-9",
+			created_at: new Date().toISOString(),
+			duration_type: "weekly",
+			is_pickup: true,
+			background_image: "/images/quests/learning-bg.jpg",
+			layout_size: "large",
+			layout_position: {
+				row_span: 2,
+				col_span: 6,
+			},
+			theme: {
+				color: "#0ea5e9",
+				gradient: {
+					from: "#0ea5e9",
+					to: "#0284c7",
+				},
+				text: "#f0f9ff",
+				badge: "#e0f2fe",
+			},
+		},
+		userQuest: {
+			id: "uq-11",
+			user_id: "user-1",
+			quest_id: "11",
+			status: "IN_PROGRESS",
+			progress: {
+				current: 4,
+				target: 10,
+				percentage: 40,
+			},
+			start_date: new Date().toISOString(),
+			end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+			completed_at: null,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		},
+	},
+	{
+		quest: {
+			id: "12",
+			title: "エネルギー管理",
+			description:
+				"1日3回の休憩タイムを設定し、エネルギーレベルを維持しよう。適切な休息で生産性を最大化！",
+			quest_type: "TIME_MANAGEMENT",
+			requirements: [
+				{
+					type: "break_sessions",
+					target: 3,
+					current: 1,
+				},
+			],
+			reward_exp: 150,
+			reward_badge_id: "badge-10",
+			created_at: new Date().toISOString(),
+			duration_type: "daily",
+			is_pickup: true,
+			background_image: "/images/quests/energy-bg.jpg",
+			layout_size: "small",
+			layout_position: {
+				row_span: 1,
+				col_span: 3,
+			},
+			theme: {
+				color: "#eab308",
+				gradient: {
+					from: "#eab308",
+					to: "#ca8a04",
+				},
+				text: "#fefce8",
+				badge: "#fef9c3",
+			},
+		},
+		userQuest: {
+			id: "uq-12",
+			user_id: "user-1",
+			quest_id: "12",
+			status: "IN_PROGRESS",
+			progress: {
+				current: 1,
+				target: 3,
+				percentage: 33,
+			},
+			start_date: new Date().toISOString(),
+			end_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+			completed_at: null,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		},
+	},
+	{
+		quest: {
+			id: "13",
+			title: "プロジェクトマイルストーン",
+			description:
+				"重要プロジェクトの主要なマイルストーンを3つ達成しよう。大きな目標を着実に進めていきましょう！",
+			quest_type: "ACHIEVEMENT",
+			requirements: [
+				{
+					type: "project_milestones",
+					target: 3,
+					current: 1,
+				},
+			],
+			reward_exp: 400,
+			reward_badge_id: "badge-11",
+			created_at: new Date().toISOString(),
+			duration_type: "weekly",
+			is_pickup: true,
+			background_image: "/images/quests/project-bg.jpg",
+			layout_size: "medium",
+			layout_position: {
+				row_span: 2,
+				col_span: 4,
+			},
+			theme: {
+				color: "#14b8a6",
+				gradient: {
+					from: "#14b8a6",
+					to: "#0d9488",
+				},
+				text: "#f0fdfa",
+				badge: "#ccfbf1",
+			},
+		},
+		userQuest: {
+			id: "uq-13",
+			user_id: "user-1",
+			quest_id: "13",
+			status: "IN_PROGRESS",
+			progress: {
+				current: 1,
+				target: 3,
+				percentage: 33,
+			},
+			start_date: new Date().toISOString(),
+			end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+			completed_at: null,
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+		},
+	},
+];

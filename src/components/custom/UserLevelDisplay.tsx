@@ -9,13 +9,44 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import {
+	getUserLevel,
+	getNextLevelExp,
+	getLevelSetting,
+} from "@/app/_actions/users/level";
+import type { UserLevel, LevelSetting } from "@/types/users";
 
 export function UserLevelDisplay() {
-	// サンプルデータ
-	const userLevel = 5;
-	const currentExp = 750;
-	const requiredExp = 1000;
-	const expPercentage = (currentExp / requiredExp) * 100;
+	const [userLevel, setUserLevel] = useState<UserLevel | null>(null);
+	const [nextLevelExp, setNextLevelExp] = useState<number | null>(null);
+	const [levelSetting, setLevelSetting] = useState<LevelSetting | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
+
+	useEffect(() => {
+		const fetchLevelData = async () => {
+			try {
+				const level = await getUserLevel();
+				setUserLevel(level);
+				const nextExp = await getNextLevelExp(level.current_level);
+				setNextLevelExp(nextExp);
+				const setting = await getLevelSetting(level.current_level);
+				setLevelSetting(setting);
+			} catch (error) {
+				console.error("レベル情報の取得に失敗しました:", error);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchLevelData();
+	}, []);
+
+	if (isLoading || !userLevel || !nextLevelExp || !levelSetting) {
+		return null;
+	}
+
+	const expPercentage = (userLevel.current_exp / nextLevelExp) * 100;
 
 	return (
 		<TooltipProvider>
@@ -41,7 +72,7 @@ export function UserLevelDisplay() {
 									"group-hover:from-amber-400 group-hover:via-yellow-300 group-hover:to-orange-300",
 								)}
 							>
-								Lv.{userLevel}
+								Lv.{userLevel.current_level}
 							</span>
 						</div>
 						<div className="relative w-28">
@@ -74,19 +105,20 @@ export function UserLevelDisplay() {
 					<div className="flex flex-col gap-2 p-1.5">
 						<div className="flex items-center gap-2 border-b border-border/50 pb-2">
 							<Star className="h-4 w-4 text-amber-500" fill="currentColor" />
-							<p className="font-semibold">レベル {userLevel}</p>
+							<p className="font-semibold">{levelSetting.rewards.title}</p>
 						</div>
 						<div className="space-y-2 px-1">
 							<div className="flex items-center justify-between gap-3">
 								<span className="text-muted-foreground">経験値:</span>
 								<span className="tabular-nums font-medium">
-									{currentExp.toLocaleString()} / {requiredExp.toLocaleString()}
+									{userLevel.current_exp.toLocaleString()} /{" "}
+									{nextLevelExp.toLocaleString()}
 								</span>
 							</div>
 							<div className="flex items-center justify-between gap-3">
 								<span className="text-muted-foreground">次のレベルまで:</span>
 								<span className="tabular-nums font-medium text-amber-500">
-									{(requiredExp - currentExp).toLocaleString()}
+									{(nextLevelExp - userLevel.current_exp).toLocaleString()}
 								</span>
 							</div>
 						</div>

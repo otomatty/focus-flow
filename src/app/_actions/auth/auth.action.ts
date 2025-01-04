@@ -14,35 +14,63 @@ const signupSchema = z.object({
 
 // システム管理者の確認
 export async function checkIsSystemAdmin() {
-	const supabase = await createClient();
-	const {
-		data: { user },
-		error: userError,
-	} = await supabase.auth.getUser();
+	try {
+		const supabase = await createClient();
 
-	if (!user || userError) {
-		console.error("User authentication error:", userError);
+		// 現在のユーザーを取得
+		const {
+			data: { user },
+			error: userError,
+		} = await supabase.auth.getUser();
+
+		if (!user || userError) {
+			console.error("User authentication error:", userError);
+			return false;
+		}
+
+		console.log("Checking system admin status for user:", {
+			userId: user.id,
+			email: user.email,
+		});
+
+		// システム管理者権限を確認
+		const { data: roleMapping, error: roleError } = await supabase
+			.schema("ff_users")
+			.from("user_role_mappings")
+			.select(`
+				user_id,
+				is_active,
+				user_roles!inner (
+					name
+				)
+			`)
+			.eq("user_id", user.id)
+			.eq("is_active", true)
+			.eq("user_roles.name", "SYSTEM_ADMIN")
+			.maybeSingle();
+
+		if (roleError) {
+			console.error("Error checking system admin status:", roleError);
+			return false;
+		}
+
+		const isAdmin = !!roleMapping;
+
+		console.log("System admin check result:", {
+			roleMapping,
+			isAdmin,
+			query: {
+				userId: user.id,
+				roleName: "SYSTEM_ADMIN",
+				isActive: true,
+			},
+		});
+
+		return isAdmin;
+	} catch (error) {
+		console.error("Error in checkIsSystemAdmin:", error);
 		return false;
 	}
-
-	const { data: userRole, error } = await supabase
-		.schema("ff_users")
-		.from("user_role_mappings")
-		.select(`
-			user_roles!inner (
-				name
-			)
-		`)
-		.eq("user_id", user.id)
-		.eq("user_roles.name", "SYSTEM_ADMIN")
-		.maybeSingle();
-
-	if (error) {
-		console.error("Error checking system admin status:", error);
-		return false;
-	}
-
-	return !!userRole;
 }
 
 // ログイン
@@ -52,7 +80,14 @@ export async function login(formData: FormData): Promise<AuthResponse> {
 	const password = formData.get("password") as string;
 	const supabase = await createClient();
 
+	console.log("Login attempt:", {
+		email,
+		hasPassword: !!password,
+		timestamp: new Date().toISOString(),
+	});
+
 	if (!email || !password) {
+		console.error("Login validation error: Missing credentials");
 		return {
 			data: { user: null, session: null },
 			error: {
@@ -62,17 +97,73 @@ export async function login(formData: FormData): Promise<AuthResponse> {
 		};
 	}
 
-	const { data, error } = await supabase.auth.signInWithPassword({
-		email,
-		password,
-	});
+	try {
+		// セッション状態を確認
+		const {
+			data: { session: currentSession },
+		} = await supabase.auth.getSession();
+		console.log("Current session state:", {
+			hasSession: !!currentSession,
+			sessionId: currentSession?.user?.id,
+			timestamp: new Date().toISOString(),
+		});
 
-	if (error) {
-		return { data: { user: null, session: null }, error };
+		const { data, error } = await supabase.auth.signInWithPassword({
+			email,
+			password,
+		});
+
+		if (error) {
+			console.error("Login error:", {
+				code: error.status,
+				message: error.message,
+				details: error,
+				timestamp: new Date().toISOString(),
+			});
+			return { data: { user: null, session: null }, error };
+		}
+
+		// ユーザー情報の取得を試みる
+		const { data: userData, error: userError } = await supabase.auth.getUser(
+			data.user?.id,
+		);
+
+		if (userError) {
+			console.error("User data fetch error:", {
+				error: userError,
+				userId: data.user?.id,
+				timestamp: new Date().toISOString(),
+			});
+		} else {
+			console.log("User data fetch success:", {
+				userId: userData.user.id,
+				timestamp: new Date().toISOString(),
+			});
+		}
+
+		console.log("Login success:", {
+			userId: data.user?.id,
+			email: data.user?.email,
+			hasSession: !!data.session,
+			timestamp: new Date().toISOString(),
+		});
+
+		revalidatePath("/webapp/dashboard");
+		return { data, error: null };
+	} catch (error) {
+		console.error("Unexpected login error:", {
+			error,
+			stack: error instanceof Error ? error.stack : undefined,
+			timestamp: new Date().toISOString(),
+		});
+		return {
+			data: { user: null, session: null },
+			error: {
+				message: "予期せぬエラーが発生しました",
+				status: 500,
+			} as AuthError,
+		};
 	}
-
-	revalidatePath("/webapp/dashboard");
-	return { data, error: null };
 }
 
 // ユーザープロフィールの存在認を追加

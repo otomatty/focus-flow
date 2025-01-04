@@ -1,4 +1,4 @@
-create table if not exists level_settings (
+create table if not exists ff_gamification.level_settings (
   level integer primary key,
   required_exp integer not null,
   rewards jsonb default '{}'::jsonb,
@@ -6,32 +6,32 @@ create table if not exists level_settings (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
-comment on table level_settings is 'レベルごとの設定情報を管理するテーブル';
-comment on column level_settings.level is 'レベル';
-comment on column level_settings.required_exp is 'レベルアップに必要な経験値';
-comment on column level_settings.rewards is 'レベルアップ時の報酬情報';
-comment on column level_settings.created_at is 'レコード作成日時';
-comment on column level_settings.updated_at is 'レコード更新日時';
+comment on table ff_gamification.level_settings is 'レベルごとの設定情報を管理するテーブル';
+comment on column ff_gamification.level_settings.level is 'レベル';
+comment on column ff_gamification.level_settings.required_exp is 'レベルアップに必要な経験値';
+comment on column ff_gamification.level_settings.rewards is 'レベルアップ時の報酬情報';
+comment on column ff_gamification.level_settings.created_at is 'レコード作成日時';
+comment on column ff_gamification.level_settings.updated_at is 'レコード更新日時';
 
 -- RLSポリシーの設定
-alter table level_settings enable row level security;
+alter table ff_gamification.level_settings enable row level security;
 
 create policy "全てのユーザーがレベル設定を参照できる"
-  on level_settings for select
+  on ff_gamification.level_settings for select
   to authenticated
   using (true);
 
 -- インデックスの作成
-create index level_settings_required_exp_idx on level_settings(required_exp);
+create index level_settings_required_exp_idx on ff_gamification.level_settings(required_exp);
 
 -- トリガーの設定
 create trigger update_level_settings_updated_at
-  before update on level_settings
+  before update on ff_gamification.level_settings
   for each row
   execute function update_updated_at_column();
 
 -- 初期データの挿入
-with recursive level_data as (
+  with recursive level_data as (
   -- 基本となる称号の配列を定義
   select array[
     'ビギナー', 'ルーキー', 'アマチュア', 'ベテラン', 'エキスパート',

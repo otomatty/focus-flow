@@ -1,7 +1,7 @@
 import type { TaskTemplate } from "@/types/task";
 
 export const TASK_TEMPLATES: Record<string, TaskTemplate[]> = {
-	開発: [
+	development: [
 		{
 			title: "新機能開発",
 			description: `## 目的
@@ -50,7 +50,7 @@ export const TASK_TEMPLATES: Record<string, TaskTemplate[]> = {
 			experiencePoints: 50,
 		},
 	],
-	学習: [
+	learning: [
 		{
 			title: "新技術の学習",
 			description: `## 学習目標
@@ -74,7 +74,7 @@ export const TASK_TEMPLATES: Record<string, TaskTemplate[]> = {
 			experiencePoints: 150,
 		},
 	],
-	プロジェクト管理: [
+	project_management: [
 		{
 			title: "スプリント計画",
 			description: `## 目的
@@ -98,7 +98,7 @@ export const TASK_TEMPLATES: Record<string, TaskTemplate[]> = {
 			experiencePoints: 80,
 		},
 	],
-	レビュー: [
+	review: [
 		{
 			title: "コードレビュー",
 			description: `## レビュー観点
@@ -126,7 +126,7 @@ export const TASK_TEMPLATES: Record<string, TaskTemplate[]> = {
 			experiencePoints: 30,
 		},
 	],
-	ドキュメント: [
+	documentation: [
 		{
 			title: "技術文書作成",
 			description: `## ドキュメントの目的
@@ -154,4 +154,4 @@ export const TASK_TEMPLATES: Record<string, TaskTemplate[]> = {
 	],
 };
 
-export const DEFAULT_TEMPLATES = TASK_TEMPLATES.開発;
+export const DEFAULT_TEMPLATES = TASK_TEMPLATES.development;

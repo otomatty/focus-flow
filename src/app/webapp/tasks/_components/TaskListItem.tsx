@@ -14,12 +14,10 @@ import { MoreHorizontal, Calendar, Clock } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
-import type { Database } from "@/types/supabase";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useState } from "react";
-
-type Task = Database["public"]["Tables"]["tasks"]["Row"];
+import type { Task } from "@/types/task";
 
 interface TaskListItemProps {
 	task: Task;

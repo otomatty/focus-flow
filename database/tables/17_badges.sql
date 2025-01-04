@@ -1,5 +1,5 @@
 -- バッジマスターテーブル
-create table if not exists badges (
+create table if not exists ff_achievements.badges (
     id uuid primary key default uuid_generate_v4(),
     name text not null unique,
     description text not null,

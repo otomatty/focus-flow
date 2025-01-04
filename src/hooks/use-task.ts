@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Task, AIAnalysis } from "@/types/task";
-import { getTask } from "@/app/_actions/tasks";
+import { getTask } from "@/app/_actions/tasks/core";
 
 export function useTask(taskId: string) {
 	const [task, setTask] = useState<Task | null>(null);

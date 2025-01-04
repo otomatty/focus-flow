@@ -2,9 +2,9 @@ import type { Database } from "@/types/supabase";
 import type { CamelCase } from "@/utils/caseConverter";
 
 // Supabaseのアクティビティテーブルの型
-type ActivityRow = Database["public"]["Tables"]["project_activities"]["Row"];
+type ActivityRow = Database["ff_tasks"]["Tables"]["project_activities"]["Row"];
 type ActivityInsert =
-	Database["public"]["Tables"]["project_activities"]["Insert"];
+	Database["ff_tasks"]["Tables"]["project_activities"]["Insert"];
 
 // アクティビティの種類の型
 export type ActivityType = ActivityRow["type"];

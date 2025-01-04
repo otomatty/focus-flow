@@ -3,13 +3,11 @@
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TaskListItem } from "./TaskListItem";
-import type { Database } from "@/types/supabase";
 import { motion } from "framer-motion";
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-
-type Task = Database["public"]["Tables"]["tasks"]["Row"];
+import type { Task } from "@/types/task";
 
 interface TaskListProps {
 	tasks: Task[];

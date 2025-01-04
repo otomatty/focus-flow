@@ -1,5 +1,5 @@
 import { AppHeader } from "@/app/webapp/_layouts/AppHeader";
-import { AppSidebar } from "@/app/webapp/_layouts/AppSidebar/AppSidebar";
+import { AppSidebar } from "@/app/webapp/_layouts/AppSidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 interface WebAppLayoutProps {
@@ -12,7 +12,6 @@ export default function WebAppLayout({ children }: WebAppLayoutProps) {
 			<AppSidebar />
 			<SidebarInset>
 				<AppHeader />
-
 				<main>{children}</main>
 			</SidebarInset>
 		</SidebarProvider>

@@ -1,5 +1,5 @@
 -- スケジュールテーブル
-create table if not exists schedules (
+create table if not exists ff_schedules.schedules (
     id uuid primary key default uuid_generate_v4(),
     user_id uuid references auth.users(id) not null,
     day_of_week integer not null check (day_of_week between 0 and 6),
