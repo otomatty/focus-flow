@@ -1893,6 +1893,283 @@ export type Database = {
 			[_ in never]: never;
 		};
 	};
+	ff_notifications: {
+		Tables: {
+			categories: {
+				Row: {
+					color: string | null;
+					created_at: string | null;
+					description: string | null;
+					display_name: string;
+					icon: string | null;
+					id: string;
+					is_active: boolean | null;
+					name: string;
+					priority: number | null;
+					updated_at: string | null;
+				};
+				Insert: {
+					color?: string | null;
+					created_at?: string | null;
+					description?: string | null;
+					display_name: string;
+					icon?: string | null;
+					id?: string;
+					is_active?: boolean | null;
+					name: string;
+					priority?: number | null;
+					updated_at?: string | null;
+				};
+				Update: {
+					color?: string | null;
+					created_at?: string | null;
+					description?: string | null;
+					display_name?: string;
+					icon?: string | null;
+					id?: string;
+					is_active?: boolean | null;
+					name?: string;
+					priority?: number | null;
+					updated_at?: string | null;
+				};
+				Relationships: [];
+			};
+			delivery_history: {
+				Row: {
+					created_at: string | null;
+					delivery_type: string;
+					error_message: string | null;
+					id: string;
+					notification_id: string;
+					provider: string | null;
+					provider_response: Json | null;
+					status: string;
+				};
+				Insert: {
+					created_at?: string | null;
+					delivery_type: string;
+					error_message?: string | null;
+					id?: string;
+					notification_id: string;
+					provider?: string | null;
+					provider_response?: Json | null;
+					status: string;
+				};
+				Update: {
+					created_at?: string | null;
+					delivery_type?: string;
+					error_message?: string | null;
+					id?: string;
+					notification_id?: string;
+					provider?: string | null;
+					provider_response?: Json | null;
+					status?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "delivery_history_notification_id_fkey";
+						columns: ["notification_id"];
+						isOneToOne: false;
+						referencedRelation: "notifications";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			notifications: {
+				Row: {
+					action_data: Json | null;
+					action_type: string | null;
+					body: string;
+					category_id: string;
+					created_at: string | null;
+					delivery_attempts: Json | null;
+					expires_at: string | null;
+					id: string;
+					metadata: Json | null;
+					priority: number | null;
+					read_at: string | null;
+					status: string;
+					template_id: string;
+					title: string;
+					updated_at: string | null;
+					user_id: string;
+				};
+				Insert: {
+					action_data?: Json | null;
+					action_type?: string | null;
+					body: string;
+					category_id: string;
+					created_at?: string | null;
+					delivery_attempts?: Json | null;
+					expires_at?: string | null;
+					id?: string;
+					metadata?: Json | null;
+					priority?: number | null;
+					read_at?: string | null;
+					status?: string;
+					template_id: string;
+					title: string;
+					updated_at?: string | null;
+					user_id: string;
+				};
+				Update: {
+					action_data?: Json | null;
+					action_type?: string | null;
+					body?: string;
+					category_id?: string;
+					created_at?: string | null;
+					delivery_attempts?: Json | null;
+					expires_at?: string | null;
+					id?: string;
+					metadata?: Json | null;
+					priority?: number | null;
+					read_at?: string | null;
+					status?: string;
+					template_id?: string;
+					title?: string;
+					updated_at?: string | null;
+					user_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "notifications_category_id_fkey";
+						columns: ["category_id"];
+						isOneToOne: false;
+						referencedRelation: "categories";
+						referencedColumns: ["id"];
+					},
+					{
+						foreignKeyName: "notifications_template_id_fkey";
+						columns: ["template_id"];
+						isOneToOne: false;
+						referencedRelation: "templates";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			templates: {
+				Row: {
+					action_data: Json | null;
+					action_type: string | null;
+					body_template: string;
+					category_id: string;
+					created_at: string | null;
+					id: string;
+					is_active: boolean | null;
+					name: string;
+					priority: number | null;
+					title_template: string;
+					updated_at: string | null;
+				};
+				Insert: {
+					action_data?: Json | null;
+					action_type?: string | null;
+					body_template: string;
+					category_id: string;
+					created_at?: string | null;
+					id?: string;
+					is_active?: boolean | null;
+					name: string;
+					priority?: number | null;
+					title_template: string;
+					updated_at?: string | null;
+				};
+				Update: {
+					action_data?: Json | null;
+					action_type?: string | null;
+					body_template?: string;
+					category_id?: string;
+					created_at?: string | null;
+					id?: string;
+					is_active?: boolean | null;
+					name?: string;
+					priority?: number | null;
+					title_template?: string;
+					updated_at?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "templates_category_id_fkey";
+						columns: ["category_id"];
+						isOneToOne: false;
+						referencedRelation: "categories";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			user_preferences: {
+				Row: {
+					category_id: string;
+					created_at: string | null;
+					email_enabled: boolean | null;
+					id: string;
+					in_app_enabled: boolean | null;
+					push_enabled: boolean | null;
+					quiet_hours: Json | null;
+					updated_at: string | null;
+					user_id: string;
+				};
+				Insert: {
+					category_id: string;
+					created_at?: string | null;
+					email_enabled?: boolean | null;
+					id?: string;
+					in_app_enabled?: boolean | null;
+					push_enabled?: boolean | null;
+					quiet_hours?: Json | null;
+					updated_at?: string | null;
+					user_id: string;
+				};
+				Update: {
+					category_id?: string;
+					created_at?: string | null;
+					email_enabled?: boolean | null;
+					id?: string;
+					in_app_enabled?: boolean | null;
+					push_enabled?: boolean | null;
+					quiet_hours?: Json | null;
+					updated_at?: string | null;
+					user_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "user_preferences_category_id_fkey";
+						columns: ["category_id"];
+						isOneToOne: false;
+						referencedRelation: "categories";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+		};
+		Views: {
+			[_ in never]: never;
+		};
+		Functions: {
+			create_notification: {
+				Args: {
+					p_user_id: string;
+					p_category_name: string;
+					p_template_name: string;
+					p_template_data: Json;
+				};
+				Returns: string;
+			};
+			render_template: {
+				Args: {
+					p_template: string;
+					p_data: Json;
+				};
+				Returns: string;
+			};
+		};
+		Enums: {
+			[_ in never]: never;
+		};
+		CompositeTypes: {
+			[_ in never]: never;
+		};
+	};
 	ff_party: {
 		Tables: {
 			parties: {
@@ -2742,6 +3019,601 @@ export type Database = {
 			[_ in never]: never;
 		};
 	};
+	ff_seasons: {
+		Tables: {
+			audit_logs: {
+				Row: {
+					action_details: Json;
+					action_type: string;
+					created_at: string | null;
+					id: string;
+					performed_by: string | null;
+					season_id: string;
+					user_id: string | null;
+				};
+				Insert: {
+					action_details: Json;
+					action_type: string;
+					created_at?: string | null;
+					id?: string;
+					performed_by?: string | null;
+					season_id: string;
+					user_id?: string | null;
+				};
+				Update: {
+					action_details?: Json;
+					action_type?: string;
+					created_at?: string | null;
+					id?: string;
+					performed_by?: string | null;
+					season_id?: string;
+					user_id?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "audit_logs_season_id_fkey";
+						columns: ["season_id"];
+						isOneToOne: false;
+						referencedRelation: "seasons";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			data_integrity_checks: {
+				Row: {
+					check_type: string;
+					created_at: string | null;
+					id: string;
+					inconsistencies: Json | null;
+					resolved: boolean | null;
+					transition_id: string;
+					updated_at: string | null;
+				};
+				Insert: {
+					check_type: string;
+					created_at?: string | null;
+					id?: string;
+					inconsistencies?: Json | null;
+					resolved?: boolean | null;
+					transition_id: string;
+					updated_at?: string | null;
+				};
+				Update: {
+					check_type?: string;
+					created_at?: string | null;
+					id?: string;
+					inconsistencies?: Json | null;
+					resolved?: boolean | null;
+					transition_id?: string;
+					updated_at?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "data_integrity_checks_transition_id_fkey";
+						columns: ["transition_id"];
+						isOneToOne: false;
+						referencedRelation: "season_transitions";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			rank_settings: {
+				Row: {
+					created_at: string | null;
+					daily_focus_requirement: unknown | null;
+					demotion_threshold: number | null;
+					focus_time_requirement: unknown | null;
+					id: string;
+					maintenance_requirements: Json | null;
+					promotion_threshold: number | null;
+					rank_name: string;
+					required_points: number;
+					rewards: Json;
+					season_id: string;
+					task_completion_requirement: number | null;
+					updated_at: string | null;
+					weekly_focus_requirement: unknown | null;
+				};
+				Insert: {
+					created_at?: string | null;
+					daily_focus_requirement?: unknown | null;
+					demotion_threshold?: number | null;
+					focus_time_requirement?: unknown | null;
+					id?: string;
+					maintenance_requirements?: Json | null;
+					promotion_threshold?: number | null;
+					rank_name: string;
+					required_points: number;
+					rewards?: Json;
+					season_id: string;
+					task_completion_requirement?: number | null;
+					updated_at?: string | null;
+					weekly_focus_requirement?: unknown | null;
+				};
+				Update: {
+					created_at?: string | null;
+					daily_focus_requirement?: unknown | null;
+					demotion_threshold?: number | null;
+					focus_time_requirement?: unknown | null;
+					id?: string;
+					maintenance_requirements?: Json | null;
+					promotion_threshold?: number | null;
+					rank_name?: string;
+					required_points?: number;
+					rewards?: Json;
+					season_id?: string;
+					task_completion_requirement?: number | null;
+					updated_at?: string | null;
+					weekly_focus_requirement?: unknown | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "rank_settings_season_id_fkey";
+						columns: ["season_id"];
+						isOneToOne: false;
+						referencedRelation: "seasons";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			season_transitions: {
+				Row: {
+					created_at: string | null;
+					error_logs: Json | null;
+					from_season_id: string;
+					id: string;
+					status: string;
+					to_season_id: string;
+					transition_end: string;
+					transition_start: string;
+					transition_steps: Json;
+					updated_at: string | null;
+				};
+				Insert: {
+					created_at?: string | null;
+					error_logs?: Json | null;
+					from_season_id: string;
+					id?: string;
+					status?: string;
+					to_season_id: string;
+					transition_end: string;
+					transition_start: string;
+					transition_steps?: Json;
+					updated_at?: string | null;
+				};
+				Update: {
+					created_at?: string | null;
+					error_logs?: Json | null;
+					from_season_id?: string;
+					id?: string;
+					status?: string;
+					to_season_id?: string;
+					transition_end?: string;
+					transition_start?: string;
+					transition_steps?: Json;
+					updated_at?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "season_transitions_from_season_id_fkey";
+						columns: ["from_season_id"];
+						isOneToOne: false;
+						referencedRelation: "seasons";
+						referencedColumns: ["id"];
+					},
+					{
+						foreignKeyName: "season_transitions_to_season_id_fkey";
+						columns: ["to_season_id"];
+						isOneToOne: false;
+						referencedRelation: "seasons";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			seasons: {
+				Row: {
+					created_at: string | null;
+					default_duration: unknown;
+					description: string | null;
+					end_date: string;
+					id: string;
+					name: string;
+					rewards: Json | null;
+					rules: Json | null;
+					season_number: number;
+					start_date: string;
+					status: string;
+					transition_end_date: string | null;
+					transition_start_date: string | null;
+					updated_at: string | null;
+				};
+				Insert: {
+					created_at?: string | null;
+					default_duration?: unknown;
+					description?: string | null;
+					end_date: string;
+					id?: string;
+					name: string;
+					rewards?: Json | null;
+					rules?: Json | null;
+					season_number: number;
+					start_date: string;
+					status?: string;
+					transition_end_date?: string | null;
+					transition_start_date?: string | null;
+					updated_at?: string | null;
+				};
+				Update: {
+					created_at?: string | null;
+					default_duration?: unknown;
+					description?: string | null;
+					end_date?: string;
+					id?: string;
+					name?: string;
+					rewards?: Json | null;
+					rules?: Json | null;
+					season_number?: number;
+					start_date?: string;
+					status?: string;
+					transition_end_date?: string | null;
+					transition_start_date?: string | null;
+					updated_at?: string | null;
+				};
+				Relationships: [];
+			};
+			transition_backups: {
+				Row: {
+					backup_data: Json;
+					backup_type: string;
+					created_at: string | null;
+					id: string;
+					transition_id: string;
+				};
+				Insert: {
+					backup_data: Json;
+					backup_type: string;
+					created_at?: string | null;
+					id?: string;
+					transition_id: string;
+				};
+				Update: {
+					backup_data?: Json;
+					backup_type?: string;
+					created_at?: string | null;
+					id?: string;
+					transition_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "transition_backups_transition_id_fkey";
+						columns: ["transition_id"];
+						isOneToOne: false;
+						referencedRelation: "season_transitions";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			transition_checkpoints: {
+				Row: {
+					created_at: string | null;
+					error_count: number | null;
+					id: string;
+					last_processed_user_id: string | null;
+					processed_users: number | null;
+					status: string;
+					step_name: string;
+					total_users: number | null;
+					transition_id: string;
+					updated_at: string | null;
+				};
+				Insert: {
+					created_at?: string | null;
+					error_count?: number | null;
+					id?: string;
+					last_processed_user_id?: string | null;
+					processed_users?: number | null;
+					status?: string;
+					step_name: string;
+					total_users?: number | null;
+					transition_id: string;
+					updated_at?: string | null;
+				};
+				Update: {
+					created_at?: string | null;
+					error_count?: number | null;
+					id?: string;
+					last_processed_user_id?: string | null;
+					processed_users?: number | null;
+					status?: string;
+					step_name?: string;
+					total_users?: number | null;
+					transition_id?: string;
+					updated_at?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "transition_checkpoints_transition_id_fkey";
+						columns: ["transition_id"];
+						isOneToOne: false;
+						referencedRelation: "season_transitions";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			transition_notifications: {
+				Row: {
+					created_at: string | null;
+					id: string;
+					message: string;
+					notification_type: string;
+					read: boolean | null;
+					transition_id: string;
+					user_id: string;
+				};
+				Insert: {
+					created_at?: string | null;
+					id?: string;
+					message: string;
+					notification_type: string;
+					read?: boolean | null;
+					transition_id: string;
+					user_id: string;
+				};
+				Update: {
+					created_at?: string | null;
+					id?: string;
+					message?: string;
+					notification_type?: string;
+					read?: boolean | null;
+					transition_id?: string;
+					user_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "transition_notifications_transition_id_fkey";
+						columns: ["transition_id"];
+						isOneToOne: false;
+						referencedRelation: "season_transitions";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			transition_performance_stats: {
+				Row: {
+					created_at: string | null;
+					end_time: string | null;
+					execution_time: unknown | null;
+					id: string;
+					memory_usage: Json | null;
+					performance_metrics: Json | null;
+					processed_records: number | null;
+					start_time: string;
+					step_name: string;
+					transition_id: string;
+				};
+				Insert: {
+					created_at?: string | null;
+					end_time?: string | null;
+					execution_time?: unknown | null;
+					id?: string;
+					memory_usage?: Json | null;
+					performance_metrics?: Json | null;
+					processed_records?: number | null;
+					start_time: string;
+					step_name: string;
+					transition_id: string;
+				};
+				Update: {
+					created_at?: string | null;
+					end_time?: string | null;
+					execution_time?: unknown | null;
+					id?: string;
+					memory_usage?: Json | null;
+					performance_metrics?: Json | null;
+					processed_records?: number | null;
+					start_time?: string;
+					step_name?: string;
+					transition_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "transition_performance_stats_transition_id_fkey";
+						columns: ["transition_id"];
+						isOneToOne: false;
+						referencedRelation: "season_transitions";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			user_history: {
+				Row: {
+					achievements_earned: Json | null;
+					archived_at: string | null;
+					created_at: string | null;
+					final_rank: string;
+					id: string;
+					rewards_received: Json | null;
+					season_id: string;
+					statistics: Json | null;
+					total_completed_tasks: number;
+					total_focus_time: unknown;
+					total_points: number;
+					user_id: string;
+				};
+				Insert: {
+					achievements_earned?: Json | null;
+					archived_at?: string | null;
+					created_at?: string | null;
+					final_rank: string;
+					id?: string;
+					rewards_received?: Json | null;
+					season_id: string;
+					statistics?: Json | null;
+					total_completed_tasks?: number;
+					total_focus_time?: unknown;
+					total_points?: number;
+					user_id: string;
+				};
+				Update: {
+					achievements_earned?: Json | null;
+					archived_at?: string | null;
+					created_at?: string | null;
+					final_rank?: string;
+					id?: string;
+					rewards_received?: Json | null;
+					season_id?: string;
+					statistics?: Json | null;
+					total_completed_tasks?: number;
+					total_focus_time?: unknown;
+					total_points?: number;
+					user_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "user_history_season_id_fkey";
+						columns: ["season_id"];
+						isOneToOne: false;
+						referencedRelation: "seasons";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			user_progress: {
+				Row: {
+					achievements: Json | null;
+					completed_tasks: number;
+					created_at: string | null;
+					current_points: number;
+					current_rank: string;
+					highest_rank: string;
+					id: string;
+					rewards_claimed: boolean | null;
+					season_id: string;
+					total_focus_time: unknown;
+					updated_at: string | null;
+					user_id: string;
+				};
+				Insert: {
+					achievements?: Json | null;
+					completed_tasks?: number;
+					created_at?: string | null;
+					current_points?: number;
+					current_rank?: string;
+					highest_rank?: string;
+					id?: string;
+					rewards_claimed?: boolean | null;
+					season_id: string;
+					total_focus_time?: unknown;
+					updated_at?: string | null;
+					user_id: string;
+				};
+				Update: {
+					achievements?: Json | null;
+					completed_tasks?: number;
+					created_at?: string | null;
+					current_points?: number;
+					current_rank?: string;
+					highest_rank?: string;
+					id?: string;
+					rewards_claimed?: boolean | null;
+					season_id?: string;
+					total_focus_time?: unknown;
+					updated_at?: string | null;
+					user_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "user_progress_season_id_fkey";
+						columns: ["season_id"];
+						isOneToOne: false;
+						referencedRelation: "seasons";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+		};
+		Views: {
+			[_ in never]: never;
+		};
+		Functions: {
+			archive_user_season_history: {
+				Args: {
+					p_season_id: string;
+					p_user_id: string;
+				};
+				Returns: undefined;
+			};
+			create_default_rank_settings: {
+				Args: {
+					p_season_id: string;
+				};
+				Returns: undefined;
+			};
+			create_transition_backup: {
+				Args: {
+					p_transition_id: string;
+					p_backup_type: string;
+				};
+				Returns: string;
+			};
+			create_transition_notification: {
+				Args: {
+					p_user_id: string;
+					p_transition_id: string;
+					p_notification_type: string;
+					p_message: string;
+				};
+				Returns: undefined;
+			};
+			execute_season_transition: {
+				Args: {
+					p_from_season_id: string;
+					p_to_season_id: string;
+				};
+				Returns: undefined;
+			};
+			log_action: {
+				Args: {
+					p_season_id: string;
+					p_user_id: string;
+					p_action_type: string;
+					p_action_details: Json;
+					p_performed_by?: string;
+				};
+				Returns: undefined;
+			};
+			log_performance_stats: {
+				Args: {
+					p_transition_id: string;
+					p_step_name: string;
+					p_start_time: string;
+					p_processed_records: number;
+				};
+				Returns: undefined;
+			};
+			update_checkpoint: {
+				Args: {
+					p_transition_id: string;
+					p_step_name: string;
+					p_processed_count: number;
+					p_status: string;
+				};
+				Returns: undefined;
+			};
+			verify_data_integrity: {
+				Args: {
+					p_transition_id: string;
+				};
+				Returns: undefined;
+			};
+		};
+		Enums: {
+			[_ in never]: never;
+		};
+		CompositeTypes: {
+			[_ in never]: never;
+		};
+	};
 	ff_skills: {
 		Tables: {
 			evaluation_history: {
@@ -3248,6 +4120,502 @@ export type Database = {
 		};
 		Enums: {
 			follow_status: "pending" | "accepted" | "blocked";
+		};
+		CompositeTypes: {
+			[_ in never]: never;
+		};
+	};
+	ff_statistics: {
+		Tables: {
+			access_control: {
+				Row: {
+					access_period: unknown;
+					created_at: string;
+					id: string;
+					max_history_months: number;
+					updated_at: string;
+					user_tier: string;
+				};
+				Insert: {
+					access_period: unknown;
+					created_at?: string;
+					id?: string;
+					max_history_months: number;
+					updated_at?: string;
+					user_tier: string;
+				};
+				Update: {
+					access_period?: unknown;
+					created_at?: string;
+					id?: string;
+					max_history_months?: number;
+					updated_at?: string;
+					user_tier?: string;
+				};
+				Relationships: [];
+			};
+			error_logs: {
+				Row: {
+					created_at: string;
+					error_context: string | null;
+					error_detail: string | null;
+					error_hint: string | null;
+					error_message: string;
+					function_name: string;
+					id: string;
+				};
+				Insert: {
+					created_at?: string;
+					error_context?: string | null;
+					error_detail?: string | null;
+					error_hint?: string | null;
+					error_message: string;
+					function_name: string;
+					id?: string;
+				};
+				Update: {
+					created_at?: string;
+					error_context?: string | null;
+					error_detail?: string | null;
+					error_hint?: string | null;
+					error_message?: string;
+					function_name?: string;
+					id?: string;
+				};
+				Relationships: [];
+			};
+			statistics_archive: {
+				Row: {
+					archive_data: Json;
+					archive_date: string;
+					created_at: string;
+					id: string;
+					user_id: string;
+				};
+				Insert: {
+					archive_data: Json;
+					archive_date: string;
+					created_at?: string;
+					id?: string;
+					user_id: string;
+				};
+				Update: {
+					archive_data?: Json;
+					archive_date?: string;
+					created_at?: string;
+					id?: string;
+					user_id?: string;
+				};
+				Relationships: [];
+			};
+			update_frequency: {
+				Row: {
+					batch_window: unknown;
+					created_at: string;
+					id: string;
+					last_update: string | null;
+					next_update: string | null;
+					statistic_name: string;
+					update_frequency: unknown;
+					updated_at: string;
+				};
+				Insert: {
+					batch_window: unknown;
+					created_at?: string;
+					id?: string;
+					last_update?: string | null;
+					next_update?: string | null;
+					statistic_name: string;
+					update_frequency: unknown;
+					updated_at?: string;
+				};
+				Update: {
+					batch_window?: unknown;
+					created_at?: string;
+					id?: string;
+					last_update?: string | null;
+					next_update?: string | null;
+					statistic_name?: string;
+					update_frequency?: unknown;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
+			user_statistics: {
+				Row: {
+					created_at: string;
+					current_focus_streak: number;
+					daily_completed_tasks: number;
+					daily_focus_time: unknown;
+					id: string;
+					longest_focus_streak: number;
+					monthly_completed_tasks: number;
+					monthly_focus_time: unknown;
+					total_completed_tasks: number;
+					total_focus_time: unknown;
+					updated_at: string;
+					user_id: string;
+					weekly_completed_tasks: number;
+					weekly_focus_time: unknown;
+				};
+				Insert: {
+					created_at?: string;
+					current_focus_streak?: number;
+					daily_completed_tasks?: number;
+					daily_focus_time?: unknown;
+					id?: string;
+					longest_focus_streak?: number;
+					monthly_completed_tasks?: number;
+					monthly_focus_time?: unknown;
+					total_completed_tasks?: number;
+					total_focus_time?: unknown;
+					updated_at?: string;
+					user_id: string;
+					weekly_completed_tasks?: number;
+					weekly_focus_time?: unknown;
+				};
+				Update: {
+					created_at?: string;
+					current_focus_streak?: number;
+					daily_completed_tasks?: number;
+					daily_focus_time?: unknown;
+					id?: string;
+					longest_focus_streak?: number;
+					monthly_completed_tasks?: number;
+					monthly_focus_time?: unknown;
+					total_completed_tasks?: number;
+					total_focus_time?: unknown;
+					updated_at?: string;
+					user_id?: string;
+					weekly_completed_tasks?: number;
+					weekly_focus_time?: unknown;
+				};
+				Relationships: [];
+			};
+			user_statistics_history: {
+				Row: {
+					completed_tasks: number;
+					created_at: string;
+					focus_time: unknown;
+					id: string;
+					statistics_date: string;
+					user_id: string;
+				};
+				Insert: {
+					completed_tasks?: number;
+					created_at?: string;
+					focus_time?: unknown;
+					id?: string;
+					statistics_date: string;
+					user_id: string;
+				};
+				Update: {
+					completed_tasks?: number;
+					created_at?: string;
+					focus_time?: unknown;
+					id?: string;
+					statistics_date?: string;
+					user_id?: string;
+				};
+				Relationships: [];
+			};
+			user_statistics_history_2025_01_2025_04: {
+				Row: {
+					completed_tasks: number;
+					created_at: string;
+					focus_time: unknown;
+					id: string;
+					statistics_date: string;
+					user_id: string;
+				};
+				Insert: {
+					completed_tasks?: number;
+					created_at?: string;
+					focus_time?: unknown;
+					id?: string;
+					statistics_date: string;
+					user_id: string;
+				};
+				Update: {
+					completed_tasks?: number;
+					created_at?: string;
+					focus_time?: unknown;
+					id?: string;
+					statistics_date?: string;
+					user_id?: string;
+				};
+				Relationships: [];
+			};
+		};
+		Views: {
+			[_ in never]: never;
+		};
+		Functions: {
+			adjust_access_on_tier_change: {
+				Args: {
+					p_user_id: string;
+					p_new_tier: string;
+				};
+				Returns: undefined;
+			};
+			archive_old_statistics: {
+				Args: {
+					p_archive_before_date: string;
+				};
+				Returns: undefined;
+			};
+			create_statistics_history_partition: {
+				Args: {
+					start_date: string;
+					end_date: string;
+				};
+				Returns: undefined;
+			};
+			get_focus_trends: {
+				Args: {
+					p_user_id: string;
+					p_period_start: string;
+					p_period_end: string;
+				};
+				Returns: {
+					period: string;
+					focus_time: unknown;
+					completed_tasks: number;
+					trend_direction: string;
+					avg_focus_time: unknown;
+					avg_completed_tasks: number;
+				}[];
+			};
+			get_statistics_by_period: {
+				Args: {
+					p_user_id: string;
+					p_start_date: string;
+					p_end_date: string;
+				};
+				Returns: {
+					focus_time: unknown;
+					completed_tasks: number;
+					avg_daily_focus_time: unknown;
+					avg_daily_tasks: number;
+				}[];
+			};
+			get_user_statistics: {
+				Args: {
+					p_user_id: string;
+					p_user_tier: string;
+				};
+				Returns: {
+					total_focus_time: unknown;
+					total_completed_tasks: number;
+					daily_focus_time: unknown;
+					weekly_focus_time: unknown;
+					monthly_focus_time: unknown;
+					daily_completed_tasks: number;
+					weekly_completed_tasks: number;
+					monthly_completed_tasks: number;
+					longest_focus_streak: number;
+					current_focus_streak: number;
+				}[];
+			};
+			log_error: {
+				Args: {
+					p_function_name: string;
+					p_error_message: string;
+					p_error_detail?: string;
+					p_error_hint?: string;
+					p_error_context?: string;
+				};
+				Returns: undefined;
+			};
+			manage_history_partitions: {
+				Args: Record<PropertyKey, never>;
+				Returns: undefined;
+			};
+			optimize_statistics_tables: {
+				Args: Record<PropertyKey, never>;
+				Returns: undefined;
+			};
+			safe_update_statistics: {
+				Args: Record<PropertyKey, never>;
+				Returns: undefined;
+			};
+			schedule_maintenance: {
+				Args: Record<PropertyKey, never>;
+				Returns: undefined;
+			};
+			schedule_statistics_updates: {
+				Args: Record<PropertyKey, never>;
+				Returns: undefined;
+			};
+			update_daily_statistics: {
+				Args: Record<PropertyKey, never>;
+				Returns: undefined;
+			};
+			update_focus_streaks: {
+				Args: Record<PropertyKey, never>;
+				Returns: undefined;
+			};
+			update_monthly_statistics: {
+				Args: Record<PropertyKey, never>;
+				Returns: undefined;
+			};
+			update_weekly_statistics: {
+				Args: Record<PropertyKey, never>;
+				Returns: undefined;
+			};
+		};
+		Enums: {
+			[_ in never]: never;
+		};
+		CompositeTypes: {
+			[_ in never]: never;
+		};
+	};
+	ff_subscriptions: {
+		Tables: {
+			plans: {
+				Row: {
+					created_at: string;
+					description: string | null;
+					display_name: string;
+					features: Json;
+					id: string;
+					interval: string;
+					is_active: boolean;
+					name: string;
+					price: number;
+					updated_at: string;
+				};
+				Insert: {
+					created_at?: string;
+					description?: string | null;
+					display_name: string;
+					features?: Json;
+					id?: string;
+					interval: string;
+					is_active?: boolean;
+					name: string;
+					price: number;
+					updated_at?: string;
+				};
+				Update: {
+					created_at?: string;
+					description?: string | null;
+					display_name?: string;
+					features?: Json;
+					id?: string;
+					interval?: string;
+					is_active?: boolean;
+					name?: string;
+					price?: number;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
+			subscription_history: {
+				Row: {
+					created_at: string;
+					id: string;
+					period_end: string;
+					period_start: string;
+					plan_id: string;
+					status: string;
+					user_id: string;
+				};
+				Insert: {
+					created_at?: string;
+					id?: string;
+					period_end: string;
+					period_start: string;
+					plan_id: string;
+					status: string;
+					user_id: string;
+				};
+				Update: {
+					created_at?: string;
+					id?: string;
+					period_end?: string;
+					period_start?: string;
+					plan_id?: string;
+					status?: string;
+					user_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "subscription_history_plan_id_fkey";
+						columns: ["plan_id"];
+						isOneToOne: false;
+						referencedRelation: "plans";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			user_subscriptions: {
+				Row: {
+					cancel_at_period_end: boolean;
+					created_at: string;
+					current_period_end: string;
+					current_period_start: string;
+					id: string;
+					plan_id: string;
+					status: string;
+					trial_end: string | null;
+					updated_at: string;
+					user_id: string;
+				};
+				Insert: {
+					cancel_at_period_end?: boolean;
+					created_at?: string;
+					current_period_end: string;
+					current_period_start: string;
+					id?: string;
+					plan_id: string;
+					status: string;
+					trial_end?: string | null;
+					updated_at?: string;
+					user_id: string;
+				};
+				Update: {
+					cancel_at_period_end?: boolean;
+					created_at?: string;
+					current_period_end?: string;
+					current_period_start?: string;
+					id?: string;
+					plan_id?: string;
+					status?: string;
+					trial_end?: string | null;
+					updated_at?: string;
+					user_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "user_subscriptions_plan_id_fkey";
+						columns: ["plan_id"];
+						isOneToOne: false;
+						referencedRelation: "plans";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+		};
+		Views: {
+			[_ in never]: never;
+		};
+		Functions: {
+			get_user_plan: {
+				Args: {
+					p_user_id: string;
+				};
+				Returns: {
+					plan_name: string;
+					plan_features: Json;
+					status: string;
+					current_period_end: string;
+				}[];
+			};
+		};
+		Enums: {
+			[_ in never]: never;
 		};
 		CompositeTypes: {
 			[_ in never]: never;

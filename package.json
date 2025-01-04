@@ -7,7 +7,7 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
-		"gen:types": "bunx supabase gen types typescript --project-id uivglzrnyfjuysvpqprf --schema public,auth,ff_users,ff_skills,ff_learning,ff_tasks,ff_gamification,ff_achievements,ff_focus,ff_goals,ff_habits,ff_logs,ff_party,ff_quest,ff_schedules,ff_social,ff_time_table > src/types/supabase.d.ts && bunx @biomejs/biome format src/types/supabase.d.ts --write"
+		"gen:types": "bunx supabase gen types typescript --project-id uivglzrnyfjuysvpqprf --schema public,auth,ff_users,ff_skills,ff_learning,ff_tasks,ff_gamification,ff_achievements,ff_focus,ff_goals,ff_habits,ff_logs,ff_party,ff_quest,ff_schedules,ff_social,ff_time_table,ff_statistics,ff_seasons,ff_notifications,ff_subscriptions > src/types/supabase.d.ts && bunx @biomejs/biome format src/types/supabase.d.ts --write"
 	},
 	"dependencies": {
 		"@dnd-kit/core": "^6.3.1",

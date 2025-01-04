@@ -28,11 +28,6 @@ export async function checkIsSystemAdmin() {
 			return false;
 		}
 
-		console.log("Checking system admin status for user:", {
-			userId: user.id,
-			email: user.email,
-		});
-
 		// システム管理者権限を確認
 		const { data: roleMapping, error: roleError } = await supabase
 			.schema("ff_users")
@@ -56,16 +51,6 @@ export async function checkIsSystemAdmin() {
 
 		const isAdmin = !!roleMapping;
 
-		console.log("System admin check result:", {
-			roleMapping,
-			isAdmin,
-			query: {
-				userId: user.id,
-				roleName: "SYSTEM_ADMIN",
-				isActive: true,
-			},
-		});
-
 		return isAdmin;
 	} catch (error) {
 		console.error("Error in checkIsSystemAdmin:", error);
@@ -79,12 +64,6 @@ export async function login(formData: FormData): Promise<AuthResponse> {
 	const email = formData.get("email") as string;
 	const password = formData.get("password") as string;
 	const supabase = await createClient();
-
-	console.log("Login attempt:", {
-		email,
-		hasPassword: !!password,
-		timestamp: new Date().toISOString(),
-	});
 
 	if (!email || !password) {
 		console.error("Login validation error: Missing credentials");
@@ -140,13 +119,6 @@ export async function login(formData: FormData): Promise<AuthResponse> {
 				timestamp: new Date().toISOString(),
 			});
 		}
-
-		console.log("Login success:", {
-			userId: data.user?.id,
-			email: data.user?.email,
-			hasSession: !!data.session,
-			timestamp: new Date().toISOString(),
-		});
 
 		revalidatePath("/webapp/dashboard");
 		return { data, error: null };
