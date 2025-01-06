@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
-import type { Agent } from "@/app/types/agent";
+import type { Agent } from "@/types/agent";
 
 export function AgentSettings() {
 	const {
@@ -90,15 +90,13 @@ export function AgentSettings() {
 											{selectedAgentId === agent.id ? "使用中" : "選択"}
 										</Button>
 										{!agent.isDefault && (
-											<>
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={() => deleteCustomAgent(agent.id)}
-												>
-													削除
-												</Button>
-											</>
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() => deleteCustomAgent(agent.id)}
+											>
+												削除
+											</Button>
 										)}
 									</div>
 								</div>

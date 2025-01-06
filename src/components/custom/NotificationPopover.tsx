@@ -10,26 +10,26 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
-import { sampleNotifications } from "@/data/notifications";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import type { Notification } from "@/types/notification";
+import { useAtom, useAtomValue } from "jotai";
+import {
+	notificationsAtom,
+	notificationsLoadingAtom,
+	unreadNotificationsCountAtom,
+	notificationStylesAtom,
+} from "@/stores/notifications";
+import { markNotificationAsRead } from "@/app/_actions/notifications";
 
-const typeStyles = {
-	info: "border-blue-500/50",
-	warning: "border-yellow-500/50",
-	error: "border-red-500/50",
-	success: "border-green-500/50",
-};
-
+// 通知の種類に応じたアイコン
 const TypeIcon = ({
-	type,
+	actionType,
 	className,
 }: {
-	type: Notification["type"];
+	actionType: string | null;
 	className?: string;
 }) => {
-	switch (type) {
+	switch (actionType) {
 		case "info":
 			return <Info className={cn("h-4 w-4 text-blue-500", className)} />;
 		case "warning":
@@ -43,12 +43,30 @@ const TypeIcon = ({
 				<CheckCircle2 className={cn("h-4 w-4 text-green-500", className)} />
 			);
 		default:
-			return null;
+			return <Info className={cn("h-4 w-4 text-blue-500", className)} />;
 	}
 };
 
 export function NotificationPopover() {
-	const unreadCount = sampleNotifications.filter((n) => !n.isRead).length;
+	const [notifications, setNotifications] = useAtom(notificationsAtom);
+	const [isLoading, setIsLoading] = useAtom(notificationsLoadingAtom);
+	const unreadCount = useAtomValue(unreadNotificationsCountAtom);
+	const typeStyles = useAtomValue(notificationStylesAtom);
+
+	const handleNotificationClick = async (notificationId: string) => {
+		try {
+			await markNotificationAsRead(notificationId);
+			setNotifications(
+				notifications.map((notification) =>
+					notification.id === notificationId
+						? { ...notification, read_at: new Date().toISOString() }
+						: notification,
+				),
+			);
+		} catch (error) {
+			console.error("Failed to mark notification as read:", error);
+		}
+	};
 
 	return (
 		<Popover>
@@ -78,37 +96,57 @@ export function NotificationPopover() {
 				</div>
 				<ScrollArea className="h-[300px]">
 					<div className="space-y-1">
-						{sampleNotifications.slice(0, 5).map((notification) => (
-							<div
-								key={notification.id}
-								className={cn(
-									"flex flex-col gap-1 p-4 hover:bg-muted/50 border-l-4",
-									typeStyles[notification.type],
-									!notification.isRead ? "bg-muted/30" : "",
-								)}
-							>
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<TypeIcon type={notification.type} />
-										<span className="text-sm font-medium">
-											{notification.title}
-										</span>
-										{!notification.isRead && (
-											<Circle className="h-2 w-2 fill-current text-blue-500" />
-										)}
-									</div>
-									<span className="text-xs text-muted-foreground">
-										{formatDistanceToNow(notification.timestamp, {
-											addSuffix: true,
-											locale: ja,
-										})}
-									</span>
-								</div>
-								<p className="text-sm text-muted-foreground pl-6">
-									{notification.message}
-								</p>
+						{isLoading ? (
+							<div className="flex justify-center items-center h-[200px]">
+								<span className="text-sm text-muted-foreground">
+									読み込み中...
+								</span>
 							</div>
-						))}
+						) : notifications.length === 0 ? (
+							<div className="flex justify-center items-center h-[200px]">
+								<span className="text-sm text-muted-foreground">
+									通知はありません
+								</span>
+							</div>
+						) : (
+							notifications.map((notification) => (
+								<button
+									type="button"
+									key={notification.id}
+									className={cn(
+										"w-full text-left flex flex-col gap-1 p-4 hover:bg-muted/50 border-l-4",
+										typeStyles[
+											notification.action_type as keyof typeof typeStyles
+										] || typeStyles.info,
+										!notification.read_at ? "bg-muted/30" : "",
+									)}
+									onClick={() => handleNotificationClick(notification.id)}
+								>
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<TypeIcon actionType={notification.action_type} />
+											<span className="text-sm font-medium">
+												{(notification.action_data as { title: string })
+													?.title || "通知"}
+											</span>
+											{!notification.read_at && (
+												<Circle className="h-2 w-2 fill-current text-blue-500" />
+											)}
+										</div>
+										<span className="text-xs text-muted-foreground">
+											{notification.created_at &&
+												formatDistanceToNow(new Date(notification.created_at), {
+													addSuffix: true,
+													locale: ja,
+												})}
+										</span>
+									</div>
+									<p className="text-sm text-muted-foreground pl-6">
+										{notification.body}
+									</p>
+								</button>
+							))
+						)}
 					</div>
 				</ScrollArea>
 			</PopoverContent>

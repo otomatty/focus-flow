@@ -1,40 +1,29 @@
-export interface User {
-	id: string;
-	name: string;
-	avatar: string;
-	exp: number;
-	level: number;
+import type { PublicUserProfile } from "@/stores/userProfileAtom";
+import type { Database } from "@/types/supabase";
+
+type UserLevel = Database["ff_gamification"]["Tables"]["user_levels"]["Row"];
+type Season = Database["ff_gamification"]["Tables"]["seasons"]["Row"];
+type UserProgress =
+	Database["ff_gamification"]["Tables"]["user_progress"]["Row"];
+
+export interface WeeklyStats {
+	focusTime: number;
+	completedTasks: number;
+	avgSessionLength: number;
+	taskCompletionRate: number;
+}
+
+export interface DashboardUserProfile extends PublicUserProfile {
+	level: UserLevel;
+
 	streak: {
 		current: number;
 		best: number;
 	};
-	weeklyStats: {
-		focusTime: number;
-		completedTasks: number;
-		earnedPoints: number;
-		plannedSessions: number;
-		completedSessions: number;
-		lastActive: Date;
-		streak: number;
-		points: number;
-		contribution: number;
-		growth: number;
-		bestFocusTime: number;
-		achievementCount: number;
-		mvpCount: number;
-		specialContribution?: string;
-	};
 }
 
-export interface Season {
-	number: number;
+export interface SeasonData {
+	season: Season;
+	progress: UserProgress;
 	remainingDays: number;
-	rank: {
-		current: string;
-		highest: string;
-	};
-	progress: {
-		current: number;
-		target: number;
-	};
 }

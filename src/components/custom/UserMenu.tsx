@@ -1,6 +1,7 @@
+// データフェッチはServerActionsを使用してlayout.tsxで行う
+
 "use client";
 
-import { useEffect } from "react";
 import { User, ChevronsUpDown, LogOut, Settings } from "lucide-react";
 import {
 	SidebarMenu,
@@ -18,11 +19,9 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { useAtom } from "jotai";
-import { userProfileAtom } from "@/stores/userProfileAtom";
+import { useAtomValue } from "jotai";
+import { userDataAtom } from "@/stores/userDataAtom";
 import { signOut } from "@/app/_actions/auth";
-import { getUserProfile } from "@/app/_actions/user";
-import { useAuth } from "@/hooks/useAuth";
 
 interface UserMenuProps {
 	additionalMenuItems?: React.ReactNode;
@@ -32,30 +31,11 @@ interface UserMenuProps {
 export function UserMenu({ additionalMenuItems, className }: UserMenuProps) {
 	const router = useRouter();
 	const { toast } = useToast();
-	const { user } = useAuth();
-	const [profile, setProfile] = useAtom(userProfileAtom);
+	const userData = useAtomValue(userDataAtom);
 
-	useEffect(() => {
-		const fetchProfile = async () => {
-			if (user?.id) {
-				const userProfile = await getUserProfile(user.id);
-				if (userProfile) {
-					setProfile({
-						displayName:
-							userProfile.displayName ||
-							user.email?.split("@")[0] ||
-							"ユーザー",
-						email: userProfile.email || user.email || "",
-						profileImage: userProfile.profileImage,
-					});
-				}
-			}
-		};
-
-		if (user && !profile) {
-			fetchProfile();
-		}
-	}, [user, profile, setProfile]);
+	if (!userData?.profile) {
+		return null;
+	}
 
 	const getInitials = (displayName: string | null): string => {
 		if (!displayName) return "U";
@@ -87,10 +67,6 @@ export function UserMenu({ additionalMenuItems, className }: UserMenuProps) {
 		}
 	};
 
-	if (!profile) {
-		return null;
-	}
-
 	return (
 		<SidebarMenu className={className}>
 			<SidebarMenuItem>
@@ -101,16 +77,18 @@ export function UserMenu({ additionalMenuItems, className }: UserMenuProps) {
 							className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 						>
 							<Avatar className="h-8 w-8 mr-2">
-								<AvatarImage src={profile.profileImage ?? undefined} />
+								<AvatarImage src={userData.profile.profileImage ?? undefined} />
 								<AvatarFallback>
-									{getInitials(profile.displayName)}
+									{getInitials(userData.profile.displayName)}
 								</AvatarFallback>
 							</Avatar>
 							<div className="grid flex-1 text-left text-sm leading-tight">
 								<span className="truncate font-semibold">
-									{profile.displayName}
+									{userData.profile.displayName}
 								</span>
-								<span className="truncate text-xs">{profile.email}</span>
+								<span className="truncate text-xs">
+									{userData.profile.email}
+								</span>
 							</div>
 							<ChevronsUpDown className="ml-auto size-4" />
 						</SidebarMenuButton>

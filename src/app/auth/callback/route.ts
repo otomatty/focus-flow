@@ -1,5 +1,5 @@
 import { handleAuthCallback } from "@/app/_actions/auth";
-import { initializeUserProfile } from "@/app/_actions/user/userProfile.action";
+import { initializeUserProfile } from "@/app/_actions/users/user-profile";
 
 export async function GET(request: Request) {
 	try {

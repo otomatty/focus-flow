@@ -1,4 +1,4 @@
-import type { Agent } from "@/app/types/agent";
+import type { Agent } from "@/types/agent";
 import { baseSystemPrompt } from "./baseSystemPrompt";
 
 export const defaultAgents: Agent[] = [

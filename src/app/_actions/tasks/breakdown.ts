@@ -16,12 +16,15 @@ export async function createTaskBreakdown(data: {
 	const supabase = await createClient();
 	const { data: breakdown, error } = await supabase
 		.schema("ff_tasks")
-		.from("task_breakdowns")
+		.from("task_breakdown_results")
 		.insert({
-			...data,
-			status: "not_started",
-			order_index: data.order_index || 0,
-			experience_points: data.experience_points || 0,
+			task_id: data.parent_task_id,
+			breakdown_metadata: {
+				title: data.title,
+				description: data.description,
+				estimated_duration: data.estimated_duration,
+				skill_category: data.skill_category,
+			},
 		})
 		.select()
 		.single();
@@ -51,7 +54,7 @@ export async function updateTaskBreakdown(
 	const supabase = await createClient();
 	const { data: breakdown, error } = await supabase
 		.schema("ff_tasks")
-		.from("task_breakdowns")
+		.from("task_breakdown_results")
 		.update(data)
 		.eq("id", id)
 		.select()
@@ -70,7 +73,7 @@ export async function deleteTaskBreakdown(id: string) {
 	const supabase = await createClient();
 	const { error } = await supabase
 		.schema("ff_tasks")
-		.from("task_breakdowns")
+		.from("task_breakdown_results")
 		.delete()
 		.eq("id", id);
 
@@ -89,13 +92,15 @@ export async function updateTaskBreakdownOrder(
 	const supabase = await createClient();
 	const { error } = await supabase
 		.schema("ff_tasks")
-		.from("task_breakdowns")
+		.from("task_breakdown_results")
 		.upsert(
 			orderUpdates.map((update) => ({
 				id: update.id,
-				parent_task_id: parentTaskId,
-				order_index: update.order_index,
-				title: update.title,
+				task_id: parentTaskId,
+				breakdown_metadata: {
+					title: update.title,
+					order_index: update.order_index,
+				},
 			})),
 		);
 
@@ -124,13 +129,15 @@ export async function bulkUpdateTaskBreakdowns(
 	const supabase = await createClient();
 	const { error } = await supabase
 		.schema("ff_tasks")
-		.from("task_breakdowns")
+		.from("task_breakdown_results")
 		.upsert(
 			updates.map((update) => ({
 				...update,
-				parent_task_id: parentTaskId,
-				order_index: update.order_index ?? 0,
-				title: update.title ?? "未設定",
+				task_id: parentTaskId,
+				breakdown_metadata: {
+					title: update.title ?? "未設定",
+					order_index: update.order_index ?? 0,
+				},
 			})),
 		);
 
@@ -146,10 +153,10 @@ export async function getTaskBreakdowns(parentTaskId: string) {
 	const supabase = await createClient();
 	const { data: breakdowns, error } = await supabase
 		.schema("ff_tasks")
-		.from("task_breakdowns")
+		.from("task_breakdown_results")
 		.select("*")
-		.eq("parent_task_id", parentTaskId)
-		.order("order_index", { ascending: true });
+		.eq("task_id", parentTaskId)
+		.order("breakdown_metadata->order_index", { ascending: true });
 
 	if (error) {
 		throw new Error(`タスク分解の取得に失敗しました: ${error.message}`);
@@ -163,7 +170,7 @@ export async function getTaskBreakdown(id: string) {
 	const supabase = await createClient();
 	const { data: breakdown, error } = await supabase
 		.schema("ff_tasks")
-		.from("task_breakdowns")
+		.from("task_breakdown_results")
 		.select("*")
 		.eq("id", id)
 		.single();

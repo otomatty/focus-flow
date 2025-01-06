@@ -45,7 +45,13 @@ export async function bulkDeleteTasks(taskIds: string[]): Promise<void> {
 // タスクの一括ステータス更新
 export async function bulkUpdateTaskStatus(
 	taskIds: string[],
-	status: string,
+	status:
+		| "not_started"
+		| "in_progress"
+		| "completed"
+		| "cancelled"
+		| "blocked"
+		| "in_review",
 	progress_percentage?: number,
 ): Promise<void> {
 	return bulkUpdateTasks(taskIds, {
@@ -58,7 +64,7 @@ export async function bulkUpdateTaskStatus(
 // タスクの一括優先度更新
 export async function bulkUpdateTaskPriority(
 	taskIds: string[],
-	priority: string,
+	priority: "high" | "medium" | "low",
 ): Promise<void> {
 	return bulkUpdateTasks(taskIds, { priority });
 }

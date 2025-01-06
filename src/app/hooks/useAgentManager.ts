@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { atom, useAtom } from "jotai";
-import type { Agent, AgentSettings } from "@/app/types/agent";
+import type { Agent, AgentSettings } from "@/types/agent";
 import { defaultAgents } from "@/app/webapp/_fixtures/defaultAgents";
 
 const selectedAgentIdAtom = atom<string>("focus-companion");

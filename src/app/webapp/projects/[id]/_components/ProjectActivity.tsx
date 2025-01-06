@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { projectAtom } from "@/stores/project";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getProjectActivities } from "@/app/_actions/activities";
+import { getProjectActivities } from "@/app/_actions/tasks/activities";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import {

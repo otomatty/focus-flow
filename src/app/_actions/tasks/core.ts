@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { Task, TaskStatus } from "@/types/task";
+import type { Task, TaskStatus, TaskFormData } from "@/types/task";
 import type { TaskInsert } from "@/types/task";
 import { convertToTask } from "@/utils/converters";
 import type { TaskUpdate } from "@/types/task";
@@ -78,9 +78,9 @@ export async function getTask(id: string): Promise<Task> {
 
 		const { data: breakdowns, error: breakError } = await supabase
 			.schema("ff_tasks")
-			.from("task_breakdowns")
+			.from("task_breakdown_results")
 			.select("*")
-			.eq("parent_task_id", id);
+			.eq("task_id", id);
 
 		if (breakError) {
 			console.error("タスク分解の取得エラー:", breakError);

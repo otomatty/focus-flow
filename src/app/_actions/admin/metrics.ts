@@ -85,11 +85,13 @@ export const getSystemMetrics = cache(async () => {
 	const completedTasks =
 		tasks?.filter((task) => task.status === "completed").length ?? 0;
 	const pendingTasks =
-		tasks?.filter((task) => task.status === "pending").length ?? 0;
+		tasks?.filter(
+			(task) => task.status === "not_started" || task.status === "in_progress",
+		).length ?? 0;
 	const overdueTasks =
 		tasks?.filter(
 			(task) =>
-				task.status === "pending" &&
+				(task.status === "not_started" || task.status === "in_progress") &&
 				task.due_date &&
 				new Date(task.due_date) < new Date(),
 		).length ?? 0;
@@ -223,7 +225,9 @@ export const getSystemActivity = cache(async () => {
 		// システムログの変換
 		...(systemLogs?.map((log) => ({
 			id: `log-${log.id}`,
-			type: (log.error_detail ? "error" : "system") as TimelineEvent["type"],
+			type: (log.severity === "error"
+				? "error"
+				: "system") as TimelineEvent["type"],
 			title: log.event_type,
 			description:
 				typeof log.event_data === "object" &&

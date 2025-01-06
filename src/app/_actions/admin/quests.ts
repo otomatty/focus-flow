@@ -14,7 +14,7 @@ import { convertToCamelCase } from "@/utils/caseConverter";
 export async function getQuestTypes(): Promise<QuestType[]> {
 	const supabase = await createClient();
 	const { data, error } = await supabase
-		.schema("ff_quest")
+		.schema("ff_gamification")
 		.from("quest_types")
 		.select("*")
 		.order("name");
@@ -36,7 +36,7 @@ export async function getQuestTypes(): Promise<QuestType[]> {
 export async function getQuestDifficulties(): Promise<QuestDifficulty[]> {
 	const supabase = await createClient();
 	const { data, error } = await supabase
-		.schema("ff_quest")
+		.schema("ff_gamification")
 		.from("quest_difficulties")
 		.select("*")
 		.order("level");
@@ -55,7 +55,7 @@ export async function getQuestDifficulties(): Promise<QuestDifficulty[]> {
 export async function getQuests(): Promise<QuestWithDetails[]> {
 	const supabase = await createClient();
 	const { data, error } = await supabase
-		.schema("ff_quest")
+		.schema("ff_gamification")
 		.from("quests")
 		.select(`
       *,
@@ -107,7 +107,7 @@ export async function createQuest(
 ): Promise<Quest> {
 	const supabase = await createClient();
 	const { data, error } = await supabase
-		.schema("ff_quest")
+		.schema("ff_gamification")
 		.from("quests")
 		.insert([
 			{
@@ -156,7 +156,7 @@ export async function updateQuest(
 ): Promise<Quest> {
 	const supabase = await createClient();
 	const { data, error } = await supabase
-		.schema("ff_quest")
+		.schema("ff_gamification")
 		.from("quests")
 		.update({
 			title: quest.title,
@@ -201,7 +201,7 @@ export async function updateQuest(
 export async function deleteQuest(id: string): Promise<void> {
 	const supabase = await createClient();
 	const { error } = await supabase
-		.schema("ff_quest")
+		.schema("ff_gamification")
 		.from("quests")
 		.delete()
 		.eq("id", id);
@@ -216,7 +216,7 @@ export async function toggleQuestActive(
 ): Promise<Quest> {
 	const supabase = await createClient();
 	const { data, error } = await supabase
-		.schema("ff_quest")
+		.schema("ff_gamification")
 		.from("quests")
 		.update({ is_active: isActive })
 		.eq("id", id)

@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
 	getUserProfile,
 	updateUserProfile,
-} from "@/app/_actions/user/userProfile.action";
+} from "@/app/_actions/users/user-profile";
 import { Button } from "@/components/ui/button";
 import {
 	Form,

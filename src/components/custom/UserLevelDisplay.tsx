@@ -1,3 +1,5 @@
+// layout.tsxでServerActionsを使用してデータをフェッチする
+
 "use client";
 
 import { Star } from "lucide-react";
@@ -9,44 +11,18 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
-import {
-	getUserLevel,
-	getNextLevelExp,
-	getLevelSetting,
-} from "@/app/_actions/users/level";
-import type { UserLevel, LevelSetting } from "@/types/users";
+import { useAtomValue } from "jotai";
+import { userDataAtom } from "@/stores/userDataAtom";
 
 export function UserLevelDisplay() {
-	const [userLevel, setUserLevel] = useState<UserLevel | null>(null);
-	const [nextLevelExp, setNextLevelExp] = useState<number | null>(null);
-	const [levelSetting, setLevelSetting] = useState<LevelSetting | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
+	const userData = useAtomValue(userDataAtom);
 
-	useEffect(() => {
-		const fetchLevelData = async () => {
-			try {
-				const level = await getUserLevel();
-				setUserLevel(level);
-				const nextExp = await getNextLevelExp(level.current_level);
-				setNextLevelExp(nextExp);
-				const setting = await getLevelSetting(level.current_level);
-				setLevelSetting(setting);
-			} catch (error) {
-				console.error("レベル情報の取得に失敗しました:", error);
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		fetchLevelData();
-	}, []);
-
-	if (isLoading || !userLevel || !nextLevelExp || !levelSetting) {
+	if (!userData?.level || !userData.nextLevelExp || !userData.levelSetting) {
 		return null;
 	}
 
-	const expPercentage = (userLevel.current_exp / nextLevelExp) * 100;
+	const expPercentage =
+		(userData.level.current_exp / userData.nextLevelExp) * 100;
 
 	return (
 		<TooltipProvider>
@@ -72,7 +48,7 @@ export function UserLevelDisplay() {
 									"group-hover:from-amber-400 group-hover:via-yellow-300 group-hover:to-orange-300",
 								)}
 							>
-								Lv.{userLevel.current_level}
+								Lv.{userData.level.current_level}
 							</span>
 						</div>
 						<div className="relative w-28">
@@ -102,23 +78,21 @@ export function UserLevelDisplay() {
 						"shadow-lg",
 					)}
 				>
-					<div className="flex flex-col gap-2 p-1.5">
-						<div className="flex items-center gap-2 border-b border-border/50 pb-2">
-							<Star className="h-4 w-4 text-amber-500" fill="currentColor" />
-							<p className="font-semibold">{levelSetting.rewards.title}</p>
-						</div>
-						<div className="space-y-2 px-1">
+					<div className="flex flex-col gap-2 p-3">
+						<div className="space-y-2">
 							<div className="flex items-center justify-between gap-3">
 								<span className="text-muted-foreground">経験値:</span>
 								<span className="tabular-nums font-medium">
-									{userLevel.current_exp.toLocaleString()} /{" "}
-									{nextLevelExp.toLocaleString()}
+									{userData.level.current_exp.toLocaleString()} /{" "}
+									{userData.nextLevelExp.toLocaleString()}
 								</span>
 							</div>
 							<div className="flex items-center justify-between gap-3">
 								<span className="text-muted-foreground">次のレベルまで:</span>
 								<span className="tabular-nums font-medium text-amber-500">
-									{(nextLevelExp - userLevel.current_exp).toLocaleString()}
+									{(
+										userData.nextLevelExp - userData.level.current_exp
+									).toLocaleString()}
 								</span>
 							</div>
 						</div>

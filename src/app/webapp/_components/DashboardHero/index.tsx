@@ -5,14 +5,23 @@ import { UserProfile } from "./UserProfile";
 import { WeeklyStats } from "./WeeklyStats";
 import { SeasonInfo } from "./SeasonInfo";
 import { motion } from "framer-motion";
-import type { User, Season } from "./types";
+import type {
+	DashboardUserProfile,
+	WeeklyStats as WeeklyStatsType,
+	SeasonData,
+} from "./types";
 
 interface DashboardHeroProps {
-	user: User;
-	season: Season;
+	profile: DashboardUserProfile;
+	weeklyStats: WeeklyStatsType;
+	season: SeasonData;
 }
 
-export function DashboardHero({ user, season }: DashboardHeroProps) {
+export function DashboardHero({
+	profile,
+	weeklyStats,
+	season,
+}: DashboardHeroProps) {
 	return (
 		<motion.div
 			initial={{ opacity: 0, scale: 0.95 }}
@@ -50,8 +59,8 @@ export function DashboardHero({ user, season }: DashboardHeroProps) {
 				<div className="relative p-6">
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 						<div className="md:col-span-2 space-y-6">
-							<UserProfile user={user} />
-							<WeeklyStats stats={user.weeklyStats} />
+							<UserProfile profile={profile} />
+							<WeeklyStats stats={weeklyStats} />
 						</div>
 						<div className="md:col-span-1">
 							<SeasonInfo season={season} />

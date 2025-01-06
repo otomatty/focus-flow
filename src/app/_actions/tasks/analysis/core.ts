@@ -1,53 +1,29 @@
-import type {
-	AITaskFormData,
-	TaskAnalysisContext,
-	EnhancedAIAnalysis,
-	TaskRecommendation,
-} from "@/types/task";
-import { generateResponse } from "@/lib/gemini/client";
-import {
-	evaluateComplexity,
-	analyzeRisks,
-	calculateQualityMetrics,
-} from "./utils";
+"use server";
 
-function generateTaskPrompt(
-	task: AITaskFormData,
-	context?: TaskAnalysisContext,
-): string {
+import { createClient } from "@/lib/supabase/server";
+import { generateResponse } from "@/lib/gemini/client";
+import type { TaskFormData, Task, TaskInsert } from "@/types/task";
+
+interface AITaskAnalysisResult {
+	breakdown_metadata: {
+		title: string;
+		description?: string;
+		estimated_duration?: string;
+		skill_category?: string;
+	}[];
+	category?: string;
+	skill_category?: string;
+}
+
+async function generateTaskPrompt(task: TaskFormData): Promise<string> {
 	return `
 以下のタスクを分析し、最適な分解方法を提案してください。
 
 # タスク情報
 ${task.title ? `- タイトル: "${task.title}"` : ""}
-- タスク内容: "${task.description}"
-- 優先度: ${task.priority}
-${task.category ? `- カテゴリ: ${task.category}` : ""}
-${task.skill_category ? `- スキルカテゴリ: ${task.skill_category}` : ""}
-
-${
-	context?.projectContext
-		? `
-# プロジェクト情報
-- プロジェクト名: ${context.projectContext.projectName}
-- プロジェクト説明: ${context.projectContext.projectDescription}
-- 関連タスク数: ${context.projectContext.relatedTasks.length}
-`
-		: ""
-}
-
-${
-	context?.teamContext
-		? `
-# チーム情報
-- チームサイズ: ${context.teamContext.teamSize}
-- 利用可能なスキル: ${context.teamContext.availableSkills.join(", ")}
-- 作業時間: ${context.teamContext.workingHours.start} - ${
-				context.teamContext.workingHours.end
-			} (${context.teamContext.workingHours.timezone})
-`
-		: ""
-}
+${task.description ? `- タスク内容: "${task.description}"` : ""}
+${task.priority ? `- 優先度: ${task.priority}` : ""}
+${task.estimated_duration ? `- 見積時間: ${task.estimated_duration}` : ""}
 
 タスクを以下の条件に従って分解し、JSON形式で出力してください：
 
@@ -59,96 +35,69 @@ ${
 
 出力形式：
 {
-  "breakdowns": [{
-    "title": "具体的なサブタスク名",
-    "description": "詳細な説明",
-    "estimated_duration": "PT2H",
-    "experience_points": 100,
-    "skill_category": "frontend"
-  }],
-  "category": "開発",
-  "skill_category": "フロントエンド",
-  "experience_points": 100
+	"breakdown_metadata": [{
+		"title": "具体的なサブタスク名",
+		"description": "詳細な説明",
+		"estimated_duration": "PT2H",
+		"skill_category_id": "skill_id"
+	}],
+	"category_id": "category_id",
+	"skill_category_id": "skill_id"
 }`;
 }
 
-async function generateRecommendations(
-	task: AITaskFormData,
-	context?: TaskAnalysisContext,
-): Promise<TaskRecommendation> {
-	const complexity = evaluateComplexity(task, context);
-	const risks = analyzeRisks(task, context);
+export async function analyzeTask(task: TaskFormData): Promise<Task> {
+	const supabase = await createClient();
 
-	// 分解戦略の決定
-	const breakdownStrategy =
-		complexity.level === "high"
-			? "top-down"
-			: complexity.level === "medium"
-				? "middle-out"
-				: "bottom-up";
-
-	// 推奨スキルの決定
-	const suggestedSkills = task.skill_category
-		? [task.skill_category]
-		: context?.teamContext?.availableSkills.slice(0, 3) || [];
-
-	// 工数見積もりの計算
-	const baseHours = task.estimated_duration
-		? Number.parseInt(task.estimated_duration.match(/PT(\d+)H/)?.[1] || "0")
-		: 0;
-	const estimatedEffort = {
-		optimistic: `PT${Math.max(1, Math.floor(baseHours * 0.7))}H`,
-		realistic: `PT${baseHours}H`,
-		pessimistic: `PT${Math.ceil(baseHours * 1.5)}H`,
-	};
-
-	// 並列化の可能性を評価
-	const parallelizationPotential =
-		complexity.level === "high" && baseHours > 8 ? 0.8 : 0.3;
-
-	// 推奨チームサイズの決定
-	const suggestedTeamSize = Math.min(
-		Math.ceil(baseHours / 16),
-		context?.teamContext?.teamSize || 1,
-	);
-
-	return {
-		breakdownStrategy,
-		suggestedSkills,
-		estimatedEffort,
-		parallelizationPotential,
-		suggestedTeamSize,
-	};
-}
-
-export async function enhancedTaskAnalysis(
-	task: AITaskFormData,
-	context?: TaskAnalysisContext,
-): Promise<EnhancedAIAnalysis> {
 	try {
-		// 1. 基本的なAI分析の実行
-		const prompt = generateTaskPrompt(task, context);
+		// AIによるタスク分析
+		const prompt = await generateTaskPrompt(task);
 		const response = await generateResponse(prompt, "");
 		const jsonMatch = response.match(/{[\s\S]*}/);
 		if (!jsonMatch) {
 			throw new Error("Invalid response format");
 		}
-		const baseAnalysis = JSON.parse(jsonMatch[0]);
 
-		// 2. 拡張分析の実行
-		const complexity = evaluateComplexity(task, context);
-		const risks = analyzeRisks(task, context);
-		const recommendations = await generateRecommendations(task, context);
-		const qualityMetrics = calculateQualityMetrics(task, context);
+		const analysis: AITaskAnalysisResult = JSON.parse(jsonMatch[0]);
 
-		// 3. 分析結果の結合
-		return {
-			...baseAnalysis,
-			complexity,
-			risks,
-			recommendations,
-			qualityMetrics,
+		// タスクの作成
+		const {
+			data: { user },
+		} = await supabase.auth.getUser();
+		if (!user) throw new Error("認証されていません");
+
+		const taskData: TaskInsert = {
+			title: task.title,
+			description: task.description,
+			status: "not_started",
+			ai_generated: true,
+			category: analysis.category,
+			user_id: user.id,
 		};
+
+		const { data: createdTask, error: taskError } = await supabase
+			.schema("ff_tasks")
+			.from("tasks")
+			.insert(taskData)
+			.select()
+			.single();
+
+		if (taskError) throw taskError;
+
+		// 分解結果の作成
+		const { error: breakdownError } = await supabase
+			.schema("ff_tasks")
+			.from("task_breakdown_results")
+			.insert(
+				analysis.breakdown_metadata.map((breakdown) => ({
+					task_id: createdTask.id,
+					breakdown_metadata: breakdown,
+				})),
+			);
+
+		if (breakdownError) throw breakdownError;
+
+		return createdTask as Task;
 	} catch (error) {
 		console.error("タスク分析処理でエラーが発生しました:", error);
 		throw new Error("タスクの分析に失敗しました");

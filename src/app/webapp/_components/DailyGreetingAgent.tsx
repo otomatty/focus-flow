@@ -1,8 +1,10 @@
+"use client";
+
 import { Avatar } from "@/components/ui/avatar";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import type { Agent, AgentResponse } from "@/app/types/agent";
+import type { Agent } from "@/types/agent";
 import Image from "next/image";
 import { ResponsiveDialog } from "@/components/custom/ResponsiveDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
