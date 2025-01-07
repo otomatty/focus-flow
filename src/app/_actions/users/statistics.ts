@@ -180,28 +180,72 @@ export async function recordStatisticsWithValidation(
  * @param userId - 対象ユーザーのID
  */
 export async function getWeeklyStats(userId: string) {
+	const supabase = await createClient();
 	const now = new Date();
-	const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+	const startOfWeek = new Date(now);
+	startOfWeek.setDate(now.getDate() - now.getDay());
 	startOfWeek.setHours(0, 0, 0, 0);
 
-	try {
-		const data = await getStatisticsSummary(userId, startOfWeek, new Date());
+	const { data, error } = await supabase
+		.schema("ff_users")
+		.from("weekly_statistics")
+		.select(
+			"focus_time, completed_tasks, completed_habits, avg_session_length, task_completion_rate",
+		)
+		.eq("user_id", userId)
+		.eq("year", now.getFullYear())
+		.eq("week", getWeekNumber(now))
+		.single();
 
-		return {
-			focusTime: data?.[0]?.total_focus_time || 0,
-			completedTasks: data?.[0]?.total_completed_tasks || 0,
-			avgSessionLength: data?.[0]?.avg_session_length || 0,
-			taskCompletionRate: data?.[0]?.task_completion_rate || 0,
-		};
-	} catch (error) {
-		console.error("週間統計の取得に失敗しました:", error);
-		return {
-			focusTime: 0,
-			completedTasks: 0,
-			avgSessionLength: 0,
-			taskCompletionRate: 0,
-		};
+	if (error) {
+		if (error.code === "PGRST116") {
+			// データが見つからない場合はデフォルト値を返す
+			return {
+				focusTime: 0,
+				completedTasks: 0,
+				completedHabits: 0,
+				avgSessionLength: 0,
+				taskCompletionRate: 0,
+			};
+		}
+		throw new Error(`Failed to fetch weekly statistics: ${error.message}`);
 	}
+
+	return {
+		focusTime: data?.focus_time
+			? Math.floor(intervalToHours(data.focus_time as string))
+			: 0,
+		completedTasks: data?.completed_tasks || 0,
+		completedHabits: data?.completed_habits || 0,
+		avgSessionLength: data?.avg_session_length
+			? Math.floor(intervalToHours(data.avg_session_length as string))
+			: 0,
+		taskCompletionRate: data?.task_completion_rate || 0,
+	};
+}
+
+// 週番号を取得するヘルパー関数
+function getWeekNumber(date: Date): number {
+	const d = new Date(date);
+	d.setHours(0, 0, 0, 0);
+	d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+	const yearStart = new Date(d.getFullYear(), 0, 1);
+	const weekNumber = Math.ceil(
+		((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+	);
+	return weekNumber;
+}
+
+// INTERVAL型を時間に変換するヘルパー関数
+function intervalToHours(interval: string): number {
+	const matches = interval.match(/(\d+):(\d+):(\d+)/);
+	if (!matches) return 0;
+	const [_, hours, minutes, seconds] = matches;
+	return (
+		Number.parseInt(hours) +
+		Number.parseInt(minutes) / 60 +
+		Number.parseInt(seconds) / 3600
+	);
 }
 
 /**
@@ -213,20 +257,23 @@ export async function getUserStreaks(userId: string) {
 
 	const { data, error } = await supabase
 		.schema("ff_users")
-		.from("user_statistics")
-		.select(`
-			current_login_streak,
-			longest_login_streak,
-			current_focus_streak,
-			longest_focus_streak,
-			current_task_streak,
-			longest_task_streak
-		`)
-		.eq("user_id", userId)
+		.rpc("get_user_streaks", {
+			p_user_id: userId,
+		})
 		.single();
 
 	if (error) {
-		throw new Error(`Failed to fetch user streaks: ${error.message}`);
+		console.error("Error fetching user streaks:", {
+			error,
+			userId,
+			timestamp: new Date().toISOString(),
+		});
+		// エラーが発生しても、デフォルト値を返す
+		return {
+			login: { current: 0, best: 0 },
+			focus: { current: 0, best: 0 },
+			task: { current: 0, best: 0 },
+		};
 	}
 
 	return {

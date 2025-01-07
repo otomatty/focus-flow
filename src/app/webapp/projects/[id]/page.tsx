@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useAtom } from "jotai";
 import { projectAtom } from "@/stores/project";
-import { getProject } from "@/app/_actions/projects";
+import { getProject } from "@/app/_actions/tasks/projects";
 import { ProjectHeader } from "./_components/ProjectHeader";
 import { ProjectProgress } from "./_components/ProjectProgress";
 import { ProjectActivity } from "./_components/ProjectActivity";
@@ -43,8 +43,9 @@ export default function ProjectPage({ params }: Props) {
 					isArchived: rawProject.is_archived,
 					createdAt: rawProject.created_at,
 					updatedAt: rawProject.updated_at,
-					userId: rawProject.user_id,
-					projectTasks: rawProject.project_tasks ?? [],
+					ownerId: rawProject.owner_id,
+					tasks: rawProject.tasks ?? [],
+					taskPositions: rawProject.task_positions ?? [],
 				} as Project);
 			}
 		};

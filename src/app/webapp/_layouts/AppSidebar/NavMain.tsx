@@ -90,6 +90,40 @@ const useMainMenuItems = (): NavMainItem[] => {
 			],
 		},
 		{
+			title: "集中モード",
+			url: "/webapp/focus",
+			icon: Focus,
+			isActive: pathname.startsWith("/webapp/focus"),
+			isInDevelopment: false,
+			items: [
+				{
+					title: "集中トップ",
+					url: "/webapp/focus",
+					isActive: pathname === "/webapp/focus",
+				},
+				{
+					title: "統計",
+					url: "/webapp/focus/statistics",
+					isActive: pathname === "/webapp/focus/statistics",
+				},
+				{
+					title: "タイマー",
+					url: "/webapp/focus/timer",
+					isActive: pathname === "/webapp/focus/timer",
+				},
+				{
+					title: "履歴",
+					url: "/webapp/focus/history",
+					isActive: pathname === "/webapp/focus/history",
+				},
+				{
+					title: "設定",
+					url: "/webapp/focus/settings",
+					isActive: pathname === "/webapp/focus/settings",
+				},
+			],
+		},
+		{
 			title: "タイムテーブル",
 			url: "/webapp/time-table",
 			icon: Clock,
@@ -104,13 +138,6 @@ const useMainMenuItems = (): NavMainItem[] => {
 			isInDevelopment: true,
 		},
 
-		{
-			title: "集中モード",
-			url: "/webapp/focus",
-			icon: Focus,
-			isActive: pathname === "/webapp/focus",
-			isInDevelopment: true,
-		},
 		{
 			title: "習慣トラッカー",
 			url: "/webapp/habits",

@@ -35,6 +35,28 @@ export async function getUserLevel(): Promise<UserLevel> {
 		.single();
 
 	if (error) {
+		if (error.code === "PGRST116") {
+			// レベル情報が存在しない場合は初期レベル情報を作成
+			const { data: newLevel, error: createError } = await supabase
+				.schema("ff_gamification")
+				.from("user_levels")
+				.insert({
+					user_id: user.id,
+					current_level: 1,
+					current_exp: 0,
+					total_exp: 0,
+				})
+				.select()
+				.single();
+
+			if (createError) {
+				throw new Error(
+					`初期レベル情報の作成に失敗しました: ${createError.message}`,
+				);
+			}
+
+			return newLevel;
+		}
 		throw new Error(`レベル情報の取得に失敗しました: ${error.message}`);
 	}
 
@@ -105,6 +127,34 @@ export async function getUserLevels(userIds: string[]): Promise<UserLevel[]> {
 		throw new Error(`レベル情報の取得に失敗しました: ${error.message}`);
 	}
 
+	// 存在しないユーザーの初期レベル情報を作成
+	const missingUserIds = userIds.filter(
+		(id) => !levels.some((level) => level.user_id === id),
+	);
+
+	if (missingUserIds.length > 0) {
+		const initialLevels = missingUserIds.map((userId) => ({
+			user_id: userId,
+			current_level: 1,
+			current_exp: 0,
+			total_exp: 0,
+		}));
+
+		const { data: newLevels, error: createError } = await supabase
+			.schema("ff_gamification")
+			.from("user_levels")
+			.insert(initialLevels)
+			.select();
+
+		if (createError) {
+			throw new Error(
+				`初期レベル情報の作成に失敗しました: ${createError.message}`,
+			);
+		}
+
+		return [...levels, ...(newLevels || [])];
+	}
+
 	return levels;
 }
 
@@ -140,4 +190,14 @@ export async function getLevelSettings(params?: {
 	}
 
 	return settings;
+}
+
+/**
+ * 次のレベルまでの必要経験値を取得
+ * @param level 現在のレベル
+ * @returns 次のレベルまでの必要経験値
+ */
+export async function getNextLevelExp(level: number): Promise<number> {
+	const levelSetting = await getLevelSetting(level + 1);
+	return levelSetting.required_exp;
 }

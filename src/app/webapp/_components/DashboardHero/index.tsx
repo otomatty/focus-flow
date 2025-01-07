@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { UserProfile } from "./UserProfile";
 import { WeeklyStats } from "./WeeklyStats";
@@ -7,26 +8,29 @@ import { SeasonInfo } from "./SeasonInfo";
 import { motion } from "framer-motion";
 import type {
 	DashboardUserProfile,
-	WeeklyStats as WeeklyStatsType,
+	WeeklyStatsData,
 	SeasonData,
 } from "./types";
 
 interface DashboardHeroProps {
 	profile: DashboardUserProfile;
-	weeklyStats: WeeklyStatsType;
+	weeklyStats: WeeklyStatsData;
 	season: SeasonData;
+	className?: string;
 }
 
 export function DashboardHero({
 	profile,
 	weeklyStats,
 	season,
+	className,
 }: DashboardHeroProps) {
 	return (
 		<motion.div
 			initial={{ opacity: 0, scale: 0.95 }}
 			animate={{ opacity: 1, scale: 1 }}
 			transition={{ duration: 0.5 }}
+			className={cn("col-span-2", className)}
 		>
 			<Card className="relative overflow-hidden">
 				<motion.div

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProjectDialog } from "./ProjectDialog";
-import { createProject } from "@/app/_actions/projects";
+import { createProject } from "@/app/_actions/tasks/projects";
 import type { ProjectFormValues } from "./ProjectDialog";
 
 interface ProjectHeaderProps {

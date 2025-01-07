@@ -18,7 +18,7 @@ import {
 	signInWithGoogle as serverSignInWithGoogle,
 	handleAuthCallback as serverHandleAuthCallback,
 } from "@/app/_actions/auth";
-import { getUserProfile } from "@/app/_actions/user";
+import { getUserProfile } from "@/app/_actions/users";
 
 // 型定義
 interface SignUpParams {

@@ -1,8 +1,4 @@
--- 既存の権限を取り消し
-revoke all privileges on all tables in schema cron from service_role cascade;
-revoke all privileges on all routines in schema cron from service_role cascade;
-revoke all privileges on all sequences in schema cron from service_role cascade;
-revoke usage on schema cron from service_role cascade;
+
 
 -- pg_cron拡張の作成
 create extension if not exists pg_cron;

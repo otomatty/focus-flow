@@ -1,93 +1,59 @@
-export type AnnouncementType = "contributor" | "promotion";
-export type QuestRarity = "common" | "rare" | "epic" | "legendary";
-export type TaskDifficulty = "easy" | "medium" | "hard";
-export type TaskStatus =
-	| "not_started"
-	| "in_progress"
-	| "in_review"
-	| "blocked"
-	| "completed"
-	| "cancelled";
-export type PartyMemberStatus = "online" | "focusing" | "offline";
+import type { Database } from "./supabase";
 
-export interface Task {
-	id: string;
-	user_id: string;
-	project_id: string | null;
-	title: string;
-	description: string | null;
-	start_date: string | null;
-	due_date: string | null;
-	priority: string | null;
-	category: string | null;
-	status: TaskStatus | null;
-	progress_percentage: number | null;
-	is_recurring: boolean | null;
-	recurring_pattern: unknown | null;
-	ai_generated: boolean | null;
-	difficulty_level: number | null;
-	estimated_duration: unknown | null;
-	actual_duration: unknown | null;
-	style: {
-		color: string | null;
-		icon: string | null;
-	} | null;
-	created_at: string | null;
-	updated_at: string | null;
+type UserHabit = Database["ff_habits"]["Tables"]["user_habits"]["Row"];
+type HabitProgress = Database["ff_habits"]["Tables"]["habit_progress"]["Row"];
+
+export interface Habit extends UserHabit {
+	currentCount: number;
+	targetCount: number;
+	streak: number;
+	bestStreak: number;
+	lastCompletedAt: string | null;
+	completionHistory?: {
+		date: string;
+		completed: boolean;
+	}[];
 }
 
-export interface Quest {
-	id: string;
-	title: string;
-	description: string;
-	rarity: string;
-	progress: number;
-	maxProgress: number;
-	reward: {
-		exp: number;
-		badge?: string;
+export interface WeeklyPartyData {
+	members: PartyMemberData[];
+	goal: {
+		currentSessions: number;
+		targetSessions: number;
+		deadline: Date;
 	};
 }
 
-export interface Habit {
-	id: string;
-	title: string;
-	description: string;
-	frequency: unknown;
-	targetCount: number;
-	currentCount: number;
-	streak: number;
-	isActive: boolean;
-	createdAt: string;
-}
-
-export interface PartyMember {
+export interface PartyMemberData {
 	id: string;
 	name: string;
-	avatarUrl: string;
 	level: number;
+	avatarUrl: string | null;
+	status: "online" | "focusing" | "offline";
 	weeklyStats: {
-		plannedSessions: number;
-		completedSessions: number;
 		focusTime: number;
-		lastActive: Date;
-		streak: number;
-		points: number;
-		contribution: number;
-		growth: number;
-		bestFocusTime: number;
 		achievementCount: number;
+		points: number;
+		streak: number;
+		growth: number;
+		lastActive: Date;
+		completedSessions: number;
+		plannedSessions: number;
+		contribution: number;
+		bestFocusTime: number;
 	};
-	status: PartyMemberStatus;
 }
 
-export interface PartyGoal {
-	targetSessions: number;
-	currentSessions: number;
-	deadline: Date;
-}
-
-export interface WeeklyPartyCardProps {
-	members: PartyMember[];
-	goal: PartyGoal;
+export interface CpuAccount {
+	id: string;
+	name: string;
+	level: number;
+	avatarUrl: string | null;
+	personality: "supportive" | "competitive" | "analytical" | "creative";
+	baseStats: {
+		focusTime: number;
+		achievementRate: number;
+		sessionCompletion: number;
+		consistency: number;
+	};
 }

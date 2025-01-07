@@ -1,11 +1,21 @@
 -- updated_at更新用の関数
-create or replace function ff_users.update_updated_at_column()
-returns trigger as $$
+create or replace function update_updated_at_column()
+returns trigger
+security definer
+set search_path = public
+as $$
 begin
-    new.updated_at = now();
+    new.updated_at = timezone('utc'::text, now());
     return new;
 end;
 $$ language plpgsql;
+
+-- コメント
+comment on function update_updated_at_column() is 'updated_at列を現在のUTC時刻に自動更新するトリガー関数';
+
+-- 権限の設定
+grant execute on function update_updated_at_column() to authenticated;
+grant execute on function update_updated_at_column() to service_role;
 
 -- キャッシュバージョン更新用の関数
 create or replace function ff_users.update_cache_version()

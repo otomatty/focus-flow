@@ -10,9 +10,9 @@ enabled = true
 port = 54321
 # Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
 # endpoints. `public` and `graphql_public` schemas are included by default.
-schemas = ["ff_tasks", "ff_focus", "ff_gamification", "ff_learning"]
+schemas = ["public", "graphql_public", "ff_agents", "ff_focus", "ff_gamification", "ff_habits", "ff_logs", "ff_notifications", "ff_schedules", "ff_skills", "ff_social", "ff_tasks", "ff_users", "ff_notes", "common"]
 # Extra schemas to add to the search_path of every request.
-extra_search_path = ["ff_tasks", "ff_focus", "ff_gamification", "ff_learning"]
+extra_search_path = ["public", "extensions"]
 # The maximum number of rows returns from a view, table, or stored procedure. Limits payload size
 # for accidental or malicious requests.
 max_rows = 1000
@@ -23,7 +23,7 @@ enabled = false
 
 [db]
 # Port to use for the local database URL.
-port = 54322
+port = 54326
 # Port used by db diff command to initialize the shadow database.
 shadow_port = 54320
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW

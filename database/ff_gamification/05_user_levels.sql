@@ -76,29 +76,8 @@ $$;
 -- レベルアップ時にバッジを付与する関数
 create or replace function ff_gamification.grant_level_badges()
 returns trigger as $$
-declare
-  level_rewards jsonb;
-  badge record;
 begin
-  -- レベル設定から報酬情報を取得
-  select rewards into level_rewards
-  from ff_gamification.level_settings
-  where level = NEW.current_level;
-
-  -- バッジ報酬がある場合は付与
-  if jsonb_array_length(level_rewards->'badges') > 0 then
-    for badge in
-      select b.id as badge_id
-      from ff_gamification.badges b
-      where b.name = (level_rewards->'badges'->0->>'badge_name')
-    loop
-      -- バッジをユーザーに付与（重複は無視）
-      insert into ff_gamification.user_badges (user_id, badge_id)
-      values (NEW.user_id, badge.badge_id)
-      on conflict (user_id, badge_id) do nothing;
-    end loop;
-  end if;
-
+  -- 現時点ではバッジ付与機能は実装しない
   return NEW;
 end;
 $$ language plpgsql security definer;

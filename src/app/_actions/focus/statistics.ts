@@ -119,10 +119,19 @@ export async function getStreakInfo(userId: string) {
 		.from("focus_statistics")
 		.select("current_streak, longest_streak, last_session_date")
 		.eq("user_id", userId)
-		.single();
+		.maybeSingle();
 
 	if (error) {
 		throw new Error(`Failed to fetch streak info: ${error.message}`);
+	}
+
+	// レコードが存在しない場合はデフォルト値を返す
+	if (!data) {
+		return {
+			currentStreak: 0,
+			longestStreak: 0,
+			lastSessionDate: null,
+		};
 	}
 
 	return {

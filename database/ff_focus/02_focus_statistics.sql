@@ -68,6 +68,9 @@ create policy "システムは統計情報を更新可能" on ff_focus.focus_sta
         )
     );
 
+    create policy "システム関数は統計情報を管理可能" on ff_focus.focus_statistics
+    for all using (auth.role() = 'service_role');
+
 create policy "システム管理者は全ての統計情報を参照可能" on ff_focus.focus_statistics
     for select using (
         exists (
@@ -175,3 +178,88 @@ create trigger tr_update_session_streak
     after insert on ff_focus.focus_sessions
     for each row
     execute function ff_focus.update_session_streak(); 
+
+-- 統計情報の初期化関数
+create or replace function ff_focus.initialize_focus_statistics(p_user_id uuid)
+returns void as $$
+begin
+    insert into ff_focus.focus_statistics (
+        user_id,
+        total_sessions,
+        total_focus_time,
+        total_exp_earned,
+        perfect_sessions,
+        completed_sessions,
+        partial_sessions,
+        abandoned_sessions,
+        max_consecutive_sessions,
+        current_streak,
+        longest_streak,
+        morning_sessions,
+        afternoon_sessions,
+        evening_sessions,
+        night_sessions,
+        avg_focus_rating,
+        completion_rate,
+        perfect_rate
+    ) values (
+        p_user_id,
+        0, -- total_sessions
+        '0'::interval, -- total_focus_time
+        0, -- total_exp_earned
+        0, -- perfect_sessions
+        0, -- completed_sessions
+        0, -- partial_sessions
+        0, -- abandoned_sessions
+        0, -- max_consecutive_sessions
+        0, -- current_streak
+        0, -- longest_streak
+        0, -- morning_sessions
+        0, -- afternoon_sessions
+        0, -- evening_sessions
+        0, -- night_sessions
+        0, -- avg_focus_rating
+        0, -- completion_rate
+        0  -- perfect_rate
+    )
+    on conflict (user_id) do nothing;
+end;
+$$ language plpgsql security definer;
+
+-- プロフィール作成時に統計情報を初期化するトリガー
+create or replace function ff_users.tr_initialize_focus_statistics()
+returns trigger as $$
+begin
+    perform ff_focus.initialize_focus_statistics(new.user_id);
+    return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger initialize_focus_statistics_on_profile_creation
+    after insert on ff_users.user_profiles
+    for each row
+    execute function ff_users.tr_initialize_focus_statistics();
+
+-- 統計情報取得時に存在しない場合は初期化する関数
+create or replace function ff_focus.get_or_create_focus_statistics(p_user_id uuid)
+returns ff_focus.focus_statistics as $$
+declare
+    v_stats ff_focus.focus_statistics;
+begin
+    -- 統計情報の取得を試みる
+    select * into v_stats
+    from ff_focus.focus_statistics
+    where user_id = p_user_id;
+
+    -- 存在しない場合は初期化
+    if v_stats is null then
+        perform ff_focus.initialize_focus_statistics(p_user_id);
+        
+        select * into v_stats
+        from ff_focus.focus_statistics
+        where user_id = p_user_id;
+    end if;
+
+    return v_stats;
+end;
+$$ language plpgsql security definer; 

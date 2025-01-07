@@ -79,45 +79,72 @@ create index if not exists task_positions_project_id_position_idx on ff_tasks.ta
 alter table ff_tasks.tasks enable row level security;
 alter table ff_tasks.task_positions enable row level security;
 
--- タスクのRLSポリシー
-create policy "タスクは所有者が参照可能" on ff_tasks.tasks
-    for select using (auth.uid() = user_id);
+-- 既存のポリシーを削除
+drop policy if exists "task_owner_select" on ff_tasks.tasks;
+drop policy if exists "task_project_select" on ff_tasks.tasks;
+drop policy if exists "task_owner_insert" on ff_tasks.tasks;
+drop policy if exists "task_owner_update" on ff_tasks.tasks;
+drop policy if exists "task_owner_delete" on ff_tasks.tasks;
+drop policy if exists "task_position_select" on ff_tasks.task_positions;
+drop policy if exists "task_position_update" on ff_tasks.task_positions;
 
-create policy "プロジェクトに属するタスクはプロジェクトメンバーも参照可能" on ff_tasks.tasks
+-- タスクのRLSポリシー
+-- タスクの参照権限（自分のタスクまたは参加プロジェクトのタスク）
+create policy "task_access" on ff_tasks.tasks
     for select using (
-        project_id is not null and exists (
-            select 1 from ff_tasks.project_members
-            where project_id = tasks.project_id
-            and user_id = auth.uid()
+        user_id = auth.uid() -- 自分のタスク
+        or project_id in ( -- プロジェクトのタスク
+            select id 
+            from ff_tasks.projects 
+            where owner_id = auth.uid() 
+            or id in (
+                select project_id 
+                from ff_tasks.project_members 
+                where user_id = auth.uid()
+            )
         )
     );
 
-create policy "タスクは所有者が作成可能" on ff_tasks.tasks
+-- タスクの作成権限（認証済みユーザー）
+create policy "task_insert" on ff_tasks.tasks
     for insert with check (auth.uid() = user_id);
 
-create policy "タスクは所有者が更新可能" on ff_tasks.tasks
+-- タスクの更新権限（所有者のみ）
+create policy "task_update" on ff_tasks.tasks
     for update using (auth.uid() = user_id);
 
-create policy "タスクは所有者が削除可能" on ff_tasks.tasks
+-- タスクの削除権限（所有者のみ）
+create policy "task_delete" on ff_tasks.tasks
     for delete using (auth.uid() = user_id);
 
 -- タスク位置のRLSポリシー
-create policy "タスク位置はプロジェクトメンバーが参照可能" on ff_tasks.task_positions
+-- タスク位置の参照権限（プロジェクトメンバー）
+create policy "task_position_access" on ff_tasks.task_positions
     for select using (
-        exists (
-            select 1 from ff_tasks.project_members
-            where project_id = task_positions.project_id
-            and user_id = auth.uid()
+        project_id in (
+            select id 
+            from ff_tasks.projects 
+            where owner_id = auth.uid() 
+            or id in (
+                select project_id 
+                from ff_tasks.project_members 
+                where user_id = auth.uid()
+            )
         )
     );
 
-create policy "タスク位置はプロジェクトメンバーが更新可能" on ff_tasks.task_positions
+-- タスク位置の更新権限（プロジェクトメンバー）
+create policy "task_position_modify" on ff_tasks.task_positions
     for all using (
-        exists (
-            select 1 from ff_tasks.project_members
-            where project_id = task_positions.project_id
-            and user_id = auth.uid()
-            and role in ('owner', 'admin', 'member')
+        project_id in (
+            select id 
+            from ff_tasks.projects 
+            where owner_id = auth.uid() 
+            or id in (
+                select project_id 
+                from ff_tasks.project_members 
+                where user_id = auth.uid()
+            )
         )
     );
 

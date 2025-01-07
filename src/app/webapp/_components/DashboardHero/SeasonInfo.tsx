@@ -4,19 +4,27 @@ import {
 	Star,
 	ChevronUp,
 	Calendar,
-	Trophy,
-	Sparkles,
+	Clock,
+	CheckCircle2,
+	AlertCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import type { Season } from "./types";
+import {
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import type { SeasonData } from "./types";
 
 interface SeasonInfoProps {
-	season: Season;
+	season: SeasonData;
 }
 
 export function SeasonInfo({ season }: SeasonInfoProps) {
-	const progress = (season.progress.current / season.progress.target) * 100;
+	const progress =
+		(season.progress.current_points / season.rankRequirements.required_points) *
+		100;
 	const milestones = [25, 50, 75, 100];
 
 	return (
@@ -67,7 +75,7 @@ export function SeasonInfo({ season }: SeasonInfoProps) {
 							</div>
 							<div>
 								<h3 className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
-									シーズン {season.number}
+									シーズン {season.season.season_number}
 								</h3>
 								<div className="flex items-center space-x-1 text-xs text-slate-500 dark:text-slate-400">
 									<Calendar className="w-3 h-3" />
@@ -79,21 +87,11 @@ export function SeasonInfo({ season }: SeasonInfoProps) {
 
 					{/* ランク情報 */}
 					<div className="space-y-2">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center space-x-2">
-								<Star className="w-5 h-5 text-purple-500" />
-								<span className="text-lg font-bold text-purple-600 dark:text-purple-400">
-									{season.rank.current}
-								</span>
-							</div>
-							{season.rank.current !== season.rank.highest && (
-								<div className="flex items-center space-x-1 px-2 py-1 bg-green-500/10 rounded-full">
-									<ChevronUp className="w-3 h-3 text-green-500" />
-									<span className="text-xs font-medium text-green-600 dark:text-green-400">
-										最高: {season.rank.highest}
-									</span>
-								</div>
-							)}
+						<div className="flex items-center space-x-2">
+							<Star className="w-5 h-5 text-purple-500" />
+							<span className="text-lg font-bold text-purple-600 dark:text-purple-400">
+								{season.progress.current_rank}
+							</span>
 						</div>
 						<div className="relative pt-2">
 							<div className="h-3 bg-purple-100 dark:bg-purple-900/20 rounded-full overflow-hidden">
@@ -135,7 +133,7 @@ export function SeasonInfo({ season }: SeasonInfoProps) {
 					<div className="space-y-4">
 						<div className="flex items-center justify-between">
 							<div className="text-sm font-medium text-slate-600 dark:text-slate-300">
-								シーズン進捗
+								次のランクまで
 							</div>
 							<div className="text-sm font-bold text-purple-600 dark:text-purple-400">
 								{Math.floor(progress)}%
@@ -147,20 +145,70 @@ export function SeasonInfo({ season }: SeasonInfoProps) {
 									現在のポイント
 								</div>
 								<div className="text-lg font-bold text-purple-600 dark:text-purple-400">
-									{season.progress.current}
+									{season.progress.current_points}
 									<span className="ml-1 text-xs font-medium">pt</span>
 								</div>
 							</div>
 							<div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
-							<div className="space-y-1">
-								<div className="text-xs text-slate-500 dark:text-slate-400">
-									目標ポイント
-								</div>
-								<div className="text-lg font-bold text-slate-600 dark:text-slate-300">
-									{season.progress.target}
-									<span className="ml-1 text-xs font-medium">pt</span>
-								</div>
-							</div>
+							<HoverCard>
+								<HoverCardTrigger asChild>
+									<div className="space-y-1 cursor-help">
+										<div className="text-xs text-slate-500 dark:text-slate-400">
+											必要ポイント
+										</div>
+										<div className="text-lg font-bold text-slate-600 dark:text-slate-300">
+											{season.rankRequirements.required_points}
+											<span className="ml-1 text-xs font-medium">pt</span>
+										</div>
+									</div>
+								</HoverCardTrigger>
+								<HoverCardContent className="w-80">
+									<div className="space-y-2">
+										<h4 className="text-sm font-semibold">ランクアップ要件</h4>
+										<div className="text-sm space-y-1">
+											{season.rankRequirements.focus_time_requirement && (
+												<div className="flex items-center gap-2">
+													<Clock className="w-4 h-4 text-purple-500" />
+													<span>
+														累計フォーカス時間:{" "}
+														{season.rankRequirements.focus_time_requirement}
+													</span>
+												</div>
+											)}
+											{season.rankRequirements.task_completion_requirement && (
+												<div className="flex items-center gap-2">
+													<CheckCircle2 className="w-4 h-4 text-green-500" />
+													<span>
+														タスク完了数:{" "}
+														{
+															season.rankRequirements
+																.task_completion_requirement
+														}
+													</span>
+												</div>
+											)}
+											{season.rankRequirements.daily_focus_requirement && (
+												<div className="flex items-center gap-2">
+													<AlertCircle className="w-4 h-4 text-yellow-500" />
+													<span>
+														1日の目標時間:{" "}
+														{season.rankRequirements.daily_focus_requirement}
+													</span>
+												</div>
+											)}
+											{season.rankRequirements.weekly_focus_requirement && (
+												<div className="flex items-center gap-2">
+													<AlertCircle className="w-4 h-4 text-orange-500" />
+													<span>
+														週の目標時間:{" "}
+														{season.rankRequirements.weekly_focus_requirement}
+													</span>
+												</div>
+											)}
+										</div>
+									</div>
+								</HoverCardContent>
+							</HoverCard>
 						</div>
 					</div>
 				</div>

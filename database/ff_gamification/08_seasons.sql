@@ -133,6 +133,52 @@ create index if not exists idx_audit_logs_user on ff_gamification.audit_logs(use
 create index if not exists idx_audit_logs_created_at on ff_gamification.audit_logs(created_at);
 create index if not exists idx_rank_settings_season on ff_gamification.rank_settings(season_id);
 
+-- ユーザーがシーズンに初めてアクセスした時に進捗データを自動作成する関数
+CREATE OR REPLACE FUNCTION ff_gamification.initialize_user_season_progress(
+    p_user_id UUID,
+    p_season_id UUID
+)
+RETURNS ff_gamification.user_progress AS $$
+DECLARE
+    v_progress ff_gamification.user_progress;
+BEGIN
+    -- 既存の進捗データをチェック
+    SELECT * INTO v_progress
+    FROM ff_gamification.user_progress
+    WHERE user_id = p_user_id AND season_id = p_season_id;
+
+    -- 存在しない場合は新規作成
+    IF NOT FOUND THEN
+        INSERT INTO ff_gamification.user_progress (
+            user_id,
+            season_id,
+            current_rank,
+            highest_rank,
+            current_points,
+            total_focus_time,
+            completed_tasks,
+            achievements,
+            rewards_claimed
+        ) VALUES (
+            p_user_id,
+            p_season_id,
+            'bronze',
+            'bronze',
+            0,
+            '0'::interval,
+            0,
+            '[]'::jsonb,
+            false
+        ) RETURNING * INTO v_progress;
+    END IF;
+
+    RETURN v_progress;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- RPCとして公開
+GRANT EXECUTE ON FUNCTION ff_gamification.initialize_user_season_progress(UUID, UUID) TO authenticated;
+
 -- 更新日時自動更新のトリガー関数
 create or replace function ff_gamification.update_updated_at_column()
 returns trigger as $$

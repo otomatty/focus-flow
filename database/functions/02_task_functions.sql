@@ -1,11 +1,3 @@
--- 既存の関数を削除
-drop function if exists get_active_tasks(uuid);
-drop function if exists get_task_breakdowns(uuid);
-drop function if exists calculate_task_experience(integer, interval, interval);
-drop function if exists update_user_skill(uuid, text, integer);
-drop function if exists update_overdue_tasks();
-drop function if exists generate_recurring_tasks();
-
 -- レベルごとの必要経験値を計算する関数
 create or replace function calculate_required_exp(level integer)
 returns integer as $$

@@ -13,7 +13,7 @@ import {
 import type { Project } from "@/types/project";
 import { ProjectDialog, type ProjectFormValues } from "./ProjectDialog";
 import { DeleteProjectDialog } from "./DeleteProjectDialog";
-import { updateProject } from "@/app/_actions/projects";
+import { updateProject } from "@/app/_actions/tasks/projects";
 import {
 	Table,
 	TableBody,

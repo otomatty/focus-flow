@@ -19,11 +19,15 @@ import type { Activity } from "@/types/activity";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const activityIconMap: Record<Activity["type"], JSX.Element> = {
+	project_create: <FileEdit className="h-4 w-4" />,
 	project_update: <FileEdit className="h-4 w-4" />,
+	project_archive: <FileEdit className="h-4 w-4" />,
 	task_create: <ListTodo className="h-4 w-4" />,
 	task_update: <CheckCircle2 className="h-4 w-4" />,
 	task_delete: <Trash2 className="h-4 w-4" />,
-	member_update: <Users className="h-4 w-4" />,
+	member_add: <Users className="h-4 w-4" />,
+	member_remove: <Users className="h-4 w-4" />,
+	member_role_update: <Users className="h-4 w-4" />,
 };
 
 function ActivitySkeleton() {

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { ProjectDialog } from "../../_components/ProjectDialog";
 import { DeleteProjectDialog } from "../../_components/DeleteProjectDialog";
-import { updateProject } from "@/app/_actions/projects";
+import { updateProject } from "@/app/_actions/tasks/projects";
 import { useRouter } from "next/navigation";
 import { differenceInDays, format } from "date-fns";
 import { ja } from "date-fns/locale";

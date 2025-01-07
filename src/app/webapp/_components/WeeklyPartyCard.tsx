@@ -25,10 +25,6 @@ import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
 import type { LucideIcon } from "lucide-react";
-import type {
-	WeeklyPartyCardProps,
-	PartyMemberStatus,
-} from "@/types/dashboard";
 import {
 	Table,
 	TableHeader,
@@ -37,9 +33,12 @@ import {
 	TableHead,
 	TableRow,
 } from "@/components/ui/table";
+import { useEffect, useState } from "react";
+import { getWeeklyPartyData } from "@/app/_actions/dashboard/party";
+import type { WeeklyPartyData } from "@/types/dashboard";
 
 const statusConfig: Record<
-	PartyMemberStatus,
+	"online" | "focusing" | "offline",
 	{ icon: LucideIcon; color: string; label: string }
 > = {
 	online: {
@@ -59,7 +58,35 @@ const statusConfig: Record<
 	},
 };
 
+interface WeeklyPartyCardProps {
+	members: WeeklyPartyData["members"];
+	goal: WeeklyPartyData["goal"];
+}
+
 export function WeeklyPartyCard({ members, goal }: WeeklyPartyCardProps) {
+	const [partyData, setPartyData] = useState<WeeklyPartyData | null>(null);
+
+	useEffect(() => {
+		const fetchPartyData = async () => {
+			try {
+				const data = await getWeeklyPartyData();
+				setPartyData(data);
+			} catch (error) {
+				console.error("Failed to fetch party data:", error);
+			}
+		};
+
+		fetchPartyData();
+		// 5分ごとに更新
+		const interval = setInterval(fetchPartyData, 5 * 60 * 1000);
+
+		return () => clearInterval(interval);
+	}, []);
+
+	if (!partyData) {
+		return null;
+	}
+
 	const progress = (goal.currentSessions / goal.targetSessions) * 100;
 	const remainingDays = Math.ceil(
 		(goal.deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
@@ -174,7 +201,7 @@ export function WeeklyPartyCard({ members, goal }: WeeklyPartyCardProps) {
 											className="relative cursor-pointer"
 										>
 											<Avatar className="h-14 w-14 md:h-16 md:w-16 border-4 border-background ring-2 ring-border">
-												<AvatarImage src={member.avatarUrl} />
+												<AvatarImage src={member.avatarUrl || undefined} />
 												<AvatarFallback>{member.name[0]}</AvatarFallback>
 											</Avatar>
 											<div
@@ -195,7 +222,7 @@ export function WeeklyPartyCard({ members, goal }: WeeklyPartyCardProps) {
 										{/* ユーザー情報 */}
 										<div className="flex items-center gap-3">
 											<Avatar className="h-12 w-12">
-												<AvatarImage src={member.avatarUrl} />
+												<AvatarImage src={member.avatarUrl || undefined} />
 												<AvatarFallback>{member.name[0]}</AvatarFallback>
 											</Avatar>
 											<div>
@@ -350,7 +377,7 @@ export function WeeklyPartyCard({ members, goal }: WeeklyPartyCardProps) {
 											<TableCell>
 												<div className="flex items-center gap-2">
 													<Avatar className="h-8 w-8">
-														<AvatarImage src={member.avatarUrl} />
+														<AvatarImage src={member.avatarUrl || undefined} />
 														<AvatarFallback>{member.name[0]}</AvatarFallback>
 													</Avatar>
 													<div className="flex flex-col">

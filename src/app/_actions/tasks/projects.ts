@@ -29,7 +29,7 @@ export async function createProject(data: ProjectCreate) {
 			.from("projects")
 			.insert({
 				...convertToSnakeCase(data),
-				user_id: user.id,
+				owner_id: user.id,
 				status: data.status || "not_started",
 				priority: data.priority || "medium",
 			})
@@ -37,6 +37,18 @@ export async function createProject(data: ProjectCreate) {
 			.single();
 
 		if (error) throw error;
+
+		// プロジェクトメンバーとしてオーナーを追加
+		const { error: memberError } = await supabase
+			.schema("ff_tasks")
+			.from("project_members")
+			.insert({
+				project_id: project.id,
+				user_id: user.id,
+				role: "owner",
+			});
+
+		if (memberError) throw memberError;
 
 		revalidatePath("/webapp/projects");
 		return { project: convertToCamelCase(project), error: null };
@@ -103,7 +115,17 @@ export async function getProject(id: string) {
 			.from("projects")
 			.select(`
         *,
-        project_tasks (
+        tasks (
+          id,
+          title,
+          description,
+          status,
+          priority,
+          start_date,
+          due_date,
+          progress_percentage
+        ),
+        task_positions (
           task_id,
           position
         )
@@ -130,12 +152,22 @@ export async function getProjects(filter?: ProjectFilter, sort?: ProjectSort) {
 			.schema("ff_tasks")
 			.from("projects")
 			.select(`
-      *,
-      project_tasks (
-        task_id,
-        position
-      )
-    `);
+        *,
+        tasks (
+          id,
+          title,
+          description,
+          status,
+          priority,
+          start_date,
+          due_date,
+          progress_percentage
+        ),
+        task_positions (
+          task_id,
+          position
+        )
+      `);
 
 		// フィルタリングの適用
 		if (filter) {
@@ -185,16 +217,27 @@ export async function addTaskToProject(
 ) {
 	try {
 		const supabase = await createClient();
-		const { error } = await supabase
+
+		// タスクのproject_idを更新
+		const { error: taskError } = await supabase
 			.schema("ff_tasks")
-			.from("project_tasks")
+			.from("tasks")
+			.update({ project_id: projectId })
+			.eq("id", taskId);
+
+		if (taskError) throw taskError;
+
+		// タスクの位置を設定
+		const { error: positionError } = await supabase
+			.schema("ff_tasks")
+			.from("task_positions")
 			.insert({
 				project_id: projectId,
 				task_id: taskId,
 				position,
 			});
 
-		if (error) throw error;
+		if (positionError) throw positionError;
 
 		revalidatePath("/webapp/projects");
 		return { error: null };
@@ -210,13 +253,25 @@ export async function addTaskToProject(
 export async function removeTaskFromProject(projectId: string, taskId: string) {
 	try {
 		const supabase = await createClient();
-		const { error } = await supabase
+
+		// タスクのproject_idをnullに設定
+		const { error: taskError } = await supabase
 			.schema("ff_tasks")
-			.from("project_tasks")
+			.from("tasks")
+			.update({ project_id: null })
+			.eq("id", taskId)
+			.eq("project_id", projectId);
+
+		if (taskError) throw taskError;
+
+		// タスクの位置情報を削除
+		const { error: positionError } = await supabase
+			.schema("ff_tasks")
+			.from("task_positions")
 			.delete()
 			.match({ project_id: projectId, task_id: taskId });
 
-		if (error) throw error;
+		if (positionError) throw positionError;
 
 		revalidatePath("/webapp/projects");
 		return { error: null };
@@ -238,7 +293,7 @@ export async function updateTaskPosition(
 		const supabase = await createClient();
 		const { error } = await supabase
 			.schema("ff_tasks")
-			.from("project_tasks")
+			.from("task_positions")
 			.update({ position: newPosition })
 			.match({ project_id: projectId, task_id: taskId });
 

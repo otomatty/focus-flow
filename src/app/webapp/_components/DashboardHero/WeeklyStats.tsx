@@ -1,10 +1,10 @@
 import { Timer, CheckCircle2, Trophy, BarChart3 } from "lucide-react";
-import type { User } from "./types";
+import type { WeeklyStatsData } from "./types";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface WeeklyStatsProps {
-	stats: User["weeklyStats"];
+	stats: WeeklyStatsData;
 }
 
 export function WeeklyStats({ stats }: WeeklyStatsProps) {
@@ -36,8 +36,8 @@ export function WeeklyStats({ stats }: WeeklyStatsProps) {
 					},
 					{
 						icon: Trophy,
-						label: "獲得ポイント",
-						value: `${stats.earnedPoints}pt`,
+						label: "習慣実施",
+						value: `${stats.completedHabits}回`,
 						gradient:
 							"from-blue-300 to-blue-500 dark:from-blue-400 dark:to-blue-600",
 						iconColor: "text-blue-500 dark:text-blue-400",

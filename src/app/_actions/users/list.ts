@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { UserWithDetails } from "./types";
+import type { UserWithDetails } from "@/types/users";
 import { convertToUserLevel } from "@/utils/converters";
 
 export async function listUsers(): Promise<UserWithDetails[]> {
@@ -23,11 +23,10 @@ export async function listUsers(): Promise<UserWithDetails[]> {
 		.schema("ff_users")
 		.from("user_role_mappings")
 		.select(`
-      *,
-      role:user_roles(*)
-    `)
-		.in("user_id", userIds)
-		.eq("is_active", true);
+			*,
+			role:user_roles(*)
+		`)
+		.in("user_id", userIds);
 
 	if (roleError) {
 		throw new Error(`Failed to fetch user roles: ${roleError.message}`);

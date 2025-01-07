@@ -1,0 +1,30 @@
+export const LANGUAGES = [
+	{ value: "ja", label: "日本語" },
+	{ value: "en", label: "英語" },
+	{ value: "zh", label: "中国語" },
+	{ value: "ko", label: "韓国語" },
+	{ value: "es", label: "スペイン語" },
+	{ value: "fr", label: "フランス語" },
+	{ value: "de", label: "ドイツ語" },
+	{ value: "it", label: "イタリア語" },
+	{ value: "ru", label: "ロシア語" },
+	{ value: "pt", label: "ポルトガル語" },
+];
+
+export const TIMEZONES = [
+	{ value: "Asia/Tokyo", label: "東京 (UTC+9)" },
+	{ value: "Asia/Seoul", label: "ソウル (UTC+9)" },
+	{ value: "Asia/Shanghai", label: "上海 (UTC+8)" },
+	{ value: "Asia/Singapore", label: "シンガポール (UTC+8)" },
+	{ value: "Asia/Hong_Kong", label: "香港 (UTC+8)" },
+	{ value: "Asia/Taipei", label: "台北 (UTC+8)" },
+	{ value: "Australia/Sydney", label: "シドニー (UTC+10)" },
+	{ value: "Pacific/Auckland", label: "オークランド (UTC+12)" },
+	{ value: "America/Los_Angeles", label: "ロサンゼルス (UTC-8)" },
+	{ value: "America/New_York", label: "ニューヨーク (UTC-5)" },
+	{ value: "America/Chicago", label: "シカゴ (UTC-6)" },
+	{ value: "Europe/London", label: "ロンドン (UTC+0)" },
+	{ value: "Europe/Paris", label: "パリ (UTC+1)" },
+	{ value: "Europe/Berlin", label: "ベルリン (UTC+1)" },
+	{ value: "Europe/Moscow", label: "モスクワ (UTC+3)" },
+] as const;

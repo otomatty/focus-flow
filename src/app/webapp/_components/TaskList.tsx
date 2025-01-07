@@ -10,18 +10,16 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { TaskDifficulty } from "@/types/dashboard";
-import { Clock, Flame, MoreVertical, Play, Info, Trash } from "lucide-react";
+import { Clock, MoreVertical, Play, Info, Trash } from "lucide-react";
 import { useState } from "react";
 import { TaskDetailDialog } from "./TaskDetailDialog";
 
 interface Task {
 	id: string;
 	title: string;
-	difficulty: TaskDifficulty;
+	difficulty: number;
 	estimatedTime: number;
 	progress: number;
-	comboCount: number;
 	description?: string;
 	dueDate?: string;
 	tags?: string[];
@@ -36,35 +34,35 @@ interface TaskListProps {
 	tasks: Task[];
 }
 
-const getDifficultyColor = (difficulty: TaskDifficulty) => {
+const getDifficultyColor = (difficulty: number) => {
 	switch (difficulty) {
-		case "easy":
+		case 1:
 			return "text-green-500 dark:text-green-400";
-		case "medium":
+		case 2:
 			return "text-yellow-500 dark:text-yellow-400";
-		case "hard":
+		case 3:
 			return "text-red-500 dark:text-red-400";
 	}
 };
 
-const getDifficultyBadgeColor = (difficulty: TaskDifficulty) => {
+const getDifficultyBadgeColor = (difficulty: number) => {
 	switch (difficulty) {
-		case "easy":
+		case 1:
 			return "bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300";
-		case "medium":
+		case 2:
 			return "bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300";
-		case "hard":
+		case 3:
 			return "bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300";
 	}
 };
 
-const getDifficultyLabel = (difficulty: TaskDifficulty) => {
+const getDifficultyLabel = (difficulty: number) => {
 	switch (difficulty) {
-		case "easy":
+		case 1:
 			return "簡単";
-		case "medium":
+		case 2:
 			return "普通";
-		case "hard":
+		case 3:
 			return "難しい";
 	}
 };
@@ -104,14 +102,6 @@ function TaskItem({ task, onStart }: { task: Task; onStart: () => void }) {
 								<Clock className="w-4 h-4" />
 								<span>{formatEstimatedTime(task.estimatedTime)}</span>
 							</div>
-							{task.comboCount > 0 && (
-								<div className="flex items-center gap-1">
-									<Flame className="w-4 h-4 text-orange-500" />
-									<span className="text-orange-500">
-										{task.comboCount} Combo!
-									</span>
-								</div>
-							)}
 						</div>
 					</div>
 				</div>

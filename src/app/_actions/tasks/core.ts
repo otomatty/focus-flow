@@ -22,7 +22,6 @@ export async function getTasks(): Promise<Task[]> {
 
 	return rows?.map(convertToTask) ?? [];
 }
-
 // タスクの取得
 export async function getTask(id: string): Promise<Task> {
 	const supabase = await createClient();

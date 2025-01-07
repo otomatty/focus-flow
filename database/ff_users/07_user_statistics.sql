@@ -491,4 +491,188 @@ BEGIN
         monthly_completed_tasks = 0,
         monthly_habit_completion_rate = 0;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER; 
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ユーザー統計情報の初期化関数
+CREATE OR REPLACE FUNCTION ff_users.initialize_user_statistics(new_user_id UUID)
+RETURNS ff_users.user_statistics AS $$
+DECLARE
+    new_stats ff_users.user_statistics;
+BEGIN
+    -- トランザクションの開始
+    BEGIN
+        -- 既存の統計情報をチェック
+        IF EXISTS (
+            SELECT 1
+            FROM ff_users.user_statistics
+            WHERE user_id = new_user_id
+        ) THEN
+            SELECT * INTO new_stats
+            FROM ff_users.user_statistics
+            WHERE user_id = new_user_id;
+            RETURN new_stats;
+        END IF;
+
+        -- 新規統計情報を作成
+        INSERT INTO ff_users.user_statistics (
+            user_id,
+            total_focus_sessions,
+            total_focus_time,
+            avg_session_length,
+            total_tasks,
+            completed_tasks,
+            task_completion_rate,
+            current_login_streak,
+            longest_login_streak,
+            current_focus_streak,
+            longest_focus_streak,
+            current_task_streak,
+            longest_task_streak,
+            created_at,
+            updated_at
+        ) VALUES (
+            new_user_id,
+            0,
+            '0'::INTERVAL,
+            '0'::INTERVAL,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            now(),
+            now()
+        ) RETURNING * INTO new_stats;
+
+        -- システムログに記録
+        INSERT INTO ff_logs.system_logs (
+            event_type,
+            event_source,
+            event_data,
+            severity
+        ) VALUES (
+            'USER_STATISTICS_INITIALIZED',
+            'initialize_user_statistics',
+            jsonb_build_object(
+                'user_id', new_user_id
+            ),
+            'INFO'
+        );
+
+        RETURN new_stats;
+
+    EXCEPTION WHEN OTHERS THEN
+        -- エラーをログに記録
+        INSERT INTO ff_logs.system_logs (
+            event_type,
+            event_source,
+            event_data,
+            severity
+        ) VALUES (
+            'ERROR_INITIALIZING_USER_STATISTICS',
+            'initialize_user_statistics',
+            jsonb_build_object(
+                'user_id', new_user_id,
+                'error_code', SQLSTATE,
+                'error_message', SQLERRM
+            ),
+            'ERROR'
+        );
+        RAISE;
+    END;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- トリガー関数の作成
+CREATE OR REPLACE FUNCTION ff_users.tr_initialize_user_statistics()
+RETURNS TRIGGER AS $$
+BEGIN
+    PERFORM ff_users.initialize_user_statistics(NEW.user_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- プロフィール作成時に統計情報を初期化するトリガーを設定
+DROP TRIGGER IF EXISTS initialize_user_statistics_on_profile_creation ON ff_users.user_profiles;
+
+CREATE TRIGGER initialize_user_statistics_on_profile_creation
+    AFTER INSERT ON ff_users.user_profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION ff_users.tr_initialize_user_statistics();
+
+-- 既存のRLSポリシーの後に追加
+CREATE POLICY "Service role can manage all statistics"
+    ON ff_users.user_statistics
+    FOR ALL
+    USING (auth.role() = 'service_role');
+
+CREATE POLICY "Users can initialize their own statistics"
+    ON ff_users.user_statistics
+    FOR INSERT
+    WITH CHECK (
+        auth.uid() = user_id OR
+        auth.role() = 'service_role'
+    );
+
+-- ユーザーストリーク情報を取得するビュー
+CREATE OR REPLACE VIEW ff_users.user_streaks_view
+    WITH (security_barrier = true)
+    AS
+SELECT
+    user_id,
+    COALESCE(current_login_streak, 0) as current_login_streak,
+    COALESCE(longest_login_streak, 0) as longest_login_streak,
+    COALESCE(current_focus_streak, 0) as current_focus_streak,
+    COALESCE(longest_focus_streak, 0) as longest_focus_streak,
+    COALESCE(current_task_streak, 0) as current_task_streak,
+    COALESCE(longest_task_streak, 0) as longest_task_streak
+FROM ff_users.user_statistics;
+
+-- ビューのアクセス権限設定
+GRANT SELECT ON ff_users.user_streaks_view TO authenticated;
+
+-- RLSポリシーの設定
+CREATE POLICY "Users can view their own streaks"
+    ON ff_users.user_statistics
+    FOR SELECT
+    USING (auth.uid() = user_id);
+
+-- ユーザーストリーク情報を取得する関数
+CREATE OR REPLACE FUNCTION ff_users.get_user_streaks(p_user_id UUID)
+RETURNS TABLE (
+    current_login_streak INTEGER,
+    longest_login_streak INTEGER,
+    current_focus_streak INTEGER,
+    longest_focus_streak INTEGER,
+    current_task_streak INTEGER,
+    longest_task_streak INTEGER
+) SECURITY DEFINER SET search_path = ff_users
+AS $$
+BEGIN
+    -- 統計情報が存在しない場合は自動的に初期化
+    PERFORM ff_users.initialize_user_statistics(p_user_id);
+    
+    RETURN QUERY
+    SELECT
+        v.current_login_streak,
+        v.longest_login_streak,
+        v.current_focus_streak,
+        v.longest_focus_streak,
+        v.current_task_streak,
+        v.longest_task_streak
+    FROM user_streaks_view v
+    WHERE v.user_id = p_user_id;
+
+    -- データが見つからない場合はデフォルト値を返す
+    IF NOT FOUND THEN
+        RETURN QUERY SELECT 0,0,0,0,0,0;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- RPCとして関数を公開
+GRANT EXECUTE ON FUNCTION ff_users.get_user_streaks(UUID) TO authenticated; 

@@ -2,11 +2,36 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { Database, Json } from "@/types/supabase";
+import type { PostgrestError } from "@supabase/supabase-js";
+import type { Notification } from "@/types/notifications";
 
-type Notification =
-	Database["ff_notifications"]["Tables"]["notifications"]["Row"];
 type DeliveryHistory =
 	Database["ff_notifications"]["Tables"]["delivery_history"]["Row"];
+
+/**
+ * エラーメッセージを生成
+ */
+function createErrorMessage(operation: string, error: PostgrestError): string {
+	const baseMessage = `Failed to ${operation}`;
+	const details = [];
+
+	if (error.code === "PGRST116") {
+		details.push("Resource not found");
+	} else if (error.code === "42P01") {
+		details.push("Table or schema does not exist");
+	} else if (error.code === "42501") {
+		details.push("Insufficient permissions");
+	}
+
+	if (error.message) {
+		details.push(error.message);
+	}
+	if (error.details) {
+		details.push(error.details);
+	}
+
+	return `${baseMessage}: ${details.join(" - ")}`;
+}
 
 /**
  * 通知を作成
@@ -19,33 +44,40 @@ export async function createNotification(params: {
 }): Promise<Notification> {
 	const supabase = await createClient();
 
-	const { data: notificationId, error: createError } = await supabase
-		.schema("ff_notifications")
-		.rpc("create_notification", {
-			p_user_id: params.userId,
-			p_category_name: params.categoryName,
-			p_template_name: params.templateName,
-			p_template_data: params.templateData as Json,
-		});
+	try {
+		const { data: notificationId, error: createError } = await supabase
+			.schema("ff_notifications")
+			.rpc("create_notification", {
+				p_user_id: params.userId,
+				p_category_name: params.categoryName,
+				p_template_name: params.templateName,
+				p_template_data: params.templateData as Json,
+			});
 
-	if (createError) {
-		throw new Error(`Failed to create notification: ${createError.message}`);
+		if (createError) {
+			throw new Error(createErrorMessage("create notification", createError));
+		}
+
+		const { data: notification, error: fetchError } = await supabase
+			.schema("ff_notifications")
+			.from("notifications")
+			.select("*")
+			.eq("id", notificationId)
+			.single();
+
+		if (fetchError) {
+			throw new Error(
+				createErrorMessage("fetch created notification", fetchError),
+			);
+		}
+
+		return notification as Notification;
+	} catch (error) {
+		if (error instanceof Error) {
+			throw error;
+		}
+		throw new Error(`Unexpected error while creating notification: ${error}`);
 	}
-
-	const { data: notification, error: fetchError } = await supabase
-		.schema("ff_notifications")
-		.from("notifications")
-		.select("*")
-		.eq("id", notificationId)
-		.single();
-
-	if (fetchError) {
-		throw new Error(
-			`Failed to fetch created notification: ${fetchError.message}`,
-		);
-	}
-
-	return notification;
 }
 
 /**
@@ -59,36 +91,44 @@ export async function getUserNotifications(params: {
 	offset?: number;
 }): Promise<Notification[]> {
 	const supabase = await createClient();
-	let query = supabase
-		.schema("ff_notifications")
-		.from("notifications")
-		.select("*")
-		.eq("user_id", params.userId)
-		.order("created_at", { ascending: false });
 
-	if (params.categoryId) {
-		query = query.eq("category_id", params.categoryId);
-	}
-	if (params.status) {
-		query = query.eq("status", params.status);
-	}
-	if (params.limit) {
-		query = query.limit(params.limit);
-	}
-	if (params.offset) {
-		query = query.range(
-			params.offset,
-			params.offset + (params.limit ?? 10) - 1,
-		);
-	}
+	try {
+		let query = supabase
+			.schema("ff_notifications")
+			.from("notifications")
+			.select("*")
+			.eq("user_id", params.userId)
+			.order("created_at", { ascending: false });
 
-	const { data, error } = await query;
+		if (params.categoryId) {
+			query = query.eq("category_id", params.categoryId);
+		}
+		if (params.status) {
+			query = query.eq("status", params.status);
+		}
+		if (params.limit) {
+			query = query.limit(params.limit);
+		}
+		if (params.offset) {
+			query = query.range(
+				params.offset,
+				params.offset + (params.limit ?? 10) - 1,
+			);
+		}
 
-	if (error) {
-		throw new Error(`Failed to fetch user notifications: ${error.message}`);
+		const { data, error } = await query;
+
+		if (error) {
+			throw new Error(createErrorMessage("fetch user notifications", error));
+		}
+
+		return data as Notification[];
+	} catch (error) {
+		if (error instanceof Error) {
+			throw error;
+		}
+		throw new Error(`Unexpected error while fetching notifications: ${error}`);
 	}
-
-	return data;
 }
 
 /**

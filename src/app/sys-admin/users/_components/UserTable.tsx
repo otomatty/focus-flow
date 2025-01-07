@@ -40,11 +40,11 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { UserWithDetails } from "@/app/_actions/users/types";
+import type { UserWithDetails, Role } from "@/types/users";
 import { UserRoleDialog } from "./UserRoleDialog";
 import { userRoleDialogAtom } from "@/atoms/userRoleDialog";
 import { UserTableSkeleton } from "./UserTableSkeleton";
-import { getNextLevelExp } from "@/app/_actions/users/level";
+import { getNextLevelExp } from "@/app/_actions/gamification/level";
 
 interface UserTableProps {
 	data: UserWithDetails[];
@@ -122,7 +122,7 @@ export function UserTable({ data, isLoading = false }: UserTableProps) {
 				const roles = row.getValue("roles") as UserWithDetails["roles"];
 				return (
 					<div className="flex gap-1">
-						{roles.map((role) => (
+						{roles.map((role: Role) => (
 							<Badge key={role.id} variant="secondary">
 								{role.name}
 							</Badge>

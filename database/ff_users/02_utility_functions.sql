@@ -1,14 +1,8 @@
--- updated_at列を更新する関数
-create or replace function ff_users.update_updated_at_column()
-returns trigger as $$
-begin
-    -- タイムスタンプをUTCで保存
-    new.updated_at = (now() at time zone 'UTC');
-    return new;
-end;
-$$ language plpgsql;
+-- 依存関係のあるトリガーを削除
+drop trigger if exists update_user_profiles_cache_version on ff_users.user_profiles;
 
 -- キャッシュバージョンを更新する関数
+drop function if exists ff_users.update_cache_version();
 create or replace function ff_users.update_cache_version()
 returns trigger as $$
 begin
@@ -23,10 +17,10 @@ end;
 $$ language plpgsql;
 
 -- テーブルコメント
-comment on function ff_users.update_updated_at_column() is 'レコードの更新日時を自動的に更新するトリガー関数';
 comment on function ff_users.update_cache_version() is 'キャッシュバージョンを自動的にインクリメントするトリガー関数';
 
 -- 共通のバリデーション関数
+drop function if exists ff_users.validate_timezone(text);
 create or replace function ff_users.validate_timezone(timezone text)
 returns boolean as $$
 begin
@@ -41,6 +35,7 @@ comment on function ff_users.validate_timezone(text) is 'タイムゾーン文�
 -- ユーザーのロールを確認するユーティリティ関数
 
 -- システム管理者かどうかを確認する関数
+drop function if exists ff_users.is_system_admin(uuid);
 create or replace function ff_users.is_system_admin(user_id uuid)
 returns boolean as $$
 begin
@@ -57,6 +52,7 @@ $$ language plpgsql security definer;
 comment on function ff_users.is_system_admin(uuid) is 'ユーザーがシステム管理者ロールを持っているかどうかを確認する関数';
 
 -- 特定のロールを持っているかどうかを確認する関数
+drop function if exists ff_users.has_role(uuid, text);
 create or replace function ff_users.has_role(user_id uuid, role_name text)
 returns boolean as $$
 begin
@@ -70,4 +66,10 @@ begin
 end;
 $$ language plpgsql security definer;
 
-comment on function ff_users.has_role(uuid, text) is 'ユーザーが指定されたロールを持っているかどうかを確認する関数'; 
+comment on function ff_users.has_role(uuid, text) is 'ユーザーが指定されたロールを持っているかどうかを確認する関数';
+
+-- キャッシュバージョン更新トリガーの再作成
+create trigger update_user_profiles_cache_version
+    before update on ff_users.user_profiles
+    for each row
+    execute function ff_users.update_cache_version(); 

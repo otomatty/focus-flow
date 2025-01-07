@@ -1,11 +1,8 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
 	Calendar,
-	Trophy,
 	Target,
 	TrendingUp,
 	Medal,

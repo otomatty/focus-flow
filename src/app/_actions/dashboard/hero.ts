@@ -5,6 +5,7 @@ import { getUserLevel } from "@/app/_actions/gamification/level";
 import {
 	getCurrentSeason,
 	getUserSeasonProgress,
+	getSeasonRankSettings,
 } from "@/app/_actions/gamification/seasons";
 import {
 	getWeeklyStats,
@@ -36,8 +37,21 @@ export async function getDashboardHeroData() {
 		getUserStreaks(user.id),
 	]);
 
+	// アクティブなシーズンが存在しない場合のエラーハンドリング
+	if (!currentSeason) {
+		throw new Error("No active season found");
+	}
+
 	// シーズン進捗を取得
 	const progress = await getUserSeasonProgress(user.id, currentSeason.id);
+
+	// 次のランクの要件を取得
+	const rankSettings = await getSeasonRankSettings(currentSeason.id);
+	const currentRankIndex = rankSettings.findIndex(
+		(rank) => rank.rank_name === progress.current_rank,
+	);
+	const nextRankRequirements =
+		rankSettings[currentRankIndex + 1] || rankSettings[currentRankIndex];
 
 	// 残り日数を計算
 	const remainingDays = Math.ceil(
@@ -59,8 +73,36 @@ export async function getDashboardHeroData() {
 
 	// シーズンデータを構築
 	const seasonData: SeasonData = {
-		season: currentSeason,
+		season: {
+			...currentSeason,
+			rules: currentSeason.rules as {
+				point_multipliers: {
+					focus_session: number;
+					task_completion: number;
+					streak_bonus: number;
+				};
+			},
+		},
 		progress,
+		rankRequirements: {
+			required_points: nextRankRequirements.required_points ?? undefined,
+			focus_time_requirement:
+				nextRankRequirements.focus_time_requirement?.toString(),
+			task_completion_requirement:
+				nextRankRequirements.task_completion_requirement ?? undefined,
+			daily_focus_requirement:
+				nextRankRequirements.daily_focus_requirement?.toString(),
+			weekly_focus_requirement:
+				nextRankRequirements.weekly_focus_requirement?.toString(),
+			maintenance_requirements:
+				(nextRankRequirements.maintenance_requirements as {
+					focus_time?: string;
+					task_completion?: number;
+					daily_activity?: boolean;
+					weekly_goals?: number;
+					minimum_points?: number;
+				}) ?? undefined,
+		},
 		remainingDays,
 	};
 

@@ -3,7 +3,10 @@ import type { CamelCase } from "../utils/caseConverter";
 
 // Supabaseのプロジェクトテーブルの型
 type ProjectRow = Database["ff_tasks"]["Tables"]["projects"]["Row"];
-type ProjectInsert = Database["ff_tasks"]["Tables"]["projects"]["Insert"];
+type ProjectInsert = Omit<
+	Database["ff_tasks"]["Tables"]["projects"]["Insert"],
+	"owner_id"
+>;
 type ProjectUpdateRow = Database["ff_tasks"]["Tables"]["projects"]["Update"];
 
 // プロジェクトの状態の型
@@ -13,6 +16,9 @@ export type ProjectPriority = ProjectRow["priority"];
 // キャメルケースに変換されたプロジェクトの型
 export type Project = {
 	[K in keyof ProjectRow as CamelCase<K & string>]: ProjectRow[K];
+} & {
+	tasks?: Database["ff_tasks"]["Tables"]["tasks"]["Row"][];
+	taskPositions?: Database["ff_tasks"]["Tables"]["task_positions"]["Row"][];
 };
 
 // プロジェクト作成時の型

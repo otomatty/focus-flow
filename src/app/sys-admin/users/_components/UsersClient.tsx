@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { UserFilters } from "./UserFilters";
 import { UserTable } from "./UserTable";
 import { filteredUsersAtom, usersAtom } from "@/atoms/userFilters";
-import type { UserWithDetails } from "@/app/_actions/users/types";
+import type { UserWithDetails } from "@/types/users";
 
 interface UsersClientProps {
 	initialUsers: UserWithDetails[];

@@ -80,55 +80,65 @@ alter table ff_tasks.projects enable row level security;
 alter table ff_tasks.project_members enable row level security;
 alter table ff_tasks.project_activities enable row level security;
 
+-- 既存のポリシーを削除
+drop policy if exists "project_owner_select" on ff_tasks.projects;
+drop policy if exists "project_member_select" on ff_tasks.projects;
+drop policy if exists "project_owner_insert" on ff_tasks.projects;
+drop policy if exists "project_owner_admin_update" on ff_tasks.projects;
+drop policy if exists "project_owner_delete" on ff_tasks.projects;
+drop policy if exists "membership_owner_select" on ff_tasks.project_members;
+drop policy if exists "membership_admin_select" on ff_tasks.project_members;
+drop policy if exists "activity_owner_select" on ff_tasks.project_activities;
+drop policy if exists "activity_member_select" on ff_tasks.project_activities;
+
 -- プロジェクトのRLSポリシー
-create policy "プロジェクトはメンバーが参照可能" on ff_tasks.projects
+-- プロジェクトの参照権限（オーナーまたはメンバー）
+create policy "project_access" on ff_tasks.projects
     for select using (
-        exists (
-            select 1 from ff_tasks.project_members
-            where project_id = projects.id
-            and user_id = auth.uid()
+        owner_id = auth.uid() -- オーナー
+        or id in ( -- メンバー
+            select project_id 
+            from ff_tasks.project_members 
+            where user_id = auth.uid()
         )
     );
 
-create policy "プロジェクトは認証済みユーザーが作成可能" on ff_tasks.projects
+-- プロジェクトの作成権限（認証済みユーザー）
+create policy "project_insert" on ff_tasks.projects
     for insert with check (auth.uid() = owner_id);
 
-create policy "プロジェクトはオーナーと管理者のみが更新可能" on ff_tasks.projects
-    for update using (
-        exists (
-            select 1 from ff_tasks.project_members
-            where project_id = projects.id
-            and user_id = auth.uid()
-            and role in ('owner', 'admin')
-        )
-    );
+-- プロジェクトの更新権限（オーナーのみ）
+create policy "project_update" on ff_tasks.projects
+    for update using (owner_id = auth.uid());
 
-create policy "プロジェクトはオーナーのみが削除可能" on ff_tasks.projects
-    for delete using (auth.uid() = owner_id);
+-- プロジェクトの削除権限（オーナーのみ）
+create policy "project_delete" on ff_tasks.projects
+    for delete using (owner_id = auth.uid());
 
 -- メンバーシップのRLSポリシー
-create policy "メンバーシップはプロジェクトメンバーが参照可能" on ff_tasks.project_members
-    for select using (
-        exists (
-            select 1 from ff_tasks.project_members pm
-            where pm.project_id = project_members.project_id
-            and pm.user_id = auth.uid()
-        )
-    );
+-- メンバーシップの参照権限（自分のメンバーシップのみ）
+create policy "membership_access" on ff_tasks.project_members
+    for select using (user_id = auth.uid());
 
 -- アクティビティのRLSポリシー
-create policy "アクティビティはプロジェクトメンバーが参照可能" on ff_tasks.project_activities
+-- アクティビティの参照権限（関連プロジェクトのメンバーのみ）
+create policy "activity_access" on ff_tasks.project_activities
     for select using (
-        exists (
-            select 1 from ff_tasks.project_members
-            where project_id = project_activities.project_id
-            and user_id = auth.uid()
+        project_id in (
+            select id 
+            from ff_tasks.projects 
+            where owner_id = auth.uid() 
+            or id in (
+                select project_id 
+                from ff_tasks.project_members 
+                where user_id = auth.uid()
+            )
         )
     );
 
 -- 更新日時トリガー
-create trigger handle_updated_at before update on ff_tasks.projects
+create or replace trigger handle_updated_at before update on ff_tasks.projects
     for each row execute procedure moddatetime (updated_at);
 
-create trigger handle_activities_updated_at before update on ff_tasks.project_activities
+create or replace trigger handle_activities_updated_at before update on ff_tasks.project_activities
     for each row execute procedure moddatetime (updated_at); 

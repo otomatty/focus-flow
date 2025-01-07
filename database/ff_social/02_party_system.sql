@@ -20,13 +20,39 @@ create table if not exists ff_social.parties (
 create table if not exists ff_social.party_members (
     id uuid primary key default uuid_generate_v4(),
     party_id uuid references ff_social.parties(id) not null,
-    user_id uuid references auth.users(id) not null,
+    user_id uuid not null,
+    is_cpu boolean default false,
     joined_at timestamp with time zone default now(),
     created_at timestamp with time zone default now(),
     updated_at timestamp with time zone default now(),
     -- 同じパーティー期間中に同じユーザーが複数のパーティーに所属できないように制約
     unique(user_id, party_id)
 );
+
+-- パーティーメンバーの整合性チェック用トリガー関数
+create or replace function ff_social.check_party_member_user_id()
+returns trigger as $$
+begin
+    if NEW.is_cpu = true then
+        -- CPUアカウントの場合
+        if not exists (select 1 from ff_social.cpu_accounts where id = NEW.user_id) then
+            raise exception 'CPU account with ID % does not exist', NEW.user_id;
+        end if;
+    else
+        -- 通常ユーザーの場合
+        if not exists (select 1 from auth.users where id = NEW.user_id) then
+            raise exception 'User with ID % does not exist', NEW.user_id;
+        end if;
+    end if;
+    return NEW;
+end;
+$$ language plpgsql;
+
+-- パーティーメンバーの整合性チェック用トリガー
+create trigger check_party_member_user_id
+    before insert or update on ff_social.party_members
+    for each row
+    execute function ff_social.check_party_member_user_id();
 
 -- パーティー生成履歴テーブル
 create table if not exists ff_social.party_generation_history (
@@ -74,9 +100,9 @@ declare
 begin
     start_time := clock_timestamp();
     
-    -- 次の月曜日を取得
-    start_date := date_trunc('week', current_date + interval '1 week')::date;
-    end_date := start_date + interval '6 days';
+    -- 今週の月曜日を開始日、日曜日を終了日として設定
+    start_date := date_trunc('week', current_date)::date;
+    end_date := start_date + interval '6 days'; -- 日曜日
     
     -- アクティブなユーザー数を取得
     select count(*) into total_users
@@ -86,7 +112,7 @@ begin
     
     -- 利用可能なクエストIDを取得
     select array_agg(id) into available_quest_ids
-    from ff_quest.quests
+    from ff_gamification.quests
     where is_active = true
     and is_party_quest = true
     and difficulty <= 3; -- 適度な難易度のクエストのみを選択
@@ -110,6 +136,14 @@ begin
             from auth.users u
             join ff_users.account_statuses a on u.id = a.user_id
             where a.status = 'active'
+            and not exists (
+                select 1
+                from ff_social.party_members pm
+                join ff_social.parties p on pm.party_id = p.id
+                where pm.user_id = u.id
+                and p.is_active = true
+                and p.end_date >= current_date
+            )
             order by random()
         ),
         party_assignments as (
@@ -144,6 +178,34 @@ begin
             pa.user_id
         from party_assignments pa
         join party_creation pc on pc.party_index = pa.party_index;
+
+        -- CPUアカウントで不足メンバーを補完
+        with incomplete_parties as (
+            select p.id as party_id, p.max_members - count(pm.id) as needed_cpu_count
+            from ff_social.parties p
+            left join ff_social.party_members pm on p.id = pm.party_id
+            where p.start_date = start_date
+            group by p.id, p.max_members
+            having count(pm.id) < p.max_members
+        )
+        insert into ff_social.party_members (party_id, user_id, is_cpu)
+        select
+            ip.party_id,
+            cpu.id,
+            true
+        from incomplete_parties ip
+        cross join lateral (
+            select id
+            from ff_social.cpu_accounts
+            where not exists (
+                select 1
+                from ff_social.party_members pm
+                where pm.user_id = ff_social.cpu_accounts.id
+                and pm.party_id = ip.party_id
+            )
+            order by random()
+            limit ip.needed_cpu_count
+        ) cpu;
         
         -- 履歴を記録
         insert into ff_social.party_generation_history (

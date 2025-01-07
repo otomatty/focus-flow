@@ -13,7 +13,7 @@ type RankSetting =
 /**
  * 現在アクティブなシーズンを取得
  */
-export async function getCurrentSeason(): Promise<Season> {
+export async function getCurrentSeason(): Promise<Season | null> {
 	const supabase = await createClient();
 
 	const { data, error } = await supabase
@@ -21,9 +21,15 @@ export async function getCurrentSeason(): Promise<Season> {
 		.from("seasons")
 		.select("*")
 		.eq("status", "active")
+		.order("start_date", { ascending: false })
+		.limit(1)
 		.single();
 
 	if (error) {
+		if (error.code === "PGRST116") {
+			// アクティブなシーズンが見つからない場合
+			return null;
+		}
 		throw new Error(`Failed to fetch current season: ${error.message}`);
 	}
 
@@ -41,13 +47,28 @@ export async function getUserSeasonProgress(
 ): Promise<UserProgress & { season: Season }> {
 	const supabase = await createClient();
 
+	// まず進捗データを初期化
+	const { data: initializedProgress, error: initError } = await supabase
+		.schema("ff_gamification")
+		.rpc("initialize_user_season_progress", {
+			p_user_id: userId,
+			p_season_id: seasonId,
+		});
+
+	if (initError) {
+		throw new Error(
+			`Failed to initialize user season progress: ${initError.message}`,
+		);
+	}
+
+	// 初期化されたデータとシーズン情報を取得
 	const { data, error } = await supabase
 		.schema("ff_gamification")
 		.from("user_progress")
 		.select(`
-      *,
-      season:seasons(*)
-    `)
+			*,
+			season:seasons(*)
+		`)
 		.eq("user_id", userId)
 		.eq("season_id", seasonId)
 		.single();

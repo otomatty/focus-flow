@@ -3128,6 +3128,42 @@ export type Database = {
 	};
 	ff_logs: {
 		Tables: {
+			debug_logs: {
+				Row: {
+					action: string | null;
+					created_at: string | null;
+					details: Json | null;
+					function_name: string | null;
+					id: string;
+					log_data: Json | null;
+					step_name: string | null;
+					updated_at: string | null;
+					user_id: string | null;
+				};
+				Insert: {
+					action?: string | null;
+					created_at?: string | null;
+					details?: Json | null;
+					function_name?: string | null;
+					id?: string;
+					log_data?: Json | null;
+					step_name?: string | null;
+					updated_at?: string | null;
+					user_id?: string | null;
+				};
+				Update: {
+					action?: string | null;
+					created_at?: string | null;
+					details?: Json | null;
+					function_name?: string | null;
+					id?: string;
+					log_data?: Json | null;
+					step_name?: string | null;
+					updated_at?: string | null;
+					user_id?: string | null;
+				};
+				Relationships: [];
+			};
 			error_logs: {
 				Row: {
 					created_at: string;
@@ -3205,6 +3241,37 @@ export type Database = {
 				};
 				Returns: undefined;
 			};
+			create_debug_log:
+				| {
+						Args: {
+							p_user_id: string;
+							p_action: string;
+							p_function_name?: string;
+							p_details?: Json;
+						};
+						Returns: string;
+				  }
+				| {
+						Args: {
+							p_user_id: string;
+							p_action: string;
+							p_function_name?: string;
+							p_step_name?: string;
+							p_details?: Json;
+						};
+						Returns: string;
+				  }
+				| {
+						Args: {
+							p_user_id: string;
+							p_action?: string;
+							p_function_name?: string;
+							p_step_name?: string;
+							p_log_data?: Json;
+							p_details?: Json;
+						};
+						Returns: string;
+				  };
 			log_error: {
 				Args: {
 					p_function_name: string;
@@ -4148,6 +4215,35 @@ export type Database = {
 				Relationships: [
 					{
 						foreignKeyName: "schedule_reminders_schedule_id_fkey";
+						columns: ["schedule_id"];
+						isOneToOne: false;
+						referencedRelation: "schedules";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+			schedule_tasks: {
+				Row: {
+					created_at: string | null;
+					id: string;
+					schedule_id: string | null;
+					task_id: string | null;
+				};
+				Insert: {
+					created_at?: string | null;
+					id?: string;
+					schedule_id?: string | null;
+					task_id?: string | null;
+				};
+				Update: {
+					created_at?: string | null;
+					id?: string;
+					schedule_id?: string | null;
+					task_id?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "schedule_tasks_schedule_id_fkey";
 						columns: ["schedule_id"];
 						isOneToOne: false;
 						referencedRelation: "schedules";
@@ -5266,6 +5362,48 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			cpu_accounts: {
+				Row: {
+					avatar_url: string | null;
+					base_achievement_rate: number;
+					base_consistency: number;
+					base_focus_time: number;
+					base_session_completion: number;
+					created_at: string | null;
+					id: string;
+					level: number;
+					name: string;
+					personality: string;
+					updated_at: string | null;
+				};
+				Insert: {
+					avatar_url?: string | null;
+					base_achievement_rate?: number;
+					base_consistency?: number;
+					base_focus_time?: number;
+					base_session_completion?: number;
+					created_at?: string | null;
+					id?: string;
+					level?: number;
+					name: string;
+					personality: string;
+					updated_at?: string | null;
+				};
+				Update: {
+					avatar_url?: string | null;
+					base_achievement_rate?: number;
+					base_consistency?: number;
+					base_focus_time?: number;
+					base_session_completion?: number;
+					created_at?: string | null;
+					id?: string;
+					level?: number;
+					name?: string;
+					personality?: string;
+					updated_at?: string | null;
+				};
+				Relationships: [];
+			};
 			follow_stats: {
 				Row: {
 					created_at: string | null;
@@ -5384,6 +5522,7 @@ export type Database = {
 				Row: {
 					created_at: string | null;
 					id: string;
+					is_cpu: boolean | null;
 					joined_at: string | null;
 					party_id: string;
 					updated_at: string | null;
@@ -5392,6 +5531,7 @@ export type Database = {
 				Insert: {
 					created_at?: string | null;
 					id?: string;
+					is_cpu?: boolean | null;
 					joined_at?: string | null;
 					party_id: string;
 					updated_at?: string | null;
@@ -5400,6 +5540,7 @@ export type Database = {
 				Update: {
 					created_at?: string | null;
 					id?: string;
+					is_cpu?: boolean | null;
 					joined_at?: string | null;
 					party_id?: string;
 					updated_at?: string | null;
@@ -5448,7 +5589,7 @@ export type Database = {
 					details: Json | null;
 					id: string;
 					project_id: string;
-					type: Database["public"]["Enums"]["activity_type"];
+					type: Database["ff_tasks"]["Enums"]["activity_type"];
 					updated_at: string | null;
 					user_id: string;
 				};
@@ -5458,7 +5599,7 @@ export type Database = {
 					details?: Json | null;
 					id?: string;
 					project_id: string;
-					type: Database["public"]["Enums"]["activity_type"];
+					type: Database["ff_tasks"]["Enums"]["activity_type"];
 					updated_at?: string | null;
 					user_id: string;
 				};
@@ -5468,7 +5609,7 @@ export type Database = {
 					details?: Json | null;
 					id?: string;
 					project_id?: string;
-					type?: Database["public"]["Enums"]["activity_type"];
+					type?: Database["ff_tasks"]["Enums"]["activity_type"];
 					updated_at?: string | null;
 					user_id?: string;
 				};
@@ -5634,37 +5775,37 @@ export type Database = {
 				Row: {
 					conditions: Json | null;
 					created_at: string | null;
-					dependency_type: Database["public"]["Enums"]["dependency_type"];
+					dependency_type: Database["ff_tasks"]["Enums"]["dependency_type"];
 					dependent_task_id: string;
 					lag_time: unknown | null;
-					link_type: Database["public"]["Enums"]["dependency_link_type"];
+					link_type: Database["ff_tasks"]["Enums"]["dependency_link_type"];
 					metadata: Json | null;
 					prerequisite_task_id: string;
-					status: Database["public"]["Enums"]["dependency_status"];
+					status: Database["ff_tasks"]["Enums"]["dependency_status"];
 					updated_at: string | null;
 				};
 				Insert: {
 					conditions?: Json | null;
 					created_at?: string | null;
-					dependency_type: Database["public"]["Enums"]["dependency_type"];
+					dependency_type: Database["ff_tasks"]["Enums"]["dependency_type"];
 					dependent_task_id: string;
 					lag_time?: unknown | null;
-					link_type?: Database["public"]["Enums"]["dependency_link_type"];
+					link_type?: Database["ff_tasks"]["Enums"]["dependency_link_type"];
 					metadata?: Json | null;
 					prerequisite_task_id: string;
-					status?: Database["public"]["Enums"]["dependency_status"];
+					status?: Database["ff_tasks"]["Enums"]["dependency_status"];
 					updated_at?: string | null;
 				};
 				Update: {
 					conditions?: Json | null;
 					created_at?: string | null;
-					dependency_type?: Database["public"]["Enums"]["dependency_type"];
+					dependency_type?: Database["ff_tasks"]["Enums"]["dependency_type"];
 					dependent_task_id?: string;
 					lag_time?: unknown | null;
-					link_type?: Database["public"]["Enums"]["dependency_link_type"];
+					link_type?: Database["ff_tasks"]["Enums"]["dependency_link_type"];
 					metadata?: Json | null;
 					prerequisite_task_id?: string;
-					status?: Database["public"]["Enums"]["dependency_status"];
+					status?: Database["ff_tasks"]["Enums"]["dependency_status"];
 					updated_at?: string | null;
 				};
 				Relationships: [
@@ -5896,7 +6037,7 @@ export type Database = {
 				Row: {
 					created_at: string | null;
 					metadata: Json | null;
-					relationship_type: Database["public"]["Enums"]["task_relationship_type"];
+					relationship_type: Database["ff_tasks"]["Enums"]["task_relationship_type"];
 					source_task_id: string;
 					target_task_id: string;
 					updated_at: string | null;
@@ -5904,7 +6045,7 @@ export type Database = {
 				Insert: {
 					created_at?: string | null;
 					metadata?: Json | null;
-					relationship_type: Database["public"]["Enums"]["task_relationship_type"];
+					relationship_type: Database["ff_tasks"]["Enums"]["task_relationship_type"];
 					source_task_id: string;
 					target_task_id: string;
 					updated_at?: string | null;
@@ -5912,7 +6053,7 @@ export type Database = {
 				Update: {
 					created_at?: string | null;
 					metadata?: Json | null;
-					relationship_type?: Database["public"]["Enums"]["task_relationship_type"];
+					relationship_type?: Database["ff_tasks"]["Enums"]["task_relationship_type"];
 					source_task_id?: string;
 					target_task_id?: string;
 					updated_at?: string | null;
@@ -7016,27 +7157,7 @@ export type Database = {
 	};
 	public: {
 		Tables: {
-			schedule_tasks: {
-				Row: {
-					created_at: string | null;
-					id: string;
-					schedule_id: string | null;
-					task_id: string | null;
-				};
-				Insert: {
-					created_at?: string | null;
-					id?: string;
-					schedule_id?: string | null;
-					task_id?: string | null;
-				};
-				Update: {
-					created_at?: string | null;
-					id?: string;
-					schedule_id?: string | null;
-					task_id?: string | null;
-				};
-				Relationships: [];
-			};
+			[_ in never]: never;
 		};
 		Views: {
 			[_ in never]: never;

@@ -98,3 +98,10 @@ select cron.schedule(
     end;
     $$
 ); 
+
+-- pg_cronを使用してスケジュール実行を設定
+select cron.schedule(
+    'create_focus_sessions_partition', -- ジョブの名前
+    '0 0 1 * *',                      -- 毎月1日の午前0時に実行
+    $$select ff_focus.create_focus_sessions_partition()$$
+); 

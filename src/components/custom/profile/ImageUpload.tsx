@@ -20,6 +20,7 @@ interface ImageUploadProps {
 	maxWidthOrHeight?: number;
 	onUploadComplete?: (url: string, path: string) => void;
 	onUploadError?: () => void;
+	className?: string;
 }
 
 export function ImageUpload({
@@ -32,6 +33,7 @@ export function ImageUpload({
 	maxWidthOrHeight = 1920,
 	onUploadComplete,
 	onUploadError,
+	className,
 }: ImageUploadProps) {
 	const supabase = createClient();
 	const [isUploading, setIsUploading] = useState(false);
@@ -297,38 +299,45 @@ export function ImageUpload({
 	});
 
 	return (
-		<div className="space-y-4">
+		<div className={cn("space-y-4", className)}>
 			<div
 				{...getRootProps()}
 				className={cn(
-					"flex flex-col items-center justify-center rounded-lg border border-dashed p-6 cursor-pointer",
-					isDragActive && "border-primary bg-muted",
+					"relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-all",
+					"bg-gradient-to-b from-background/50 to-background/30 backdrop-blur-sm",
+					"hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5",
+					isDragActive && "border-primary bg-primary/5",
 					isUploading && "opacity-50 cursor-not-allowed",
 				)}
 			>
 				<input {...getInputProps()} />
-				<div className="flex flex-col items-center gap-4">
-					<Avatar className="h-24 w-24">
-						<AvatarImage src={preview} />
-						<AvatarFallback>
-							{isUploading ? (
-								<Icons.spinner className="h-4 w-4 animate-spin" />
-							) : (
-								<User className="h-12 w-12" />
-							)}
-						</AvatarFallback>
-					</Avatar>
-					<div className="flex items-center gap-2">
-						<Upload className="h-4 w-4" />
-						<p className="text-sm text-muted-foreground">
-							{isDragActive
-								? "ここにドロップしてアップロード"
-								: "クリックまたはドラッグ＆ドロップで画像をアップロード"}
+				<div className="flex flex-col items-center gap-6">
+					<div className="relative group">
+						<div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-primary to-primary-foreground opacity-30 group-hover:opacity-100 transition-opacity blur" />
+						<Avatar className="relative h-32 w-32 transition-transform group-hover:scale-105">
+							<AvatarImage src={preview} />
+							<AvatarFallback className="bg-background">
+								{isUploading ? (
+									<Icons.spinner className="h-8 w-8 animate-spin text-primary" />
+								) : (
+									<User className="h-16 w-16 text-primary" />
+								)}
+							</AvatarFallback>
+						</Avatar>
+					</div>
+					<div className="flex flex-col items-center gap-2 text-center">
+						<div className="flex items-center gap-2 text-primary">
+							<Upload className="h-4 w-4" />
+							<p className="text-sm font-medium">
+								{isDragActive
+									? "ここにドロップしてアップロード"
+									: "クリックまたはドラッグ＆ドロップで画像をアップロード"}
+							</p>
+						</div>
+						<p className="text-xs text-muted-foreground">
+							推奨: {maxWidthOrHeight}px以下, {maxSizeMB}MB以下
 						</p>
 					</div>
-					<p className="text-xs text-muted-foreground">
-						推奨: {maxWidthOrHeight}px以下, {maxSizeMB}MB以下
-					</p>
 				</div>
 			</div>
 			<div className="flex flex-wrap justify-center gap-2">
@@ -339,6 +348,7 @@ export function ImageUpload({
 						size="sm"
 						onClick={removeImage}
 						disabled={isUploading}
+						className="transition-all hover:border-destructive/30 hover:text-destructive"
 					>
 						<X className="h-4 w-4 mr-2" />
 						画像を削除
@@ -353,6 +363,7 @@ export function ImageUpload({
 							handleProviderAvatarSelect(providerAvatars.google || "")
 						}
 						disabled={isUploading}
+						className="transition-all hover:border-primary/30 hover:text-primary"
 					>
 						<Icons.google className="h-4 w-4 mr-2" />
 						Googleのアバターを使用
@@ -367,6 +378,7 @@ export function ImageUpload({
 							handleProviderAvatarSelect(providerAvatars.github || "")
 						}
 						disabled={isUploading}
+						className="transition-all hover:border-primary/30 hover:text-primary"
 					>
 						<Github className="h-4 w-4 mr-2" />
 						GitHubのアバターを使用
@@ -382,6 +394,7 @@ export function ImageUpload({
 							setPreview(initialImage);
 						}}
 						disabled={isUploading}
+						className="transition-all hover:border-primary/30 hover:text-primary"
 					>
 						<RotateCcw className="h-4 w-4 mr-2" />
 						元の画像に戻す

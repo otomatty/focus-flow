@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ResponsiveDialog } from "@/components/custom/ResponsiveDialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { deleteProject } from "@/app/_actions/projects";
+import { deleteProject } from "@/app/_actions/tasks/projects";
 import type { Project } from "@/types/project";
 
 interface DeleteProjectDialogProps {

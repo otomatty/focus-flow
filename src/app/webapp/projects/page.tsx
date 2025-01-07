@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
-import { getProjects } from "@/app/_actions/projects";
+import { getProjects } from "@/app/_actions/tasks/projects";
 import { ProjectList } from "./_components/ProjectList";
 import { ProjectHeader } from "./_components/ProjectHeader";
 import { ProjectFilter } from "./_components/ProjectFilter";

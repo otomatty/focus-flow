@@ -46,6 +46,12 @@ insert into ff_skills.skill_ranks (name, slug, description, required_exp, icon, 
 ('Master', 'master', '卓越した技能を持ち、革新的な成果を生み出せる段階', 10000, 'Crown', '#EC4899', 5)
 on conflict (slug) do nothing;
 
+
+--------------------------------
+-- skill_categoriesテーブルを作成した後に実行
+--------------------------------
+
+
 -- ランク昇進の要件を管理するテーブル
 create table if not exists ff_skills.rank_promotion_requirements (
   id uuid primary key default uuid_generate_v4(),

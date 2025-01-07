@@ -26,9 +26,9 @@ create table if not exists ff_habits.habit_templates (
     expected_outcome text,                        -- 期待される結果
     implementation_intention_template text,        -- 実装意図のテンプレート（"When [X], I will [Y]"形式）
     setup_guideline jsonb default '{
-        "environment": [],                        -- 環境整備のガイドライン
-        "reminders": [],                          -- リマインダーの設定方法
-        "tracking": []                            -- 記録方法の提案
+        "environment": [],                        
+        "reminders": [],                        
+        "tracking": []                            
     }'::jsonb,
     created_at timestamp with time zone default now(),
     updated_at timestamp with time zone default now()
@@ -125,10 +125,10 @@ create table if not exists ff_habits.habit_reflections (
     habit_id uuid references ff_habits.user_habits(id) not null,
     week_start_date date not null,                -- 振り返り対象週の開始日
     scores jsonb not null default '{
-        "identity_alignment": null,               -- アイデンティティとの一致度（1-5）
-        "difficulty": null,                       -- 実行の難易度（1-5、1が最も簡単）
-        "satisfaction": null,                     -- 総合的な満足度（1-5）
-        "motivation": null                        -- 継続の意欲（1-5）
+        "identity_alignment": null,              
+        "difficulty": null,                      
+        "satisfaction": null,                   
+        "motivation": null                       
     }'::jsonb,
     created_at timestamp with time zone default now(),
     updated_at timestamp with time zone default now(),

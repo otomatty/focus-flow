@@ -1,5 +1,4 @@
 import { Calendar, Trophy, BarChart2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ResponsiveDialog } from "@/components/custom/ResponsiveDialog";
 import type { Habit } from "@/types/dashboard";
@@ -29,7 +28,10 @@ export function HabitDetailDialog({
 						<div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
 							<Calendar className="w-4 h-4" />
 							<span>
-								開始日: {new Date(habit.startDate).toLocaleDateString()}
+								開始日:{" "}
+								{habit.startDate
+									? new Date(habit.startDate).toLocaleDateString()
+									: "未設定"}
 							</span>
 						</div>
 					)}

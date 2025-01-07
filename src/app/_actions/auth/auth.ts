@@ -34,13 +34,11 @@ export async function checkIsSystemAdmin() {
 			.from("user_role_mappings")
 			.select(`
 				user_id,
-				is_active,
 				user_roles!inner (
 					name
 				)
 			`)
 			.eq("user_id", user.id)
-			.eq("is_active", true)
 			.eq("user_roles.name", "SYSTEM_ADMIN")
 			.maybeSingle();
 
@@ -58,6 +56,57 @@ export async function checkIsSystemAdmin() {
 	}
 }
 
+// エラーメッセージの定数
+const AUTH_ERROR_MESSAGES = {
+	InvalidCredentials: "メールアドレスまたはパスワードが正しくありません",
+	UserNotFound: "ユーザーが見つかりません",
+	EmailNotConfirmed: "メールアドレスが確認されていません",
+	TooManyAttempts:
+		"ログイン試行回数が多すぎます。しばらく時間をおいて再度お試しください",
+	InvalidEmail: "無効なメールアドレスです",
+	InvalidPassword: "無効なパスワードです",
+	DatabaseError:
+		"データベースエラーが発生しました。しばらく時間をおいて再度お試しください",
+	UnexpectedFailure:
+		"予期せぬエラーが発生しました。しばらく時間をおいて再度お試しください",
+	ServerError:
+		"サーバーエラーが発生しました。しばらく時間をおいて再度お試しください",
+	Default: "ログインに失敗しました",
+} as const;
+
+// エラーコードからメッセージを取得する関数
+function getAuthErrorMessage(error: AuthError): string {
+	if (error.message?.includes("Database error")) {
+		return AUTH_ERROR_MESSAGES.DatabaseError;
+	}
+
+	switch (error.message) {
+		case "Invalid login credentials":
+			return AUTH_ERROR_MESSAGES.InvalidCredentials;
+		case "User not found":
+			return AUTH_ERROR_MESSAGES.UserNotFound;
+		case "Email not confirmed":
+			return AUTH_ERROR_MESSAGES.EmailNotConfirmed;
+		case "Too many requests":
+			return AUTH_ERROR_MESSAGES.TooManyAttempts;
+		case "Invalid email":
+			return AUTH_ERROR_MESSAGES.InvalidEmail;
+		case "Invalid password":
+			return AUTH_ERROR_MESSAGES.InvalidPassword;
+		case "unexpected_failure":
+			return AUTH_ERROR_MESSAGES.UnexpectedFailure;
+		case "server_error":
+			return AUTH_ERROR_MESSAGES.ServerError;
+		default:
+			console.error("Unhandled auth error:", {
+				message: error.message,
+				code: error.status,
+				timestamp: new Date().toISOString(),
+			});
+			return AUTH_ERROR_MESSAGES.Default;
+	}
+}
+
 // ログイン
 // タイミング: ログイン時に使用
 export async function login(formData: FormData): Promise<AuthResponse> {
@@ -70,7 +119,7 @@ export async function login(formData: FormData): Promise<AuthResponse> {
 		return {
 			data: { user: null, session: null },
 			error: {
-				message: "メールアドレスとパスワーは必須です",
+				message: "メールアドレスとパスワードは必須です",
 				status: 400,
 			} as AuthError,
 		};
@@ -80,12 +129,21 @@ export async function login(formData: FormData): Promise<AuthResponse> {
 		// セッション状態を確認
 		const {
 			data: { session: currentSession },
+			error: sessionError,
 		} = await supabase.auth.getSession();
-		console.log("Current session state:", {
-			hasSession: !!currentSession,
-			sessionId: currentSession?.user?.id,
-			timestamp: new Date().toISOString(),
-		});
+
+		if (sessionError) {
+			console.error("Session check error:", {
+				error: sessionError,
+				timestamp: new Date().toISOString(),
+			});
+		}
+
+		// 既存のセッションがある場合は一旦サインアウト
+		if (currentSession) {
+			await supabase.auth.signOut();
+			console.log("Signed out existing session");
+		}
 
 		const { data, error } = await supabase.auth.signInWithPassword({
 			email,
@@ -93,13 +151,17 @@ export async function login(formData: FormData): Promise<AuthResponse> {
 		});
 
 		if (error) {
+			const errorMessage = getAuthErrorMessage(error);
 			console.error("Login error:", {
 				code: error.status,
-				message: error.message,
+				message: errorMessage,
 				details: error,
 				timestamp: new Date().toISOString(),
 			});
-			return { data: { user: null, session: null }, error };
+			return {
+				data: { user: null, session: null },
+				error: { ...error, message: errorMessage },
+			};
 		}
 
 		// ユーザー情報の取得を試みる
@@ -113,12 +175,30 @@ export async function login(formData: FormData): Promise<AuthResponse> {
 				userId: data.user?.id,
 				timestamp: new Date().toISOString(),
 			});
-		} else {
-			console.log("User data fetch success:", {
+			return {
+				data: { user: null, session: null },
+				error: {
+					message: "ユーザー情報の取得に失敗しました",
+					status: 500,
+				} as AuthError,
+			};
+		}
+
+		// ユーザープロファイルの存在確認
+		const hasProfile = await checkUserProfileExists(userData.user.id);
+		if (!hasProfile) {
+			console.warn("User profile not found:", {
 				userId: userData.user.id,
 				timestamp: new Date().toISOString(),
 			});
+			// プロファイルが存在しない場合でもログインは許可するが、ログに記録
 		}
+
+		console.log("Login success:", {
+			userId: userData.user.id,
+			hasProfile,
+			timestamp: new Date().toISOString(),
+		});
 
 		revalidatePath("/webapp/dashboard");
 		return { data, error: null };
@@ -131,7 +211,8 @@ export async function login(formData: FormData): Promise<AuthResponse> {
 		return {
 			data: { user: null, session: null },
 			error: {
-				message: "予期せぬエラーが発生しました",
+				message:
+					"予期せぬエラーが発生しました。しばらく時間をおいて再度お試しください",
 				status: 500,
 			} as AuthError,
 		};
@@ -176,6 +257,21 @@ export async function signup(formData: FormData): Promise<AuthResponse> {
 
 	try {
 		const supabase = await createClient();
+
+		// システムログの確認
+		const { data: logs, error: logError } = await supabase
+			.schema("ff_logs")
+			.from("system_logs")
+			.select("*")
+			.order("created_at", { ascending: false })
+			.limit(5);
+
+		if (logError) {
+			console.error("Error fetching system logs:", logError);
+		} else {
+			console.log("Recent system logs:", logs);
+		}
+
 		const signUpOptions = {
 			emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
 			data: {
@@ -190,6 +286,23 @@ export async function signup(formData: FormData): Promise<AuthResponse> {
 		});
 
 		if (error) {
+			// エラー発生時にシステムログを記録
+			await supabase
+				.schema("ff_logs")
+				.from("system_logs")
+				.insert([
+					{
+						event_type: "SIGNUP_ERROR",
+						event_source: "signup",
+						event_data: {
+							error: error.message,
+							email: email,
+							timestamp: new Date().toISOString(),
+						},
+						severity: "ERROR",
+					},
+				]);
+
 			throw new Error(
 				error.message === "User already registered"
 					? "このメールアドレスは既に登録されています"
@@ -205,10 +318,37 @@ export async function signup(formData: FormData): Promise<AuthResponse> {
 			redirect(`/auth/verify-email?email=${encodeURIComponent(email)}`);
 		}
 
+		// プロファイル作成の確認
 		const hasProfile = await checkUserProfileExists(data.user.id);
+		if (!hasProfile) {
+			console.warn("Profile creation failed for user:", {
+				userId: data.user.id,
+				email: data.user.email,
+				timestamp: new Date().toISOString(),
+			});
+
+			// プロファイル作成の再試行
+			const { error: profileError } = await supabase
+				.schema("ff_users")
+				.rpc("create_user_profile", { user_id: data.user.id });
+
+			if (profileError) {
+				console.error("Profile creation retry failed:", {
+					error: profileError,
+					userId: data.user.id,
+					timestamp: new Date().toISOString(),
+				});
+			}
+		}
+
 		revalidatePath("/webapp/dashboard");
 		redirect(hasProfile ? "/webapp/dashboard" : "/webapp/setup");
 	} catch (error) {
+		console.error("Signup error:", {
+			error,
+			stack: error instanceof Error ? error.stack : undefined,
+			timestamp: new Date().toISOString(),
+		});
 		throw error instanceof Error
 			? error
 			: new Error("サインアップ処理中にエラーが発生しました");

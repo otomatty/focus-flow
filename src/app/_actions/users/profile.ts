@@ -46,6 +46,22 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
 		.single();
 
 	if (error) {
+		if (error.code === "PGRST116") {
+			// 認証情報を取得
+			const { data: authData } = await supabase.auth.getUser();
+
+			// 認証情報を元に新しいプロフィールを作成
+			const newProfile = await createUserProfile(userId, {
+				displayName:
+					authData.user?.user_metadata?.name ||
+					authData.user?.email?.split("@")[0] ||
+					"Unknown User",
+				email: authData.user?.email,
+				profileImage: authData.user?.user_metadata?.avatar_url || null,
+			});
+
+			return newProfile;
+		}
 		throw new Error(`Failed to fetch user profile: ${error.message}`);
 	}
 
@@ -110,7 +126,9 @@ function convertToUserProfile(data: UserProfileRow): UserProfile {
 		location: data.location,
 		website: data.website,
 		socialLinks: data.social_links
-			? JSON.parse(data.social_links as string)
+			? typeof data.social_links === "string"
+				? JSON.parse(data.social_links)
+				: data.social_links
 			: {
 					github: null,
 					twitter: null,

@@ -1,26 +1,3 @@
--- 既存のテーブルを削除
-drop table if exists ff_schedules.template_time_slots cascade;
-drop table if exists ff_schedules.template_apply_days cascade;
-drop table if exists ff_schedules.template_likes cascade;
-drop table if exists ff_schedules.templates cascade;
-drop table if exists ff_schedules.schedule_google_events cascade;
-drop table if exists ff_schedules.google_calendars cascade;
-drop table if exists ff_schedules.google_calendar_connections cascade;
-drop table if exists ff_schedules.schedule_reminders cascade;
-drop table if exists ff_schedules.schedule_recurrences cascade;
-drop table if exists ff_schedules.recurrence_weekdays cascade;
-drop table if exists ff_schedules.recurrence_rules cascade;
-drop table if exists ff_schedules.schedules cascade;
-drop table if exists ff_schedules.schedule_categories cascade;
-drop table if exists ff_schedules.system_categories cascade;
-drop table if exists ff_schedules.color_palette cascade;
-
--- 既存の型を削除
-drop type if exists ff_schedules.priority_level cascade;
-drop type if exists ff_schedules.recurrence_pattern cascade;
-drop type if exists ff_schedules.sync_status cascade;
-drop type if exists ff_schedules.visibility_type cascade;
-
 -- 列挙型の定義
 create type ff_schedules.priority_level as enum ('high', 'medium', 'low');
 create type ff_schedules.recurrence_pattern as enum ('daily', 'weekly', 'monthly');
@@ -36,27 +13,137 @@ begin
 end;
 $$ language plpgsql;
 
-create or replace function ff_schedules.create_default_categories()
-returns trigger as $$
+create or replace function ff_schedules.create_default_categories(new_user auth.users)
+returns void as $$
+declare
+    _transaction_successful boolean := false;
 begin
-  insert into ff_schedules.schedule_categories (
-    user_id,
-    name,
-    description,
-    system_category_id,
-    sort_order
-  )
-  select
-    new.id,
-    name,
-    description,
-    id,
-    row_number() over (order by is_default desc, name)
-  from ff_schedules.system_categories;
-  
-  return new;
+    -- トランザクションを開始
+    begin
+        -- プロフィールが作成されるまで待機
+        if not exists (select 1 from ff_users.user_profiles where user_id = new_user.id) then
+            -- システムログに記録
+            insert into ff_logs.system_logs (
+                event_type,
+                event_source,
+                event_data,
+                created_by,
+                severity
+            ) values (
+                'SCHEDULE_CATEGORIES_DEFERRED',
+                'create_default_categories',
+                jsonb_build_object(
+                    'user_id', new_user.id,
+                    'reason', 'Waiting for user profile creation'
+                ),
+                null,
+                'INFO'
+            );
+            return;
+        end if;
+
+        -- デフォルトカテゴリが既に存在するか確認
+        if exists (
+            select 1 
+            from ff_schedules.schedule_categories 
+            where user_id = new_user.id
+        ) then
+            -- 既に作成済みの場合はスキップ
+            insert into ff_logs.system_logs (
+                event_type,
+                event_source,
+                event_data,
+                created_by,
+                severity
+            ) values (
+                'SCHEDULE_CATEGORIES_SKIPPED',
+                'create_default_categories',
+                jsonb_build_object(
+                    'user_id', new_user.id,
+                    'reason', 'Categories already exist'
+                ),
+                null,
+                'INFO'
+            );
+            return;
+        end if;
+
+        -- デフォルトカテゴリを作成
+        insert into ff_schedules.schedule_categories (
+            user_id,
+            name,
+            description,
+            system_category_id,
+            sort_order
+        )
+        select
+            new_user.id,
+            name,
+            description,
+            id,
+            row_number() over (order by is_default desc, name)
+        from ff_schedules.system_categories;
+
+        -- システムログに記録
+        insert into ff_logs.system_logs (
+            event_type,
+            event_source,
+            event_data,
+            created_by,
+            severity
+        ) values (
+            'SCHEDULE_CATEGORIES_CREATED',
+            'create_default_categories',
+            jsonb_build_object(
+                'user_id', new_user.id
+            ),
+            null,
+            'INFO'
+        );
+
+        _transaction_successful := true;
+    exception
+        when unique_violation then
+            -- 一意性制約違反の場合は無視してログを記録
+            insert into ff_logs.system_logs (
+                event_type,
+                event_source,
+                event_data,
+                created_by,
+                severity
+            ) values (
+                'SCHEDULE_CATEGORIES_DUPLICATE',
+                'create_default_categories',
+                jsonb_build_object(
+                    'user_id', new_user.id,
+                    'error_code', SQLSTATE,
+                    'error_message', SQLERRM
+                ),
+                null,
+                'WARNING'
+            );
+        when others then
+            -- その他のエラーの場合はログを記録
+            insert into ff_logs.system_logs (
+                event_type,
+                event_source,
+                event_data,
+                created_by,
+                severity
+            ) values (
+                'ERROR_CREATING_SCHEDULE_CATEGORIES',
+                'create_default_categories',
+                jsonb_build_object(
+                    'user_id', new_user.id,
+                    'error_code', SQLSTATE,
+                    'error_message', SQLERRM
+                ),
+                null,
+                'ERROR'
+            );
+    end;
 end;
-$$ language plpgsql;
+$$ language plpgsql security definer;
 
 create or replace function ff_schedules.update_template_likes_count()
 returns trigger as $$
@@ -298,10 +385,8 @@ create trigger update_recurrence_rules_updated_at
   for each row
   execute function ff_schedules.update_updated_at();
 
-create trigger create_user_default_categories
-  after insert on auth.users
-  for each row
-  execute function ff_schedules.create_default_categories();
+-- デフォルトカテゴリ作成トリガーは削除（assign_default_user_role関数内で呼び出すため）
+drop trigger if exists tr_create_default_categories on auth.users;
 
 create trigger update_template_likes_count
   after insert or delete on ff_schedules.template_likes
