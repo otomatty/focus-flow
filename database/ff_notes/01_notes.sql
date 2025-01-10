@@ -168,3 +168,24 @@ create trigger update_note_templates_updated_at
     before update on ff_notes.note_templates
     for each row
     execute function ff_notes.update_updated_at_column(); 
+
+-- ノートのリアルタイム化
+alter table ff_notes.notes 
+  replica identity full;
+
+alter publication supabase_realtime 
+  add table ff_notes.notes;
+
+-- リンクテーブル
+alter table ff_notes.note_links
+  replica identity full;
+
+alter publication supabase_realtime 
+  add table ff_notes.note_links;
+
+-- 参照テーブル
+alter table ff_notes.note_references
+  replica identity full;
+
+alter publication supabase_realtime 
+  add table ff_notes.note_references;

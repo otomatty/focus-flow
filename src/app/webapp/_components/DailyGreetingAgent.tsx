@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { generateResponse } from "@/lib/gemini/client";
 import { Send, Trash2 } from "lucide-react";
 import { ResetChatDialog } from "./ResetChatDialog";
+import { getAgentAvatarUrl } from "@/app/_actions/storage/agentAvatars";
 
 interface DailyGreetingAgentProps {
 	userName: string;
@@ -62,6 +63,7 @@ export function DailyGreetingAgent({
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [isTyping, setIsTyping] = useState(false);
 	const [inputValue, setInputValue] = useState("");
+	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([
 		{
@@ -295,6 +297,19 @@ export function DailyGreetingAgent({
 		}
 	};
 
+	// アバター画像のURLを取得
+	useEffect(() => {
+		const fetchAvatarUrl = async () => {
+			try {
+				const url = await getAgentAvatarUrl(agent.id);
+				setAvatarUrl(url);
+			} catch (error) {
+				console.error("Failed to fetch avatar URL:", error);
+			}
+		};
+		fetchAvatarUrl();
+	}, [agent.id]);
+
 	return (
 		<motion.div
 			initial={{ opacity: 0, y: -20 }}
@@ -313,7 +328,7 @@ export function DailyGreetingAgent({
 							<Avatar className="w-16 h-16 relative">
 								<div className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-white/20 overflow-hidden">
 									<Image
-										src={agent.avatarUrl}
+										src={avatarUrl || "/images/default-agent-avatar.png"}
 										alt={agent.name}
 										width={64}
 										height={64}
@@ -331,7 +346,7 @@ export function DailyGreetingAgent({
 							<div className="flex justify-center">
 								<div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white/20">
 									<Image
-										src={agent.avatarUrl}
+										src={avatarUrl || "/images/default-agent-avatar.png"}
 										alt={agent.name}
 										fill
 										className="object-cover"

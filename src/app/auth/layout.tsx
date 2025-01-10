@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
-import Link from "next/link";
+import { AnimatedBackButton } from "./_components/AnimatedBackButton";
 
 export const metadata: Metadata = {
 	title: "認証 - Focus Flow",
 	description:
-		"Focus Flowへようこそ。ログインまたはアカウントを作成してください。",
+		"Focus Flowへようこそ。お好みの方法でログインまたは新規登録してください。",
 };
 
 export default function AuthLayout({
@@ -15,18 +13,12 @@ export default function AuthLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="container relative min-h-screen grid place-items-center my-8">
-			<Button
-				variant="ghost"
-				className="absolute left-4 top-4 md:left-8 md:top-8 transition-colors duration-200"
-				asChild
-			>
-				<Link href="/">
-					<ChevronLeft className="mr-2 h-4 w-4" />
-					トップページ
-				</Link>
-			</Button>
-			{children}
+		<div className="min-h-screen w-full bg-gradient-to-br from-background via-muted/50 to-background relative overflow-hidden">
+			<div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,black)] dark:bg-grid-black/10" />
+			<div className="container relative min-h-screen grid place-items-center">
+				<AnimatedBackButton />
+				{children}
+			</div>
 		</div>
 	);
 }

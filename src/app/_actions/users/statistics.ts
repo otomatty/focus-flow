@@ -11,6 +11,18 @@ import { z } from "zod";
 export async function getUserStatistics(userId: string) {
 	const supabase = await createClient();
 
+	// �計情報の存在を確認し、必要に応じて初期化
+	const { error: initError } = await supabase
+		.schema("ff_users")
+		.rpc("ensure_user_statistics", {
+			target_user_id: userId,
+		});
+
+	if (initError) {
+		throw new Error(`Failed to ensure user statistics: ${initError.message}`);
+	}
+
+	// 統計情報を取得
 	const { data, error } = await supabase
 		.schema("ff_users")
 		.from("user_statistics")
@@ -35,10 +47,19 @@ export async function updateFocusStatistics(userId: string, focusTime: number) {
 
 	const { error } = await supabase
 		.schema("ff_users")
-		.rpc("update_focus_statistics", {
-			p_user_id: userId,
-			p_focus_time: `${focusTime} minutes`,
-		});
+		.from("daily_statistics")
+		.upsert(
+			{
+				user_id: userId,
+				date: new Date().toISOString().split("T")[0],
+				focus_minutes: focusTime,
+				focus_sessions: 1,
+			},
+			{
+				onConflict: "user_id,date",
+				ignoreDuplicates: false,
+			},
+		);
 
 	if (error) {
 		throw new Error(`Failed to update focus statistics: ${error.message}`);
@@ -56,9 +77,18 @@ export async function updateTaskStatistics(userId: string) {
 
 	const { error } = await supabase
 		.schema("ff_users")
-		.rpc("update_task_statistics", {
-			p_user_id: userId,
-		});
+		.from("daily_statistics")
+		.upsert(
+			{
+				user_id: userId,
+				date: new Date().toISOString().split("T")[0],
+				tasks_completed: 1,
+			},
+			{
+				onConflict: "user_id,date",
+				ignoreDuplicates: false,
+			},
+		);
 
 	if (error) {
 		throw new Error(`Failed to update task statistics: ${error.message}`);
@@ -75,9 +105,9 @@ export async function updateLoginStatistics(userId: string) {
 	const supabase = await createClient();
 
 	const { error } = await supabase
-		.schema("ff_users")
-		.rpc("update_login_statistics", {
-			p_user_id: userId,
+		.schema("ff_gamification")
+		.rpc("update_login_streak", {
+			target_user_id: userId,
 		});
 
 	if (error) {
@@ -100,11 +130,11 @@ export async function getStatisticsByPeriod(
 
 	const { data, error } = await supabase
 		.schema("ff_users")
-		.rpc("get_statistics_by_period", {
-			p_user_id: userId,
-			p_start_date: startDate.toISOString(),
-			p_end_date: endDate.toISOString(),
-		});
+		.from("daily_statistics")
+		.select("*")
+		.eq("user_id", userId)
+		.gte("date", startDate.toISOString().split("T")[0])
+		.lte("date", endDate.toISOString().split("T")[0]);
 
 	if (error) {
 		throw new Error(`Failed to fetch period statistics: ${error.message}`);
@@ -128,11 +158,19 @@ export async function getStatisticsSummary(
 
 	const { data, error } = await supabase
 		.schema("ff_users")
-		.rpc("get_statistics_summary", {
-			p_user_id: userId,
-			p_start_date: startDate.toISOString(),
-			p_end_date: endDate.toISOString(),
-		});
+		.from("daily_statistics")
+		.select(`
+			sum(focus_minutes) as total_focus_minutes,
+			sum(focus_sessions) as total_focus_sessions,
+			sum(tasks_completed) as total_tasks_completed,
+			sum(habits_completed) as total_habits_completed,
+			sum(experience_points) as total_experience_points,
+			sum(badges_earned) as total_badges_earned
+		`)
+		.eq("user_id", userId)
+		.gte("date", startDate.toISOString().split("T")[0])
+		.lte("date", endDate.toISOString().split("T")[0])
+		.single();
 
 	if (error) {
 		throw new Error(`Failed to fetch statistics summary: ${error.message}`);
@@ -182,46 +220,118 @@ export async function recordStatisticsWithValidation(
 export async function getWeeklyStats(userId: string) {
 	const supabase = await createClient();
 	const now = new Date();
-	const startOfWeek = new Date(now);
-	startOfWeek.setDate(now.getDate() - now.getDay());
-	startOfWeek.setHours(0, 0, 0, 0);
+	const year = now.getFullYear();
+	const week = getWeekNumber(now);
 
-	const { data, error } = await supabase
-		.schema("ff_users")
-		.from("weekly_statistics")
-		.select(
-			"focus_time, completed_tasks, completed_habits, avg_session_length, task_completion_rate",
-		)
-		.eq("user_id", userId)
-		.eq("year", now.getFullYear())
-		.eq("week", getWeekNumber(now))
-		.single();
+	try {
+		const { data, error } = await supabase
+			.schema("ff_users")
+			.from("weekly_statistics")
+			.select(`
+				focus_time,
+				focus_sessions,
+				completed_tasks,
+				completed_habits
+			`)
+			.eq("user_id", userId)
+			.eq("year", year)
+			.eq("week", week)
+			.single();
 
-	if (error) {
-		if (error.code === "PGRST116") {
-			// データが見つからない場合はデフォルト値を返す
+		if (error) {
+			console.error("Error fetching weekly statistics:", {
+				error,
+				userId,
+				year,
+				week,
+				details: {
+					code: error.code,
+					message: error.message,
+					details: error.details,
+					hint: error.hint,
+				},
+				timestamp: new Date().toISOString(),
+			});
+
+			if (error.code === "PGRST116") {
+				return {
+					focusMinutes: 0,
+					focusSessions: 0,
+					tasksCompleted: 0,
+					habitsCompleted: 0,
+				};
+			}
+			throw new Error(`Failed to fetch weekly statistics: ${error.message}`);
+		}
+
+		// データの型チェック
+		if (!data) {
+			console.warn("No weekly statistics data found:", {
+				userId,
+				year,
+				week,
+				timestamp: new Date().toISOString(),
+			});
 			return {
-				focusTime: 0,
-				completedTasks: 0,
-				completedHabits: 0,
-				avgSessionLength: 0,
-				taskCompletionRate: 0,
+				focusMinutes: 0,
+				focusSessions: 0,
+				tasksCompleted: 0,
+				habitsCompleted: 0,
 			};
 		}
-		throw new Error(`Failed to fetch weekly statistics: ${error.message}`);
-	}
 
-	return {
-		focusTime: data?.focus_time
-			? Math.floor(intervalToHours(data.focus_time as string))
-			: 0,
-		completedTasks: data?.completed_tasks || 0,
-		completedHabits: data?.completed_habits || 0,
-		avgSessionLength: data?.avg_session_length
-			? Math.floor(intervalToHours(data.avg_session_length as string))
-			: 0,
-		taskCompletionRate: data?.task_completion_rate || 0,
-	};
+		// focus_timeの型チェックと変換
+		let focusMinutes = 0;
+		if (data.focus_time) {
+			try {
+				focusMinutes = Math.floor(
+					intervalToMinutes(data.focus_time as unknown as string),
+				);
+			} catch (error) {
+				console.error("Error converting focus_time:", {
+					error,
+					focus_time: data.focus_time,
+					userId,
+					year,
+					week,
+					timestamp: new Date().toISOString(),
+				});
+			}
+		}
+
+		return {
+			focusMinutes,
+			focusSessions: data.focus_sessions || 0,
+			tasksCompleted: data.completed_tasks || 0,
+			habitsCompleted: data.completed_habits || 0,
+		};
+	} catch (error) {
+		console.error("Unexpected error in getWeeklyStats:", {
+			error,
+			userId,
+			year,
+			week,
+			timestamp: new Date().toISOString(),
+		});
+		return {
+			focusMinutes: 0,
+			focusSessions: 0,
+			tasksCompleted: 0,
+			habitsCompleted: 0,
+		};
+	}
+}
+
+// INTERVAL型を分に変換するヘルパー関数
+function intervalToMinutes(interval: string): number {
+	const matches = interval.match(/(\d+):(\d+):(\d+)/);
+	if (!matches) return 0;
+	const [_, hours, minutes, seconds] = matches;
+	return (
+		Number.parseInt(hours) * 60 +
+		Number.parseInt(minutes) +
+		Math.floor(Number.parseInt(seconds) / 60)
+	);
 }
 
 // 週番号を取得するヘルパー関数
@@ -236,18 +346,6 @@ function getWeekNumber(date: Date): number {
 	return weekNumber;
 }
 
-// INTERVAL型を時間に変換するヘルパー関数
-function intervalToHours(interval: string): number {
-	const matches = interval.match(/(\d+):(\d+):(\d+)/);
-	if (!matches) return 0;
-	const [_, hours, minutes, seconds] = matches;
-	return (
-		Number.parseInt(hours) +
-		Number.parseInt(minutes) / 60 +
-		Number.parseInt(seconds) / 3600
-	);
-}
-
 /**
  * ユーザーのストリーク情報を取得
  * @param userId - 対象ユーザーのID
@@ -256,10 +354,13 @@ export async function getUserStreaks(userId: string) {
 	const supabase = await createClient();
 
 	const { data, error } = await supabase
-		.schema("ff_users")
-		.rpc("get_user_streaks", {
-			p_user_id: userId,
-		})
+		.schema("ff_gamification")
+		.from("login_streaks")
+		.select(`
+			current_streak,
+			longest_streak
+		`)
+		.eq("user_id", userId)
 		.single();
 
 	if (error) {
@@ -270,25 +371,14 @@ export async function getUserStreaks(userId: string) {
 		});
 		// エラーが発生しても、デフォルト値を返す
 		return {
-			login: { current: 0, best: 0 },
-			focus: { current: 0, best: 0 },
-			task: { current: 0, best: 0 },
+			current: 0,
+			best: 0,
 		};
 	}
 
 	return {
-		login: {
-			current: data.current_login_streak,
-			best: data.longest_login_streak,
-		},
-		focus: {
-			current: data.current_focus_streak,
-			best: data.longest_focus_streak,
-		},
-		task: {
-			current: data.current_task_streak,
-			best: data.longest_task_streak,
-		},
+		current: data.current_streak,
+		best: data.longest_streak,
 	};
 }
 
@@ -300,9 +390,9 @@ export async function updateLoginStreak(userId: string) {
 	const supabase = await createClient();
 
 	const { error } = await supabase
-		.schema("ff_users")
-		.rpc("update_login_statistics", {
-			p_user_id: userId,
+		.schema("ff_gamification")
+		.rpc("update_login_streak", {
+			target_user_id: userId,
 		});
 
 	if (error) {

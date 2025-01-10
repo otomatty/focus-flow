@@ -17,6 +17,7 @@ BEGIN
             'ff_tasks',
             'ff_users',
             'ff_notes',
+            'ff_storage',
             'common',
             'auth'
         ])

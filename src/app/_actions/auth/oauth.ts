@@ -82,6 +82,13 @@ export async function signInWithOAuth(
 		console.log(`Starting ${provider} sign in process...`, {
 			provider,
 			timestamp: new Date().toISOString(),
+			env: {
+				NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+				NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+				NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+					? "設定済み"
+					: "未設定",
+			},
 		});
 
 		const supabase = await createClient();
@@ -102,7 +109,10 @@ export async function signInWithOAuth(
 		// 既存のセッションがある場合は一旦サインアウト
 		if (currentSession) {
 			await supabase.auth.signOut();
-			console.log("Signed out existing session");
+			console.log("Signed out existing session", {
+				userId: currentSession.user.id,
+				timestamp: new Date().toISOString(),
+			});
 		}
 
 		const { data, error } = await supabase.auth.signInWithOAuth({
@@ -122,6 +132,12 @@ export async function signInWithOAuth(
 				error,
 				message: errorMessage,
 				timestamp: new Date().toISOString(),
+				details: {
+					code: error.code,
+					status: error.status,
+					name: error.name,
+					stack: error.stack,
+				},
 			});
 			return {
 				error: {

@@ -66,12 +66,12 @@ export async function getDashboardHeroData() {
 		profileImage: user.user_metadata.avatar_url || null,
 		level,
 		streak: {
-			current: streaks.login.current,
-			best: streaks.login.best,
+			current: streaks.current,
+			best: streaks.best,
 		},
 	};
 
-	// シーズンデータを構築
+	// シズンデータを構築
 	const seasonData: SeasonData = {
 		season: {
 			...currentSeason,

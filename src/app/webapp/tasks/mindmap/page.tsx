@@ -1,4 +1,4 @@
-import { getProjects } from "@/app/_actions/projects";
+import { getProjects } from "@/app/_actions/tasks/projects";
 import { TaskBoardClient } from "./_components/TaskBoardClient";
 import { convertToCamelCase } from "@/utils/caseConverter";
 import type { Project } from "@/types/project";

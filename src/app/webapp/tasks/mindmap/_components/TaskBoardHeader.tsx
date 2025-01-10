@@ -10,7 +10,7 @@ import {
 	ProjectDialog,
 	type ProjectFormValues,
 } from "@/app/webapp/projects/_components/ProjectDialog";
-import { createProject } from "@/app/_actions/projects";
+import { createProject } from "@/app/_actions/tasks/projects";
 import { ResponsiveDialog } from "@/components/custom/ResponsiveDialog";
 import type { Project } from "@/types/project";
 

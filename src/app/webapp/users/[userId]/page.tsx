@@ -20,6 +20,7 @@ import {
 	getFollowStats,
 	getFollowStatus,
 } from "@/app/_actions/social/relationships";
+import { getUserStreaks } from "@/app/_actions/users/statistics";
 
 export async function generateMetadata({
 	params,
@@ -55,6 +56,7 @@ export default async function UserProfilePage({
 	// 並列でデータを取得
 	const [
 		statistics,
+		streaks,
 		badges,
 		activeQuests,
 		questHistory,
@@ -64,6 +66,7 @@ export default async function UserProfilePage({
 		followStatus,
 	] = await Promise.all([
 		getUserStatistics(params.userId),
+		getUserStreaks(params.userId),
 		getUserBadges(params.userId),
 		getActiveQuests(params.userId),
 		getQuestHistory(params.userId, 5),
@@ -108,6 +111,7 @@ export default async function UserProfilePage({
 	].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
 	const formattedStats = {
+		userId: params.userId,
 		focusStats: {
 			totalSessions: statistics.total_focus_sessions,
 			totalTime: String(statistics.total_focus_time),
@@ -119,10 +123,8 @@ export default async function UserProfilePage({
 			completionRate: statistics.task_completion_rate,
 		},
 		streaks: {
-			currentLoginStreak: statistics.current_login_streak,
-			longestLoginStreak: statistics.longest_login_streak,
-			currentFocusStreak: statistics.current_focus_streak,
-			longestFocusStreak: statistics.longest_focus_streak,
+			currentLoginStreak: streaks.current,
+			longestLoginStreak: streaks.best,
 		},
 		level: levelInfo,
 	};

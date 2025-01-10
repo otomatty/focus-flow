@@ -28,11 +28,8 @@ export function SiteHeader() {
 						お問い合わせ
 					</Link>
 					<ThemeSwitcher />
-					<Button asChild variant="outline">
+					<Button asChild variant="default">
 						<Link href="/auth/login">ログイン</Link>
-					</Button>
-					<Button asChild>
-						<Link href="/auth/signup">無料で始める</Link>
 					</Button>
 				</nav>
 			</div>

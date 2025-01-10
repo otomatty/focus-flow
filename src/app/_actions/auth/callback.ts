@@ -68,81 +68,108 @@ function getCallbackErrorMessage(error: AuthCallbackError): string {
 
 // コールバック処理
 export async function handleAuthCallback(code: string) {
-	try {
-		console.log("Starting auth callback process...", {
-			timestamp: new Date().toISOString(),
-		});
+	const MAX_RETRIES = 3;
+	const RETRY_DELAY = 1000; // 1秒
 
-		const supabase = await createClient();
+	for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+		const startTime = performance.now();
+		try {
+			const supabase = await createClient();
 
-		// 既存のセッションをチェック
-		const {
-			data: { session: currentSession },
-			error: sessionError,
-		} = await supabase.auth.getSession();
-
-		if (sessionError) {
-			console.error("Session check error:", {
+			// 既存のセッションをチェック
+			const {
+				data: { session: currentSession },
 				error: sessionError,
-				timestamp: new Date().toISOString(),
-			});
-		}
+			} = await supabase.auth.getSession();
 
-		// 既存のセッションがある場合は一旦サインアウト
-		if (currentSession) {
-			await supabase.auth.signOut();
-			console.log("Signed out existing session", {
-				timestamp: new Date().toISOString(),
-			});
-		}
+			if (sessionError) {
+				console.error("Session check error:", {
+					error: sessionError,
+					attempt,
+					timestamp: new Date().toISOString(),
+					elapsedMs: Math.round(performance.now() - startTime),
+				});
+			}
 
-		const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+			// 既存のセッションがある場合は一旦サインアウト
+			if (currentSession) {
+				await supabase.auth.signOut();
+				console.log("Signed out existing session", {
+					timestamp: new Date().toISOString(),
+					elapsedMs: Math.round(performance.now() - startTime),
+				});
+			}
 
-		if (error) {
-			const errorMessage = getCallbackErrorMessage(error);
-			console.error("Auth callback error:", {
+			const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+			if (error) {
+				const errorMessage = getCallbackErrorMessage(error);
+				console.error("Auth callback error:", {
+					error,
+					message: errorMessage,
+					attempt,
+					timestamp: new Date().toISOString(),
+					elapsedMs: Math.round(performance.now() - startTime),
+				});
+
+				if (attempt === MAX_RETRIES) {
+					return {
+						data: { session: null, user: null },
+						error: { ...error, message: errorMessage },
+					};
+				}
+				await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+				continue;
+			}
+
+			if (!data.session) {
+				console.error("No session data returned", {
+					timestamp: new Date().toISOString(),
+					elapsedMs: Math.round(performance.now() - startTime),
+				});
+
+				if (attempt === MAX_RETRIES) {
+					return {
+						data: { session: null, user: null },
+						error: {
+							message: CALLBACK_ERROR_MESSAGES.SessionCreationFailed,
+							status: 500,
+						} as AuthError,
+					};
+				}
+				await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+				continue;
+			}
+
+			return { data, error: null };
+		} catch (error) {
+			console.error("Unexpected auth callback error:", {
 				error,
-				message: errorMessage,
+				attempt,
+				stack: error instanceof Error ? error.stack : undefined,
 				timestamp: new Date().toISOString(),
+				elapsedMs: Math.round(performance.now() - startTime),
 			});
-			return {
-				data: { session: null, user: null },
-				error: { ...error, message: errorMessage },
-			};
+
+			if (attempt === MAX_RETRIES) {
+				return {
+					data: { session: null, user: null },
+					error: {
+						message:
+							"認証コールバックの処理中に予期せぬエラーが発生しました。しばらく時間をおいて再度お試しください",
+						status: 500,
+					} as AuthError,
+				};
+			}
+			await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
 		}
-
-		if (!data.session) {
-			console.error("No session data returned", {
-				timestamp: new Date().toISOString(),
-			});
-			return {
-				data: { session: null, user: null },
-				error: {
-					message: CALLBACK_ERROR_MESSAGES.SessionCreationFailed,
-					status: 500,
-				} as AuthError,
-			};
-		}
-
-		console.log("Auth callback success", {
-			userId: data.user?.id,
-			timestamp: new Date().toISOString(),
-		});
-
-		return { data, error: null };
-	} catch (error) {
-		console.error("Unexpected auth callback error:", {
-			error,
-			stack: error instanceof Error ? error.stack : undefined,
-			timestamp: new Date().toISOString(),
-		});
-		return {
-			data: { session: null, user: null },
-			error: {
-				message:
-					"認証コールバックの処理中に予期せぬエラーが発生しました。しばらく時間をおいて再度お試しください",
-				status: 500,
-			} as AuthError,
-		};
 	}
+
+	return {
+		data: { session: null, user: null },
+		error: {
+			message: "認証コールバックの処理に失敗しました",
+			status: 500,
+		} as AuthError,
+	};
 }

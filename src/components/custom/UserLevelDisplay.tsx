@@ -17,7 +17,17 @@ import { userDataAtom } from "@/stores/userDataAtom";
 export function UserLevelDisplay() {
 	const userData = useAtomValue(userDataAtom);
 
-	if (!userData?.level || !userData.nextLevelExp || !userData.levelSetting) {
+	if (
+		!userData?.level ||
+		userData.nextLevelExp === null ||
+		userData.nextLevelExp === undefined ||
+		!userData.levelSetting
+	) {
+		console.log("UserLevelDisplay returning null due to missing data:", {
+			level: userData?.level,
+			nextLevelExp: userData?.nextLevelExp,
+			levelSetting: userData?.levelSetting,
+		});
 		return null;
 	}
 

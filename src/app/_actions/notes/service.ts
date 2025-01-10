@@ -6,7 +6,6 @@ import type {
 	NoteSearchParams,
 	LinkedItem,
 } from "@/types/notes";
-import { convertToCamelCase } from "@/utils/caseConverter";
 
 function convertNoteRowToNote(row: NoteRow): Note {
 	return {
@@ -328,4 +327,172 @@ export async function makeNotePublic(
 	if (error) {
 		throw error;
 	}
+}
+
+export interface NoteTemplate {
+	id: string;
+	title: string;
+	content: string;
+	templateType:
+		| "goal_reflection"
+		| "milestone_reflection"
+		| "habit_reflection"
+		| "habit_log";
+	metadata: Record<string, unknown>;
+	isDefault: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
+interface NoteTemplateRow {
+	id: string;
+	title: string;
+	content: string;
+	template_type: string;
+	metadata: Json;
+	is_default: boolean | null;
+	created_at: string | null;
+	updated_at: string | null;
+}
+
+function convertTemplateRowToTemplate(row: NoteTemplateRow): NoteTemplate {
+	return {
+		id: row.id,
+		title: row.title,
+		content: row.content,
+		templateType: row.template_type as NoteTemplate["templateType"],
+		metadata: row.metadata as Record<string, unknown>,
+		isDefault: row.is_default || false,
+		createdAt: row.created_at || new Date().toISOString(),
+		updatedAt: row.updated_at || new Date().toISOString(),
+	};
+}
+
+export async function getTemplates() {
+	const supabase = await createClient();
+	const { data, error } = await supabase
+		.schema("ff_notes")
+		.from("note_templates")
+		.select("*")
+		.order("created_at", { ascending: false });
+
+	if (error) throw error;
+	return (data as NoteTemplateRow[]).map(convertTemplateRowToTemplate);
+}
+
+export async function getTemplatesByType(type: NoteTemplate["templateType"]) {
+	const supabase = await createClient();
+	const { data, error } = await supabase
+		.schema("ff_notes")
+		.from("note_templates")
+		.select("*")
+		.eq("template_type", type)
+		.order("is_default", { ascending: false });
+
+	if (error) throw error;
+	return (data as NoteTemplateRow[]).map(convertTemplateRowToTemplate);
+}
+
+export async function createTemplate(
+	template: Omit<NoteTemplate, "id" | "createdAt" | "updatedAt">,
+) {
+	const supabase = await createClient();
+	const { data, error } = await supabase
+		.schema("ff_notes")
+		.from("note_templates")
+		.insert({
+			title: template.title,
+			content: template.content,
+			template_type: template.templateType,
+			metadata: template.metadata as Json,
+			is_default: template.isDefault,
+		})
+		.select()
+		.single();
+
+	if (error) throw error;
+	return convertTemplateRowToTemplate(data as NoteTemplateRow);
+}
+
+export async function updateTemplate(
+	id: string,
+	template: Partial<Omit<NoteTemplate, "id" | "createdAt" | "updatedAt">>,
+) {
+	const supabase = await createClient();
+	const { data, error } = await supabase
+		.schema("ff_notes")
+		.from("note_templates")
+		.update({
+			title: template.title,
+			content: template.content,
+			template_type: template.templateType,
+			metadata: template.metadata as Json,
+			is_default: template.isDefault,
+		})
+		.eq("id", id)
+		.select()
+		.single();
+
+	if (error) throw error;
+	return convertTemplateRowToTemplate(data as NoteTemplateRow);
+}
+
+export async function deleteTemplate(id: string) {
+	const supabase = await createClient();
+	const { error } = await supabase
+		.schema("ff_notes")
+		.from("note_templates")
+		.delete()
+		.eq("id", id);
+
+	if (error) throw error;
+}
+
+export async function createNoteFromTemplate(
+	templateId: string,
+	userId: string,
+) {
+	const supabase = await createClient();
+
+	// テンプレートを取得
+	const { data: template, error: templateError } = await supabase
+		.schema("ff_notes")
+		.from("note_templates")
+		.select("*")
+		.eq("id", templateId)
+		.single();
+
+	if (templateError) throw templateError;
+
+	// テンプレートからノートを作成
+	const { data: note, error: noteError } = await supabase
+		.schema("ff_notes")
+		.from("notes")
+		.insert([
+			{
+				user_id: userId,
+				title: template.title,
+				content: template.content,
+				content_format: "markdown",
+				metadata: {
+					...(template.metadata as Record<string, unknown>),
+					template_id: templateId,
+					template_type: template.template_type,
+				} as Json,
+			},
+		])
+		.select()
+		.single();
+
+	if (noteError) throw noteError;
+	return note;
+}
+
+// 高度な検索機能
+export interface SearchNotesParams {
+	query?: string;
+	tags?: string[];
+	visibility?: "private" | "shared" | "public";
+	limit?: number;
+	offset?: number;
 }

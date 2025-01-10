@@ -1,7 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { format } from "date-fns";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -12,221 +25,320 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import type {
-	Schedule,
-	CreateScheduleInput,
-	ScheduleCategory,
-	SchedulePriority,
-	RecurrencePattern,
-} from "../types";
+import { Calendar } from "@/components/ui/calendar";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
+import type { Schedule } from "../types";
+import { useUpdateActivity } from "@/hooks/useUpdateActivity";
 
-interface Props {
-	schedule?: Schedule;
-	onSubmit: (data: CreateScheduleInput) => void;
-	onCancel: () => void;
+const formSchema = z.object({
+	title: z.string().min(1, "必須目です"),
+	description: z.string().optional(),
+	startDate: z.date(),
+	startTime: z.string().optional(),
+	endDate: z.date(),
+	endTime: z.string().optional(),
+	isAllDay: z.boolean(),
+	categoryId: z.string(),
+	priority: z.enum(["high", "medium", "low"]),
+	colorId: z.string().optional(),
+	projectId: z.string().optional(),
+	taskId: z.string().optional(),
+	habitId: z.string().optional(),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+interface ScheduleFormProps {
+	onSubmit: (
+		data: Omit<
+			Schedule,
+			| "id"
+			| "userId"
+			| "createdAt"
+			| "updatedAt"
+			| "isGoogleSynced"
+			| "googleEventData"
+			| "googleSyncError"
+			| "googleLastModified"
+		>,
+	) => Promise<void>;
+	isSubmitting: boolean;
+	defaultValues?: Partial<FormData>;
 }
 
-export function ScheduleForm({ schedule, onSubmit, onCancel }: Props) {
-	const [formData, setFormData] = useState<CreateScheduleInput>({
-		title: schedule?.title ?? "",
-		description: schedule?.description ?? "",
-		startDate: schedule?.startDate ?? new Date().toISOString().split("T")[0],
-		startTime: schedule?.startTime ?? "09:00",
-		endDate: schedule?.endDate ?? new Date().toISOString().split("T")[0],
-		endTime: schedule?.endTime ?? "10:00",
-		category: schedule?.category ?? "other",
-		priority: schedule?.priority ?? "medium",
-		isAllDay: schedule?.isAllDay ?? false,
-		recurrence: schedule?.recurrence ?? {
-			pattern: "none",
-		},
-		reminder: schedule?.reminder ?? {
-			enabled: false,
-			minutesBefore: 30,
+export function ScheduleForm({
+	onSubmit,
+	isSubmitting,
+	defaultValues,
+}: ScheduleFormProps) {
+	const form = useForm<FormData>({
+		resolver: zodResolver(formSchema),
+		defaultValues: {
+			title: "",
+			description: "",
+			startDate: new Date(),
+			endDate: new Date(),
+			isAllDay: false,
+			categoryId: "work",
+			priority: "medium",
+			...defaultValues,
 		},
 	});
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		onSubmit(formData);
+	const { updateActivity } = useUpdateActivity({ updateOnMount: false });
+
+	const handleSubmit = async (data: FormData) => {
+		try {
+			await onSubmit(data);
+			await updateActivity();
+		} catch (error) {
+			// ... エラー処理
+		}
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="space-y-6">
-			<div className="space-y-4">
-				<div>
-					<Label>タイトル</Label>
-					<Input
-						value={formData.title}
-						onChange={(e) =>
-							setFormData({ ...formData, title: e.target.value })
-						}
-						placeholder="予定のタイトル"
-						required
-					/>
-				</div>
+		<Form {...form}>
+			<form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+				<Card className="p-4">
+					<div className="grid gap-4">
+						<FormField
+							control={form.control}
+							name="title"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>タイトル</FormLabel>
+									<FormControl>
+										<Input {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 
-				<div>
-					<Label>説明</Label>
-					<Textarea
-						value={formData.description}
-						onChange={(e) =>
-							setFormData({ ...formData, description: e.target.value })
-						}
-						placeholder="予定の説明"
-					/>
-				</div>
+						<FormField
+							control={form.control}
+							name="description"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>説明</FormLabel>
+									<FormControl>
+										<Textarea {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 
-				<div className="grid grid-cols-2 gap-4">
-					<div>
-						<Label>開始日</Label>
-						<Input
-							type="date"
-							value={formData.startDate}
-							onChange={(e) =>
-								setFormData({ ...formData, startDate: e.target.value })
-							}
-							required
+						<div className="grid grid-cols-2 gap-4">
+							<FormField
+								control={form.control}
+								name="startDate"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>開始日</FormLabel>
+										<Popover>
+											<PopoverTrigger asChild>
+												<FormControl>
+													<Button
+														variant="outline"
+														className={cn(
+															"w-full pl-3 text-left font-normal",
+															!field.value && "text-muted-foreground",
+														)}
+													>
+														{field.value ? (
+															format(field.value, "yyyy/MM/dd")
+														) : (
+															<span>日付を選択</span>
+														)}
+														<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+													</Button>
+												</FormControl>
+											</PopoverTrigger>
+											<PopoverContent className="w-auto p-0" align="start">
+												<Calendar
+													mode="single"
+													selected={field.value}
+													onSelect={field.onChange}
+													disabled={(date) => date < new Date("1900-01-01")}
+													initialFocus
+												/>
+											</PopoverContent>
+										</Popover>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={form.control}
+								name="startTime"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>開始時刻</FormLabel>
+										<FormControl>
+											<Input
+												type="time"
+												{...field}
+												disabled={form.watch("isAllDay")}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={form.control}
+								name="endDate"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>終了日</FormLabel>
+										<Popover>
+											<PopoverTrigger asChild>
+												<FormControl>
+													<Button
+														variant="outline"
+														className={cn(
+															"w-full pl-3 text-left font-normal",
+															!field.value && "text-muted-foreground",
+														)}
+													>
+														{field.value ? (
+															format(field.value, "yyyy/MM/dd")
+														) : (
+															<span>日付を選択</span>
+														)}
+														<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+													</Button>
+												</FormControl>
+											</PopoverTrigger>
+											<PopoverContent className="w-auto p-0" align="start">
+												<Calendar
+													mode="single"
+													selected={field.value}
+													onSelect={field.onChange}
+													disabled={(date) => date < form.watch("startDate")}
+													initialFocus
+												/>
+											</PopoverContent>
+										</Popover>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={form.control}
+								name="endTime"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>終了時刻</FormLabel>
+										<FormControl>
+											<Input
+												type="time"
+												{...field}
+												disabled={form.watch("isAllDay")}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</div>
+
+						<FormField
+							control={form.control}
+							name="isAllDay"
+							render={({ field }) => (
+								<FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+									<div className="space-y-0.5">
+										<FormLabel>終日</FormLabel>
+									</div>
+									<FormControl>
+										<Switch
+											checked={field.value}
+											onCheckedChange={field.onChange}
+										/>
+									</FormControl>
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="categoryId"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>カテゴリー</FormLabel>
+									<Select
+										onValueChange={field.onChange}
+										defaultValue={field.value}
+									>
+										<FormControl>
+											<SelectTrigger>
+												<SelectValue placeholder="カテゴリーを選択" />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											<SelectItem value="work">仕事</SelectItem>
+											<SelectItem value="personal">個人</SelectItem>
+											<SelectItem value="habit">習慣</SelectItem>
+											<SelectItem value="other">その他</SelectItem>
+										</SelectContent>
+									</Select>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="priority"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>優先度</FormLabel>
+									<Select
+										onValueChange={field.onChange}
+										defaultValue={field.value}
+									>
+										<FormControl>
+											<SelectTrigger>
+												<SelectValue placeholder="優先度を選択" />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											<SelectItem value="high">高</SelectItem>
+											<SelectItem value="medium">中</SelectItem>
+											<SelectItem value="low">低</SelectItem>
+										</SelectContent>
+									</Select>
+									<FormMessage />
+								</FormItem>
+							)}
 						/>
 					</div>
-					<div>
-						<Label>開始時間</Label>
-						<Input
-							type="time"
-							value={formData.startTime}
-							onChange={(e) =>
-								setFormData({ ...formData, startTime: e.target.value })
-							}
-							required
-							disabled={formData.isAllDay}
-						/>
-					</div>
-				</div>
+				</Card>
 
-				<div className="grid grid-cols-2 gap-4">
-					<div>
-						<Label>終了日</Label>
-						<Input
-							type="date"
-							value={formData.endDate}
-							onChange={(e) =>
-								setFormData({ ...formData, endDate: e.target.value })
-							}
-							required
-						/>
-					</div>
-					<div>
-						<Label>終了時間</Label>
-						<Input
-							type="time"
-							value={formData.endTime}
-							onChange={(e) =>
-								setFormData({ ...formData, endTime: e.target.value })
-							}
-							required
-							disabled={formData.isAllDay}
-						/>
-					</div>
-				</div>
-
-				<div className="flex items-center space-x-2">
-					<Switch
-						checked={formData.isAllDay}
-						onCheckedChange={(checked) =>
-							setFormData({ ...formData, isAllDay: checked })
-						}
-					/>
-					<Label>終日</Label>
-				</div>
-
-				<div className="grid grid-cols-2 gap-4">
-					<div>
-						<Label>カテゴリー</Label>
-						<Select
-							value={formData.category}
-							onValueChange={(value: ScheduleCategory) =>
-								setFormData({ ...formData, category: value })
-							}
-						>
-							<SelectTrigger>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="work">仕事</SelectItem>
-								<SelectItem value="personal">個人</SelectItem>
-								<SelectItem value="habit">習慣</SelectItem>
-								<SelectItem value="other">その他</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-
-					<div>
-						<Label>優先度</Label>
-						<Select
-							value={formData.priority}
-							onValueChange={(value: SchedulePriority) =>
-								setFormData({ ...formData, priority: value })
-							}
-						>
-							<SelectTrigger>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="high">高</SelectItem>
-								<SelectItem value="medium">中</SelectItem>
-								<SelectItem value="low">低</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-				</div>
-
-				<div>
-					<Label>繰り返し</Label>
-					<Select
-						value={formData.recurrence.pattern}
-						onValueChange={(value: RecurrencePattern) =>
-							setFormData({
-								...formData,
-								recurrence: { ...formData.recurrence, pattern: value },
-							})
-						}
+				<div className="flex justify-end gap-4">
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => window.history.back()}
 					>
-						<SelectTrigger>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="none">繰り返しなし</SelectItem>
-							<SelectItem value="daily">毎日</SelectItem>
-							<SelectItem value="weekly">毎週</SelectItem>
-							<SelectItem value="monthly">毎月</SelectItem>
-						</SelectContent>
-					</Select>
+						キャンセル
+					</Button>
+					<Button type="submit" disabled={isSubmitting}>
+						{isSubmitting ? "保存中..." : "保存"}
+					</Button>
 				</div>
-
-				<div className="flex items-center space-x-2">
-					<Switch
-						checked={formData.reminder?.enabled}
-						onCheckedChange={(checked) =>
-							setFormData({
-								...formData,
-								reminder: {
-									...formData.reminder!,
-									enabled: checked,
-								},
-							})
-						}
-					/>
-					<Label>リマインダー</Label>
-				</div>
-			</div>
-
-			<div className="flex justify-end space-x-2">
-				<Button type="button" variant="outline" onClick={onCancel}>
-					キャンセル
-				</Button>
-				<Button type="submit">保存</Button>
-			</div>
-		</form>
+			</form>
+		</Form>
 	);
 }

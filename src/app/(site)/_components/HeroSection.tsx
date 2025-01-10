@@ -69,14 +69,17 @@ export function HeroSection() {
 					transition={{ duration: 0.5, delay: 0.4 }}
 				>
 					<h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-						生産性を最大化する
+						「今日」を超えて、
 						<br />
-						<span className="text-indigo-600">ポモドーロタイマー</span>
+						<span className="text-indigo-600">「なりたい自分」へ</span>
 					</h1>
-					<p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-						Focus
-						Flowは、あなたの作業効率を最大限に引き出すポモドーロタイマーです。
-						タスク管理、統計分析、AIアシスタントを組み合わせて、より効果的な時間管理を実現します。
+					<p className="text-xl md:text-2xl text-gray-600 mb-4">
+						あなたの小さな一歩が、確かな成長への道筋を作る
+					</p>
+					<p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+						Focus Flowは、あなたの成長をデザインするプラットフォーム。
+						<br className="hidden md:block" />
+						日々の小さな進歩を可視化し、理想の自分への道のりを明確にします。
 					</p>
 					<div className="flex flex-col sm:flex-row gap-4 justify-center">
 						<Button
@@ -84,7 +87,7 @@ export function HeroSection() {
 							size="lg"
 							className="bg-indigo-600 hover:bg-indigo-700"
 						>
-							<Link href="/auth/signup">無料で始める</Link>
+							<Link href="/auth/login">無料で始める</Link>
 						</Button>
 						<Button asChild variant="outline" size="lg">
 							<Link href="#features">機能を見る</Link>

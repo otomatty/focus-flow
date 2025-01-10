@@ -1,3 +1,20 @@
+-- -- 既存のトリガーを削除
+-- DROP TRIGGER IF EXISTS initialize_user_statistics_on_profile_creation ON auth.users;
+-- DROP TRIGGER IF EXISTS create_daily_statistics_partition_trigger ON ff_users.daily_statistics CASCADE;
+
+-- -- 既存の関数を削除
+-- DROP FUNCTION IF EXISTS ff_users.tr_initialize_user_statistics() CASCADE;
+-- DROP FUNCTION IF EXISTS ff_users.initialize_user_statistics(UUID) CASCADE;
+-- DROP FUNCTION IF EXISTS ff_users.update_focus_statistics(UUID, INTERVAL, DATE) CASCADE;
+-- DROP FUNCTION IF EXISTS ff_users.update_task_statistics(UUID, DATE) CASCADE;
+-- DROP FUNCTION IF EXISTS ff_users.create_daily_statistics_partition() CASCADE;
+
+-- -- 既存のテーブルを削除
+-- DROP TABLE IF EXISTS ff_users.monthly_statistics CASCADE;
+-- DROP TABLE IF EXISTS ff_users.weekly_statistics CASCADE;
+-- DROP TABLE IF EXISTS ff_users.daily_statistics CASCADE;
+-- DROP TABLE IF EXISTS ff_users.user_statistics CASCADE;
+
 -- ユーザー統計情報のメインテーブル
 CREATE TABLE ff_users.user_statistics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -19,13 +36,6 @@ CREATE TABLE ff_users.user_statistics (
     weekly_completed_tasks INTEGER NOT NULL DEFAULT 0,
     monthly_completed_tasks INTEGER NOT NULL DEFAULT 0,
     task_completion_rate DECIMAL(5,2) NOT NULL DEFAULT 0,
-    -- 連続記録
-    current_login_streak INTEGER NOT NULL DEFAULT 0,
-    longest_login_streak INTEGER NOT NULL DEFAULT 0,
-    current_focus_streak INTEGER NOT NULL DEFAULT 0,
-    longest_focus_streak INTEGER NOT NULL DEFAULT 0,
-    current_task_streak INTEGER NOT NULL DEFAULT 0,
-    longest_task_streak INTEGER NOT NULL DEFAULT 0,
     -- 習慣統計
     total_habits INTEGER NOT NULL DEFAULT 0,
     active_habits INTEGER NOT NULL DEFAULT 0,
@@ -62,14 +72,6 @@ CREATE TABLE ff_users.user_statistics (
         daily_habit_completion_rate BETWEEN 0 AND 100 AND
         weekly_habit_completion_rate BETWEEN 0 AND 100 AND
         monthly_habit_completion_rate BETWEEN 0 AND 100
-    ),
-    CONSTRAINT valid_streaks CHECK (
-        current_login_streak >= 0 AND
-        longest_login_streak >= 0 AND
-        current_focus_streak >= 0 AND
-        longest_focus_streak >= 0 AND
-        current_task_streak >= 0 AND
-        longest_task_streak >= 0
     )
 );
 
@@ -85,8 +87,12 @@ CREATE TABLE ff_users.daily_statistics (
     avg_session_length INTERVAL,
     task_completion_rate DECIMAL(5,2),
     habit_completion_rate DECIMAL(5,2),
+    login_count INTEGER NOT NULL DEFAULT 0,
+    experience_points INTEGER NOT NULL DEFAULT 0,
+    badges_earned INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (id, date)
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, date)
 ) PARTITION BY RANGE (date);
 
 -- 週次統計履歴テーブル
@@ -102,10 +108,14 @@ CREATE TABLE ff_users.weekly_statistics (
     avg_session_length INTERVAL,
     task_completion_rate DECIMAL(5,2),
     habit_completion_rate DECIMAL(5,2),
+    login_count INTEGER NOT NULL DEFAULT 0,
+    experience_points INTEGER NOT NULL DEFAULT 0,
+    badges_earned INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (id, year, week),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, year, week),
     CONSTRAINT valid_week CHECK (week BETWEEN 1 AND 53)
-);
+) PARTITION BY RANGE (year, week);
 
 -- 月次統計履歴テーブル
 CREATE TABLE ff_users.monthly_statistics (
@@ -120,559 +130,487 @@ CREATE TABLE ff_users.monthly_statistics (
     avg_session_length INTERVAL,
     task_completion_rate DECIMAL(5,2),
     habit_completion_rate DECIMAL(5,2),
+    login_count INTEGER NOT NULL DEFAULT 0,
+    experience_points INTEGER NOT NULL DEFAULT 0,
+    badges_earned INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (id, year, month),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, year, month),
     CONSTRAINT valid_month CHECK (month BETWEEN 1 AND 12)
 );
 
--- パーティション自動作成トリガー関数
+-- パーティション作成関数
 CREATE OR REPLACE FUNCTION ff_users.create_daily_statistics_partition()
 RETURNS TRIGGER AS $$
 DECLARE
     partition_date DATE;
     partition_name TEXT;
+    start_date DATE;
+    end_date DATE;
 BEGIN
-    partition_date := DATE_TRUNC('month', NEW.date)::DATE;
-    partition_name := 'daily_statistics_' || TO_CHAR(partition_date, 'YYYY_MM');
+    partition_date := NEW.date;
+    partition_name := 'daily_statistics_' || to_char(partition_date, 'YYYY_MM');
+    start_date := date_trunc('month', partition_date)::DATE;
+    end_date := (date_trunc('month', partition_date) + interval '1 month')::DATE;
 
+    -- パーティションが存在しない場合は作成
     IF NOT EXISTS (
         SELECT 1
         FROM pg_class c
         JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = 'ff_users'
-        AND c.relname = partition_name
+        WHERE c.relname = partition_name
+        AND n.nspname = 'ff_users'
     ) THEN
         EXECUTE format(
-            'CREATE TABLE IF NOT EXISTS ff_users.%I ' ||
-            'PARTITION OF ff_users.daily_statistics ' ||
-            'FOR VALUES FROM (%L) TO (%L)',
+            'CREATE TABLE ff_users.%I PARTITION OF ff_users.daily_statistics
+            FOR VALUES FROM (%L) TO (%L)',
             partition_name,
-            partition_date,
-            partition_date + INTERVAL '1 month'
+            start_date,
+            end_date
         );
     END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- パーティション自動作成トリガー
+-- パーティション作成トリガー
 CREATE TRIGGER create_daily_statistics_partition_trigger
     BEFORE INSERT ON ff_users.daily_statistics
     FOR EACH ROW
     EXECUTE FUNCTION ff_users.create_daily_statistics_partition();
 
--- インデックスの作成
-CREATE INDEX idx_user_statistics_user_id ON ff_users.user_statistics(user_id);
-CREATE INDEX idx_user_statistics_last_dates ON ff_users.user_statistics(last_login_date, last_focus_date, last_task_date, last_habit_date);
-CREATE INDEX idx_daily_statistics_user_id ON ff_users.daily_statistics(user_id);
-CREATE INDEX idx_daily_statistics_date ON ff_users.daily_statistics(date);
-CREATE INDEX idx_weekly_statistics_user_id ON ff_users.weekly_statistics(user_id);
-CREATE INDEX idx_weekly_statistics_year_week ON ff_users.weekly_statistics(year, week);
-CREATE INDEX idx_monthly_statistics_user_id ON ff_users.monthly_statistics(user_id);
-CREATE INDEX idx_monthly_statistics_year_month ON ff_users.monthly_statistics(year, month);
+-- 現在の月のパーティションを作成
+DO $$
+DECLARE
+    current_month DATE := date_trunc('month', current_date)::DATE;
+    next_month DATE := (date_trunc('month', current_date) + interval '1 month')::DATE;
+    partition_name TEXT := 'daily_statistics_' || to_char(current_date, 'YYYY_MM');
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.relname = partition_name
+        AND n.nspname = 'ff_users'
+    ) THEN
+        EXECUTE format(
+            'CREATE TABLE ff_users.%I PARTITION OF ff_users.daily_statistics
+            FOR VALUES FROM (%L) TO (%L)',
+            partition_name,
+            current_month,
+            next_month
+        );
+    END IF;
+END $$;
 
--- RLSポリシーの設定
-ALTER TABLE ff_users.user_statistics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ff_users.daily_statistics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ff_users.weekly_statistics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ff_users.monthly_statistics ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY user_statistics_policy ON ff_users.user_statistics FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY daily_statistics_policy ON ff_users.daily_statistics FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY weekly_statistics_policy ON ff_users.weekly_statistics FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY monthly_statistics_policy ON ff_users.monthly_statistics FOR ALL USING (auth.uid() = user_id);
-
--- フォーカスセッション完了時の統計更新関数
-CREATE OR REPLACE FUNCTION ff_users.update_focus_statistics(
-    p_user_id UUID,
-    p_focus_time INTERVAL,
-    p_session_date DATE DEFAULT CURRENT_DATE
-)
+-- ユーザー統計情報の初期化関数
+CREATE OR REPLACE FUNCTION ff_users.initialize_user_statistics(target_user_id UUID)
 RETURNS void AS $$
 DECLARE
-    v_current_date DATE := COALESCE(p_session_date, CURRENT_DATE);
-    v_last_focus_date DATE;
-    v_year INTEGER := EXTRACT(YEAR FROM v_current_date);
-    v_month INTEGER := EXTRACT(MONTH FROM v_current_date);
-    v_week INTEGER := EXTRACT(WEEK FROM v_current_date);
+    current_year INTEGER := extract(year from current_date);
+    current_month INTEGER := extract(month from current_date);
+    current_week INTEGER := extract(isoyear from current_date);
+    current_isoweek INTEGER := extract(week from current_date);
 BEGIN
-    -- 最後のフォーカス日を取得
-    SELECT last_focus_date INTO v_last_focus_date
-    FROM ff_users.user_statistics
-    WHERE user_id = p_user_id;
+    -- ユーザー統計情報のメインレコードを作成
+    INSERT INTO ff_users.user_statistics (user_id)
+    VALUES (target_user_id)
+    ON CONFLICT (user_id) DO NOTHING;
 
-    -- メイン統計の更新
-    INSERT INTO ff_users.user_statistics (
-        user_id,
-        total_focus_sessions,
-        total_focus_time,
-        daily_focus_sessions,
-        daily_focus_time,
-        avg_session_length,
-        current_focus_streak,
-        longest_focus_streak,
-        last_focus_date
-    ) VALUES (
-        p_user_id,
-        1,
-        p_focus_time,
-        1,
-        p_focus_time,
-        p_focus_time,
-        1,
-        1,
-        v_current_date
-    )
-    ON CONFLICT (user_id) DO UPDATE SET
-        total_focus_sessions = ff_users.user_statistics.total_focus_sessions + 1,
-        total_focus_time = ff_users.user_statistics.total_focus_time + p_focus_time,
-        daily_focus_sessions = CASE 
-            WHEN ff_users.user_statistics.last_focus_date = v_current_date 
-            THEN ff_users.user_statistics.daily_focus_sessions + 1
-            ELSE 1
-        END,
-        daily_focus_time = CASE 
-            WHEN ff_users.user_statistics.last_focus_date = v_current_date 
-            THEN ff_users.user_statistics.daily_focus_time + p_focus_time
-            ELSE p_focus_time
-        END,
-        avg_session_length = (ff_users.user_statistics.total_focus_time + p_focus_time) / 
-                            (ff_users.user_statistics.total_focus_sessions + 1),
-        current_focus_streak = CASE
-            WHEN ff_users.user_statistics.last_focus_date = v_current_date - INTERVAL '1 day'
-            THEN ff_users.user_statistics.current_focus_streak + 1
-            WHEN ff_users.user_statistics.last_focus_date != v_current_date
-            THEN 1
-            ELSE ff_users.user_statistics.current_focus_streak
-        END,
-        longest_focus_streak = GREATEST(
-            ff_users.user_statistics.longest_focus_streak,
-            CASE
-                WHEN ff_users.user_statistics.last_focus_date = v_current_date - INTERVAL '1 day'
-                THEN ff_users.user_statistics.current_focus_streak + 1
-                WHEN ff_users.user_statistics.last_focus_date != v_current_date
-                THEN 1
-                ELSE ff_users.user_statistics.current_focus_streak
-            END
-        ),
-        last_focus_date = v_current_date;
-
-    -- 日次統計の更新
+    -- 日次統計を作成
     INSERT INTO ff_users.daily_statistics (
         user_id,
         date,
         focus_sessions,
         focus_time,
-        avg_session_length
-    ) VALUES (
-        p_user_id,
-        v_current_date,
-        1,
-        p_focus_time,
-        p_focus_time
+        completed_tasks,
+        completed_habits,
+        login_count
     )
-    ON CONFLICT (user_id, date) DO UPDATE SET
-        focus_sessions = ff_users.daily_statistics.focus_sessions + 1,
-        focus_time = ff_users.daily_statistics.focus_time + p_focus_time,
-        avg_session_length = (ff_users.daily_statistics.focus_time + p_focus_time) / 
-                            (ff_users.daily_statistics.focus_sessions + 1);
+    VALUES (
+        target_user_id,
+        current_date,
+        0,
+        '0'::INTERVAL,
+        0,
+        0,
+        0
+    )
+    ON CONFLICT (user_id, date) DO NOTHING;
 
-    -- 週次統計の更新
+    -- 週次統計を作成
     INSERT INTO ff_users.weekly_statistics (
         user_id,
         year,
         week,
         focus_sessions,
         focus_time,
-        avg_session_length
-    ) VALUES (
-        p_user_id,
-        v_year,
-        v_week,
-        1,
-        p_focus_time,
-        p_focus_time
+        completed_tasks,
+        completed_habits,
+        login_count
     )
-    ON CONFLICT (user_id, year, week) DO UPDATE SET
-        focus_sessions = ff_users.weekly_statistics.focus_sessions + 1,
-        focus_time = ff_users.weekly_statistics.focus_time + p_focus_time,
-        avg_session_length = (ff_users.weekly_statistics.focus_time + p_focus_time) / 
-                            (ff_users.weekly_statistics.focus_sessions + 1);
+    VALUES (
+        target_user_id,
+        current_year,
+        current_isoweek,
+        0,
+        '0'::INTERVAL,
+        0,
+        0,
+        0
+    )
+    ON CONFLICT (user_id, year, week) DO NOTHING;
 
-    -- 月次統計の更新
+    -- 月次統計を作成
     INSERT INTO ff_users.monthly_statistics (
         user_id,
         year,
         month,
         focus_sessions,
         focus_time,
-        avg_session_length
-    ) VALUES (
-        p_user_id,
-        v_year,
-        v_month,
-        1,
-        p_focus_time,
-        p_focus_time
-    )
-    ON CONFLICT (user_id, year, month) DO UPDATE SET
-        focus_sessions = ff_users.monthly_statistics.focus_sessions + 1,
-        focus_time = ff_users.monthly_statistics.focus_time + p_focus_time,
-        avg_session_length = (ff_users.monthly_statistics.focus_time + p_focus_time) / 
-                            (ff_users.monthly_statistics.focus_sessions + 1);
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- タスク完了時の統計更新関数
-CREATE OR REPLACE FUNCTION ff_users.update_task_statistics(
-    p_user_id UUID,
-    p_completed_date DATE DEFAULT CURRENT_DATE
-)
-RETURNS void AS $$
-DECLARE
-    v_current_date DATE := COALESCE(p_completed_date, CURRENT_DATE);
-    v_last_task_date DATE;
-    v_year INTEGER := EXTRACT(YEAR FROM v_current_date);
-    v_month INTEGER := EXTRACT(MONTH FROM v_current_date);
-    v_week INTEGER := EXTRACT(WEEK FROM v_current_date);
-BEGIN
-    -- 最後のタスク完了日を取得
-    SELECT last_task_date INTO v_last_task_date
-    FROM ff_users.user_statistics
-    WHERE user_id = p_user_id;
-
-    -- メイン統計の更新
-    INSERT INTO ff_users.user_statistics (
-        user_id,
-        total_tasks,
         completed_tasks,
-        daily_completed_tasks,
-        current_task_streak,
-        longest_task_streak,
-        last_task_date
-    ) VALUES (
-        p_user_id,
-        1,
-        1,
-        1,
-        1,
-        1,
-        v_current_date
+        completed_habits,
+        login_count
     )
-    ON CONFLICT (user_id) DO UPDATE SET
-        total_tasks = ff_users.user_statistics.total_tasks + 1,
-        completed_tasks = ff_users.user_statistics.completed_tasks + 1,
-        daily_completed_tasks = CASE 
-            WHEN ff_users.user_statistics.last_task_date = v_current_date 
-            THEN ff_users.user_statistics.daily_completed_tasks + 1
-            ELSE 1
-        END,
-        task_completion_rate = (ff_users.user_statistics.completed_tasks + 1)::DECIMAL / 
-                              (ff_users.user_statistics.total_tasks + 1) * 100,
-        current_task_streak = CASE
-            WHEN ff_users.user_statistics.last_task_date = v_current_date - INTERVAL '1 day'
-            THEN ff_users.user_statistics.current_task_streak + 1
-            WHEN ff_users.user_statistics.last_task_date != v_current_date
-            THEN 1
-            ELSE ff_users.user_statistics.current_task_streak
-        END,
-        longest_task_streak = GREATEST(
-            ff_users.user_statistics.longest_task_streak,
-            CASE
-                WHEN ff_users.user_statistics.last_task_date = v_current_date - INTERVAL '1 day'
-                THEN ff_users.user_statistics.current_task_streak + 1
-                WHEN ff_users.user_statistics.last_task_date != v_current_date
-                THEN 1
-                ELSE ff_users.user_statistics.current_task_streak
-            END
-        ),
-        last_task_date = v_current_date;
-
-    -- 日次統計の更新
-    INSERT INTO ff_users.daily_statistics (
-        user_id,
-        date,
-        completed_tasks,
-        task_completion_rate
-    ) VALUES (
-        p_user_id,
-        v_current_date,
-        1,
-        100.0
+    VALUES (
+        target_user_id,
+        current_year,
+        current_month,
+        0,
+        '0'::INTERVAL,
+        0,
+        0,
+        0
     )
-    ON CONFLICT (user_id, date) DO UPDATE SET
-        completed_tasks = ff_users.daily_statistics.completed_tasks + 1;
-
-    -- 週次・月次統計も同様に更新
-    -- ... 省略（同様のパターン）
+    ON CONFLICT (user_id, year, month) DO NOTHING;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- ログイン時の統計更新関数
-CREATE OR REPLACE FUNCTION ff_users.update_login_statistics(
-    p_user_id UUID,
-    p_login_date DATE DEFAULT CURRENT_DATE
-)
-RETURNS void AS $$
-DECLARE
-    v_current_date DATE := COALESCE(p_login_date, CURRENT_DATE);
-    v_last_login_date DATE;
-BEGIN
-    -- 最後のログイン日を取得
-    SELECT last_login_date INTO v_last_login_date
-    FROM ff_users.user_statistics
-    WHERE user_id = p_user_id;
-
-    -- メイン統計の更新
-    INSERT INTO ff_users.user_statistics (
-        user_id,
-        current_login_streak,
-        longest_login_streak,
-        last_login_date
-    ) VALUES (
-        p_user_id,
-        1,
-        1,
-        v_current_date
-    )
-    ON CONFLICT (user_id) DO UPDATE SET
-        current_login_streak = CASE
-            WHEN ff_users.user_statistics.last_login_date = v_current_date - INTERVAL '1 day'
-            THEN ff_users.user_statistics.current_login_streak + 1
-            WHEN ff_users.user_statistics.last_login_date != v_current_date
-            THEN 1
-            ELSE ff_users.user_statistics.current_login_streak
-        END,
-        longest_login_streak = GREATEST(
-            ff_users.user_statistics.longest_login_streak,
-            CASE
-                WHEN ff_users.user_statistics.last_login_date = v_current_date - INTERVAL '1 day'
-                THEN ff_users.user_statistics.current_login_streak + 1
-                WHEN ff_users.user_statistics.last_login_date != v_current_date
-                THEN 1
-                ELSE ff_users.user_statistics.current_login_streak
-            END
-        ),
-        last_login_date = v_current_date;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- 日次統計リセット関数
-CREATE OR REPLACE FUNCTION ff_users.reset_daily_statistics()
-RETURNS void AS $$
-BEGIN
-    UPDATE ff_users.user_statistics SET
-        daily_focus_sessions = 0,
-        daily_focus_time = '0'::INTERVAL,
-        daily_completed_tasks = 0,
-        daily_habit_completion_rate = 0;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- 週次統計リセット関数
-CREATE OR REPLACE FUNCTION ff_users.reset_weekly_statistics()
-RETURNS void AS $$
-BEGIN
-    UPDATE ff_users.user_statistics SET
-        weekly_focus_sessions = 0,
-        weekly_focus_time = '0'::INTERVAL,
-        weekly_completed_tasks = 0,
-        weekly_habit_completion_rate = 0;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- 月次統計リセット関数
-CREATE OR REPLACE FUNCTION ff_users.reset_monthly_statistics()
-RETURNS void AS $$
-BEGIN
-    UPDATE ff_users.user_statistics SET
-        monthly_focus_sessions = 0,
-        monthly_focus_time = '0'::INTERVAL,
-        monthly_completed_tasks = 0,
-        monthly_habit_completion_rate = 0;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- ユーザー統計情報の初期化関数
-CREATE OR REPLACE FUNCTION ff_users.initialize_user_statistics(new_user_id UUID)
-RETURNS ff_users.user_statistics AS $$
-DECLARE
-    new_stats ff_users.user_statistics;
-BEGIN
-    -- トランザクションの開始
-    BEGIN
-        -- 既存の統計情報をチェック
-        IF EXISTS (
-            SELECT 1
-            FROM ff_users.user_statistics
-            WHERE user_id = new_user_id
-        ) THEN
-            SELECT * INTO new_stats
-            FROM ff_users.user_statistics
-            WHERE user_id = new_user_id;
-            RETURN new_stats;
-        END IF;
-
-        -- 新規統計情報を作成
-        INSERT INTO ff_users.user_statistics (
-            user_id,
-            total_focus_sessions,
-            total_focus_time,
-            avg_session_length,
-            total_tasks,
-            completed_tasks,
-            task_completion_rate,
-            current_login_streak,
-            longest_login_streak,
-            current_focus_streak,
-            longest_focus_streak,
-            current_task_streak,
-            longest_task_streak,
-            created_at,
-            updated_at
-        ) VALUES (
-            new_user_id,
-            0,
-            '0'::INTERVAL,
-            '0'::INTERVAL,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            now(),
-            now()
-        ) RETURNING * INTO new_stats;
-
-        -- システムログに記録
-        INSERT INTO ff_logs.system_logs (
-            event_type,
-            event_source,
-            event_data,
-            severity
-        ) VALUES (
-            'USER_STATISTICS_INITIALIZED',
-            'initialize_user_statistics',
-            jsonb_build_object(
-                'user_id', new_user_id
-            ),
-            'INFO'
-        );
-
-        RETURN new_stats;
-
-    EXCEPTION WHEN OTHERS THEN
-        -- エラーをログに記録
-        INSERT INTO ff_logs.system_logs (
-            event_type,
-            event_source,
-            event_data,
-            severity
-        ) VALUES (
-            'ERROR_INITIALIZING_USER_STATISTICS',
-            'initialize_user_statistics',
-            jsonb_build_object(
-                'user_id', new_user_id,
-                'error_code', SQLSTATE,
-                'error_message', SQLERRM
-            ),
-            'ERROR'
-        );
-        RAISE;
-    END;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- トリガー関数の作成
+-- ユーザー作成時に統計情報を初期化するトリガー
 CREATE OR REPLACE FUNCTION ff_users.tr_initialize_user_statistics()
 RETURNS TRIGGER AS $$
 BEGIN
-    PERFORM ff_users.initialize_user_statistics(NEW.user_id);
+    -- ユーザー統計情報のメインレコードを作成
+    INSERT INTO ff_users.user_statistics (user_id)
+    VALUES (NEW.id)
+    ON CONFLICT (user_id) DO NOTHING;
+
+    -- 日次統計を作成
+    INSERT INTO ff_users.daily_statistics (
+        user_id,
+        date,
+        focus_sessions,
+        focus_time,
+        completed_tasks,
+        completed_habits,
+        login_count
+    )
+    VALUES (
+        NEW.id,
+        current_date,
+        0,
+        '0'::INTERVAL,
+        0,
+        0,
+        0
+    )
+    ON CONFLICT (user_id, date) DO NOTHING;
+
+    -- 週次統計を作成
+    INSERT INTO ff_users.weekly_statistics (
+        user_id,
+        year,
+        week,
+        focus_sessions,
+        focus_time,
+        completed_tasks,
+        completed_habits
+    )
+    VALUES (
+        NEW.id,
+        EXTRACT(YEAR FROM current_date),
+        EXTRACT(WEEK FROM current_date),
+        0,
+        '0'::INTERVAL,
+        0,
+        0
+    )
+    ON CONFLICT (user_id, year, week) DO NOTHING;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ユーザー作成時のトリガーを設定
+CREATE TRIGGER initialize_user_statistics_on_profile_creation
+    AFTER INSERT ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION ff_users.tr_initialize_user_statistics();
+
+-- 週次統計パーティションを作成する関数
+CREATE OR REPLACE FUNCTION ff_users.create_weekly_statistics_partition()
+RETURNS TRIGGER AS $$
+DECLARE
+    partition_name TEXT;
+    start_year INTEGER;
+    start_week INTEGER;
+    end_year INTEGER;
+    end_week INTEGER;
+BEGIN
+    start_year := NEW.year;
+    start_week := NEW.week;
+    
+    -- 年末の場合は次の年の1週目まで
+    IF start_week = 52 THEN
+        end_year := start_year + 1;
+        end_week := 1;
+    ELSE
+        end_year := start_year;
+        end_week := start_week + 1;
+    END IF;
+
+    partition_name := 'weekly_statistics_' || start_year || '_' || LPAD(start_week::text, 2, '0');
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.relname = partition_name
+        AND n.nspname = 'ff_users'
+    ) THEN
+        EXECUTE format(
+            'CREATE TABLE IF NOT EXISTS ff_users.%I PARTITION OF ff_users.weekly_statistics
+            FOR VALUES FROM (%L, %L) TO (%L, %L)',
+            partition_name,
+            start_year, start_week,
+            end_year, end_week
+        );
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- パーティション作成トリガー
+DROP TRIGGER IF EXISTS create_weekly_statistics_partition_trigger ON ff_users.weekly_statistics;
+CREATE TRIGGER create_weekly_statistics_partition_trigger
+    BEFORE INSERT ON ff_users.weekly_statistics
+    FOR EACH ROW
+    EXECUTE FUNCTION ff_users.create_weekly_statistics_partition();
+
+-- 現在の週のパーティションを作成
+DO $$
+DECLARE
+    current_year INTEGER := EXTRACT(YEAR FROM CURRENT_DATE);
+    current_week INTEGER := EXTRACT(WEEK FROM CURRENT_DATE);
+    next_year INTEGER;
+    next_week INTEGER;
+BEGIN
+    IF current_week = 52 THEN
+        next_year := current_year + 1;
+        next_week := 1;
+    ELSE
+        next_year := current_year;
+        next_week := current_week + 1;
+    END IF;
+
+    EXECUTE format(
+        'CREATE TABLE IF NOT EXISTS ff_users.weekly_statistics_%s_%s PARTITION OF ff_users.weekly_statistics
+        FOR VALUES FROM (%L, %L) TO (%L, %L)',
+        current_year,
+        LPAD(current_week::text, 2, '0'),
+        current_year, current_week,
+        next_year, next_week
+    );
+END $$;
+
+-- 古いデータを削除するクリーンアップ関数
+CREATE OR REPLACE FUNCTION ff_users.cleanup_old_statistics()
+RETURNS void AS $$
+BEGIN
+    -- 3ヶ月以上前の日次統計を削除
+    DELETE FROM ff_users.daily_statistics
+    WHERE date < current_date - INTERVAL '3 months';
+
+    -- 1年以上前の週次統計を削除
+    DELETE FROM ff_users.weekly_statistics
+    WHERE (year < extract(year from current_date) - 1)
+    OR (year = extract(year from current_date) - 1 
+        AND week < extract(week from current_date));
+
+    -- 3年以上前の月次統計を削除
+    DELETE FROM ff_users.monthly_statistics
+    WHERE (year < extract(year from current_date) - 3)
+    OR (year = extract(year from current_date) - 3 
+        AND month < extract(month from current_date));
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- クリーンアップを実行するトリガー関数
+CREATE OR REPLACE FUNCTION ff_users.tr_cleanup_old_statistics()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- 毎日0時にクリーンアップを実行
+    IF extract(hour from current_timestamp) = 0 THEN
+        PERFORM ff_users.cleanup_old_statistics();
+    END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- プロフィール作成時に統計情報を初期化するトリガーを設定
-DROP TRIGGER IF EXISTS initialize_user_statistics_on_profile_creation ON ff_users.user_profiles;
-
-CREATE TRIGGER initialize_user_statistics_on_profile_creation
-    AFTER INSERT ON ff_users.user_profiles
+-- クリーンアップトリガーを作成
+DROP TRIGGER IF EXISTS cleanup_old_statistics_trigger ON ff_users.daily_statistics;
+CREATE TRIGGER cleanup_old_statistics_trigger
+    AFTER INSERT ON ff_users.daily_statistics
     FOR EACH ROW
-    EXECUTE FUNCTION ff_users.tr_initialize_user_statistics();
+    EXECUTE FUNCTION ff_users.tr_cleanup_old_statistics();
 
--- 既存のRLSポリシーの後に追加
-CREATE POLICY "Service role can manage all statistics"
-    ON ff_users.user_statistics
-    FOR ALL
-    USING (auth.role() = 'service_role');
-
-CREATE POLICY "Users can initialize their own statistics"
-    ON ff_users.user_statistics
-    FOR INSERT
-    WITH CHECK (
-        auth.uid() = user_id OR
-        auth.role() = 'service_role'
-    );
-
--- ユーザーストリーク情報を取得するビュー
-CREATE OR REPLACE VIEW ff_users.user_streaks_view
-    WITH (security_barrier = true)
-    AS
-SELECT
-    user_id,
-    COALESCE(current_login_streak, 0) as current_login_streak,
-    COALESCE(longest_login_streak, 0) as longest_login_streak,
-    COALESCE(current_focus_streak, 0) as current_focus_streak,
-    COALESCE(longest_focus_streak, 0) as longest_focus_streak,
-    COALESCE(current_task_streak, 0) as current_task_streak,
-    COALESCE(longest_task_streak, 0) as longest_task_streak
-FROM ff_users.user_statistics;
-
--- ビューのアクセス権限設定
-GRANT SELECT ON ff_users.user_streaks_view TO authenticated;
-
--- RLSポリシーの設定
-CREATE POLICY "Users can view their own streaks"
-    ON ff_users.user_statistics
-    FOR SELECT
-    USING (auth.uid() = user_id);
-
--- ユーザーストリーク情報を取得する関数
-CREATE OR REPLACE FUNCTION ff_users.get_user_streaks(p_user_id UUID)
-RETURNS TABLE (
-    current_login_streak INTEGER,
-    longest_login_streak INTEGER,
-    current_focus_streak INTEGER,
-    longest_focus_streak INTEGER,
-    current_task_streak INTEGER,
-    longest_task_streak INTEGER
-) SECURITY DEFINER SET search_path = ff_users
-AS $$
+-- ログイン時の統計データ作成・更新関数
+CREATE OR REPLACE FUNCTION ff_users.create_or_update_statistics(target_user_id UUID)
+RETURNS void AS $$
+DECLARE
+    current_year INTEGER := extract(year from current_date);
+    current_month INTEGER := extract(month from current_date);
+    current_isoweek INTEGER := extract(week from current_date);
+    daily_stats_exists BOOLEAN;
+    weekly_stats_exists BOOLEAN;
+    monthly_stats_exists BOOLEAN;
 BEGIN
-    -- 統計情報が存在しない場合は自動的に初期化
-    PERFORM ff_users.initialize_user_statistics(p_user_id);
-    
-    RETURN QUERY
-    SELECT
-        v.current_login_streak,
-        v.longest_login_streak,
-        v.current_focus_streak,
-        v.longest_focus_streak,
-        v.current_task_streak,
-        v.longest_task_streak
-    FROM user_streaks_view v
-    WHERE v.user_id = p_user_id;
+    -- 日次統計が既に存在するか確認
+    SELECT EXISTS (
+        SELECT 1
+        FROM ff_users.daily_statistics
+        WHERE user_id = target_user_id
+        AND date = current_date
+    ) INTO daily_stats_exists;
 
-    -- データが見つからない場合はデフォルト値を返す
-    IF NOT FOUND THEN
-        RETURN QUERY SELECT 0,0,0,0,0,0;
+    -- 週次統計が既に存在するか確認
+    SELECT EXISTS (
+        SELECT 1
+        FROM ff_users.weekly_statistics
+        WHERE user_id = target_user_id
+        AND year = current_year
+        AND week = current_isoweek
+    ) INTO weekly_stats_exists;
+
+    -- 月次統計が既に存在するか確認
+    SELECT EXISTS (
+        SELECT 1
+        FROM ff_users.monthly_statistics
+        WHERE user_id = target_user_id
+        AND year = current_year
+        AND month = current_month
+    ) INTO monthly_stats_exists;
+
+    -- 日次統計の作成または更新
+    IF NOT daily_stats_exists THEN
+        -- その日の最初のログインの場合、新規作成
+        INSERT INTO ff_users.daily_statistics (
+            user_id,
+            date,
+            focus_sessions,
+            focus_time,
+            completed_tasks,
+            completed_habits,
+            login_count
+        )
+        VALUES (
+            target_user_id,
+            current_date,
+            0,
+            '0'::INTERVAL,
+            0,
+            0,
+            1
+        );
+    ELSE
+        -- 同じ日の2回目以降のログインの場合、ログイン回数のみ更新
+        UPDATE ff_users.daily_statistics
+        SET login_count = login_count + 1
+        WHERE user_id = target_user_id
+        AND date = current_date;
+    END IF;
+
+    -- 週次統計の作成または更新
+    IF NOT weekly_stats_exists THEN
+        -- その週の最初のログインの場合、新規作成
+        INSERT INTO ff_users.weekly_statistics (
+            user_id,
+            year,
+            week,
+            focus_sessions,
+            focus_time,
+            completed_tasks,
+            completed_habits,
+            login_count
+        )
+        VALUES (
+            target_user_id,
+            current_year,
+            current_isoweek,
+            0,
+            '0'::INTERVAL,
+            0,
+            0,
+            1
+        );
+    ELSE
+        -- 既存の週次統計があれば更新
+        UPDATE ff_users.weekly_statistics
+        SET login_count = login_count + 1
+        WHERE user_id = target_user_id
+        AND year = current_year
+        AND week = current_isoweek;
+    END IF;
+
+    -- 月次統計の作成または更新
+    IF NOT monthly_stats_exists THEN
+        -- その月の最初のログインの場合、新規作成
+        INSERT INTO ff_users.monthly_statistics (
+            user_id,
+            year,
+            month,
+            focus_sessions,
+            focus_time,
+            completed_tasks,
+            completed_habits,
+            login_count
+        )
+        VALUES (
+            target_user_id,
+            current_year,
+            current_month,
+            0,
+            '0'::INTERVAL,
+            0,
+            0,
+            1
+        );
+    ELSE
+        -- 既存の月次統計があれば更新
+        UPDATE ff_users.monthly_statistics
+        SET login_count = login_count + 1
+        WHERE user_id = target_user_id
+        AND year = current_year
+        AND month = current_month;
+    END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 既存ユーザーの統計情報を初期化するヘルパー関数
+CREATE OR REPLACE FUNCTION ff_users.ensure_user_statistics(target_user_id UUID)
+RETURNS void AS $$
+BEGIN
+    -- ユーザー統計情報が存在しない場合のみ初期化
+    IF NOT EXISTS (
+        SELECT 1 FROM ff_users.user_statistics WHERE user_id = target_user_id
+    ) THEN
+        -- ユーザー統計情報のメインレコードを作成
+        INSERT INTO ff_users.user_statistics (user_id)
+        VALUES (target_user_id)
+        ON CONFLICT (user_id) DO NOTHING;
     END IF;
 END;
 $$ LANGUAGE plpgsql;
 
--- RPCとして関数を公開
-GRANT EXECUTE ON FUNCTION ff_users.get_user_streaks(UUID) TO authenticated; 

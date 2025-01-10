@@ -22,7 +22,7 @@ export interface UserProfile {
 		facebook: string | null;
 		instagram: string | null;
 	};
-	languages: string[] | null;
+	languages: string | null;
 	timezone: string | null;
 	cacheVersion: number | null;
 	createdAt: string | null;

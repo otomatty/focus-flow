@@ -685,10 +685,6 @@ export type Database = {
 				Args: Record<PropertyKey, never>;
 				Returns: Json;
 			};
-			pg_exception_context: {
-				Args: Record<PropertyKey, never>;
-				Returns: string;
-			};
 			role: {
 				Args: Record<PropertyKey, never>;
 				Returns: string;
@@ -1031,7 +1027,13 @@ export type Database = {
 			[_ in never]: never;
 		};
 		Functions: {
-			[_ in never]: never;
+			get_evaluation_statistics: {
+				Args: {
+					p_user_id: string;
+					p_agent_id: string;
+				};
+				Returns: Json;
+			};
 		};
 		Enums: {
 			[_ in never]: never;
@@ -1270,6 +1272,42 @@ export type Database = {
 				};
 				Returns: Database["ff_focus"]["Enums"]["completion_status"];
 			};
+			get_or_create_focus_statistics: {
+				Args: {
+					p_user_id: string;
+				};
+				Returns: {
+					abandoned_sessions: number | null;
+					afternoon_sessions: number | null;
+					avg_focus_rating: number | null;
+					avg_session_duration: unknown | null;
+					completed_sessions: number | null;
+					completion_rate: number | null;
+					created_at: string | null;
+					current_streak: number | null;
+					evening_sessions: number | null;
+					id: string;
+					last_session_date: string | null;
+					longest_streak: number | null;
+					max_consecutive_sessions: number | null;
+					morning_sessions: number | null;
+					night_sessions: number | null;
+					partial_sessions: number | null;
+					perfect_rate: number | null;
+					perfect_sessions: number | null;
+					total_exp_earned: number | null;
+					total_focus_time: unknown | null;
+					total_sessions: number | null;
+					updated_at: string | null;
+					user_id: string;
+				};
+			};
+			initialize_focus_statistics: {
+				Args: {
+					p_user_id: string;
+				};
+				Returns: undefined;
+			};
 		};
 		Enums: {
 			completion_status: "PERFECT" | "COMPLETED" | "PARTIAL" | "ABANDONED";
@@ -1405,6 +1443,75 @@ export type Database = {
 					level?: number;
 					required_exp?: number;
 					updated_at?: string;
+				};
+				Relationships: [];
+			};
+			login_bonus_history: {
+				Row: {
+					awarded_at: string | null;
+					bonus_exp: number;
+					created_at: string | null;
+					id: string;
+					login_streak: number;
+					updated_at: string | null;
+					user_id: string;
+				};
+				Insert: {
+					awarded_at?: string | null;
+					bonus_exp: number;
+					created_at?: string | null;
+					id?: string;
+					login_streak?: number;
+					updated_at?: string | null;
+					user_id: string;
+				};
+				Update: {
+					awarded_at?: string | null;
+					bonus_exp?: number;
+					created_at?: string | null;
+					id?: string;
+					login_streak?: number;
+					updated_at?: string | null;
+					user_id?: string;
+				};
+				Relationships: [];
+			};
+			login_streaks: {
+				Row: {
+					created_at: string | null;
+					current_month: number;
+					current_streak: number;
+					current_year: number;
+					id: string;
+					last_login_date: string;
+					longest_streak: number;
+					monthly_login_count: number;
+					updated_at: string | null;
+					user_id: string;
+				};
+				Insert: {
+					created_at?: string | null;
+					current_month?: number;
+					current_streak?: number;
+					current_year?: number;
+					id?: string;
+					last_login_date?: string;
+					longest_streak?: number;
+					monthly_login_count?: number;
+					updated_at?: string | null;
+					user_id: string;
+				};
+				Update: {
+					created_at?: string | null;
+					current_month?: number;
+					current_streak?: number;
+					current_year?: number;
+					id?: string;
+					last_login_date?: string;
+					longest_streak?: number;
+					monthly_login_count?: number;
+					updated_at?: string | null;
+					user_id?: string;
 				};
 				Relationships: [];
 			};
@@ -1545,13 +1652,6 @@ export type Database = {
 						columns: ["quest_type_id"];
 						isOneToOne: false;
 						referencedRelation: "quest_types";
-						referencedColumns: ["id"];
-					},
-					{
-						foreignKeyName: "quests_reward_badge_id_fkey";
-						columns: ["reward_badge_id"];
-						isOneToOne: false;
-						referencedRelation: "badges";
 						referencedColumns: ["id"];
 					},
 				];
@@ -1884,6 +1984,30 @@ export type Database = {
 					},
 				];
 			};
+			user_activities: {
+				Row: {
+					created_at: string | null;
+					last_activity_at: string | null;
+					last_bonus_date: string | null;
+					updated_at: string | null;
+					user_id: string;
+				};
+				Insert: {
+					created_at?: string | null;
+					last_activity_at?: string | null;
+					last_bonus_date?: string | null;
+					updated_at?: string | null;
+					user_id: string;
+				};
+				Update: {
+					created_at?: string | null;
+					last_activity_at?: string | null;
+					last_bonus_date?: string | null;
+					updated_at?: string | null;
+					user_id?: string;
+				};
+				Relationships: [];
+			};
 			user_badges: {
 				Row: {
 					acquired_at: string | null;
@@ -2132,6 +2256,36 @@ export type Database = {
 				};
 				Returns: undefined;
 			};
+			award_badge: {
+				Args: {
+					target_user_id: string;
+					badge_name: string;
+				};
+				Returns: {
+					acquired_at: string | null;
+					badge_id: string;
+					id: string;
+					user_id: string;
+				};
+			};
+			award_login_bonus: {
+				Args: {
+					target_user_id: string;
+				};
+				Returns: {
+					awarded_at: string | null;
+					bonus_exp: number;
+					created_at: string | null;
+					id: string;
+					login_streak: number;
+					updated_at: string | null;
+					user_id: string;
+				};
+			};
+			award_monthly_login_badges: {
+				Args: Record<PropertyKey, never>;
+				Returns: undefined;
+			};
 			calculate_level_info: {
 				Args: {
 					p_total_exp: number;
@@ -2142,6 +2296,20 @@ export type Database = {
 					next_level_exp: number;
 					progress: number;
 				}[];
+			};
+			check_and_award_login_bonus: {
+				Args: {
+					target_user_id: string;
+				};
+				Returns: {
+					awarded_at: string | null;
+					bonus_exp: number;
+					created_at: string | null;
+					id: string;
+					login_streak: number;
+					updated_at: string | null;
+					user_id: string;
+				};
 			};
 			check_quest_completion: {
 				Args: {
@@ -2179,6 +2347,21 @@ export type Database = {
 				};
 				Returns: undefined;
 			};
+			generate_monthly_login_badges: {
+				Args: {
+					target_year?: number;
+					target_month?: number;
+				};
+				Returns: {
+					condition_type: string;
+					condition_value: Json;
+					created_at: string | null;
+					description: string;
+					id: string;
+					image_url: string | null;
+					name: string;
+				}[];
+			};
 			grant_quest_rewards: {
 				Args: {
 					p_user_id: string;
@@ -2188,6 +2371,40 @@ export type Database = {
 					p_is_party_quest: boolean;
 				};
 				Returns: undefined;
+			};
+			initialize_user_level: {
+				Args: {
+					new_user_id: string;
+				};
+				Returns: {
+					created_at: string;
+					current_exp: number;
+					current_level: number;
+					id: string;
+					total_exp: number;
+					updated_at: string;
+					user_id: string;
+				};
+			};
+			initialize_user_season_progress: {
+				Args: {
+					p_user_id: string;
+					p_season_id: string;
+				};
+				Returns: {
+					achievements: Json | null;
+					completed_tasks: number;
+					created_at: string | null;
+					current_points: number;
+					current_rank: string;
+					highest_rank: string;
+					id: string;
+					rewards_claimed: boolean | null;
+					season_id: string;
+					total_focus_time: unknown;
+					updated_at: string | null;
+					user_id: string;
+				};
 			};
 			log_action: {
 				Args: {
@@ -2216,6 +2433,23 @@ export type Database = {
 					p_status: string;
 				};
 				Returns: undefined;
+			};
+			update_login_streak: {
+				Args: {
+					target_user_id: string;
+				};
+				Returns: {
+					created_at: string | null;
+					current_month: number;
+					current_streak: number;
+					current_year: number;
+					id: string;
+					last_login_date: string;
+					longest_streak: number;
+					monthly_login_count: number;
+					updated_at: string | null;
+					user_id: string;
+				};
 			};
 			update_party_quest_progress: {
 				Args: {
@@ -3241,37 +3475,17 @@ export type Database = {
 				};
 				Returns: undefined;
 			};
-			create_debug_log:
-				| {
-						Args: {
-							p_user_id: string;
-							p_action: string;
-							p_function_name?: string;
-							p_details?: Json;
-						};
-						Returns: string;
-				  }
-				| {
-						Args: {
-							p_user_id: string;
-							p_action: string;
-							p_function_name?: string;
-							p_step_name?: string;
-							p_details?: Json;
-						};
-						Returns: string;
-				  }
-				| {
-						Args: {
-							p_user_id: string;
-							p_action?: string;
-							p_function_name?: string;
-							p_step_name?: string;
-							p_log_data?: Json;
-							p_details?: Json;
-						};
-						Returns: string;
-				  };
+			create_debug_log: {
+				Args: {
+					p_user_id: string;
+					p_action?: string;
+					p_function_name?: string;
+					p_step_name?: string;
+					p_log_data?: Json;
+					p_details?: Json;
+				};
+				Returns: string;
+			};
 			log_error: {
 				Args: {
 					p_function_name: string;
@@ -3450,6 +3664,39 @@ export type Database = {
 						referencedColumns: ["id"];
 					},
 				];
+			};
+			note_templates: {
+				Row: {
+					content: string;
+					created_at: string | null;
+					id: string;
+					is_default: boolean | null;
+					metadata: Json | null;
+					template_type: string;
+					title: string;
+					updated_at: string | null;
+				};
+				Insert: {
+					content: string;
+					created_at?: string | null;
+					id?: string;
+					is_default?: boolean | null;
+					metadata?: Json | null;
+					template_type: string;
+					title: string;
+					updated_at?: string | null;
+				};
+				Update: {
+					content?: string;
+					created_at?: string | null;
+					id?: string;
+					is_default?: boolean | null;
+					metadata?: Json | null;
+					template_type?: string;
+					title?: string;
+					updated_at?: string | null;
+				};
+				Relationships: [];
 			};
 			note_versions: {
 				Row: {
@@ -4241,15 +4488,7 @@ export type Database = {
 					schedule_id?: string | null;
 					task_id?: string | null;
 				};
-				Relationships: [
-					{
-						foreignKeyName: "schedule_tasks_schedule_id_fkey";
-						columns: ["schedule_id"];
-						isOneToOne: false;
-						referencedRelation: "schedules";
-						referencedColumns: ["id"];
-					},
-				];
+				Relationships: [];
 			};
 			schedules: {
 				Row: {
@@ -4534,7 +4773,12 @@ export type Database = {
 			[_ in never]: never;
 		};
 		Functions: {
-			[_ in never]: never;
+			create_default_categories: {
+				Args: {
+					new_user: unknown;
+				};
+				Returns: undefined;
+			};
 		};
 		Enums: {
 			priority_level: "high" | "medium" | "low";
@@ -5580,6 +5824,139 @@ export type Database = {
 			[_ in never]: never;
 		};
 	};
+	ff_storage: {
+		Tables: {
+			files: {
+				Row: {
+					bucket_name: string;
+					created_at: string | null;
+					file_name: string;
+					file_path: string;
+					file_size_bytes: number;
+					file_type: string;
+					id: string;
+					metadata: Json | null;
+					updated_at: string | null;
+					user_id: string;
+				};
+				Insert: {
+					bucket_name: string;
+					created_at?: string | null;
+					file_name: string;
+					file_path: string;
+					file_size_bytes: number;
+					file_type: string;
+					id?: string;
+					metadata?: Json | null;
+					updated_at?: string | null;
+					user_id: string;
+				};
+				Update: {
+					bucket_name?: string;
+					created_at?: string | null;
+					file_name?: string;
+					file_path?: string;
+					file_size_bytes?: number;
+					file_type?: string;
+					id?: string;
+					metadata?: Json | null;
+					updated_at?: string | null;
+					user_id?: string;
+				};
+				Relationships: [];
+			};
+			storage_plans: {
+				Row: {
+					allowed_file_types: string[];
+					created_at: string | null;
+					id: string;
+					max_file_size_bytes: number;
+					max_storage_bytes: number;
+					name: string;
+					updated_at: string | null;
+				};
+				Insert: {
+					allowed_file_types: string[];
+					created_at?: string | null;
+					id?: string;
+					max_file_size_bytes: number;
+					max_storage_bytes: number;
+					name: string;
+					updated_at?: string | null;
+				};
+				Update: {
+					allowed_file_types?: string[];
+					created_at?: string | null;
+					id?: string;
+					max_file_size_bytes?: number;
+					max_storage_bytes?: number;
+					name?: string;
+					updated_at?: string | null;
+				};
+				Relationships: [];
+			};
+			user_storage: {
+				Row: {
+					created_at: string | null;
+					file_count: number;
+					id: string;
+					plan_id: string;
+					updated_at: string | null;
+					used_storage_bytes: number;
+					user_id: string;
+				};
+				Insert: {
+					created_at?: string | null;
+					file_count?: number;
+					id?: string;
+					plan_id: string;
+					updated_at?: string | null;
+					used_storage_bytes?: number;
+					user_id: string;
+				};
+				Update: {
+					created_at?: string | null;
+					file_count?: number;
+					id?: string;
+					plan_id?: string;
+					updated_at?: string | null;
+					used_storage_bytes?: number;
+					user_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: "user_storage_plan_id_fkey";
+						columns: ["plan_id"];
+						isOneToOne: false;
+						referencedRelation: "storage_plans";
+						referencedColumns: ["id"];
+					},
+				];
+			};
+		};
+		Views: {
+			[_ in never]: never;
+		};
+		Functions: {
+			check_storage_limits: {
+				Args: {
+					p_user_id: string;
+					p_file_size_bytes: number;
+					p_file_type: string;
+				};
+				Returns: {
+					can_upload: boolean;
+					message: string;
+				}[];
+			};
+		};
+		Enums: {
+			[_ in never]: never;
+		};
+		CompositeTypes: {
+			[_ in never]: never;
+		};
+	};
 	ff_tasks: {
 		Tables: {
 			project_activities: {
@@ -6366,41 +6743,107 @@ export type Database = {
 			daily_statistics: {
 				Row: {
 					avg_session_length: unknown | null;
+					badges_earned: number;
 					completed_habits: number;
 					completed_tasks: number;
 					created_at: string;
 					date: string;
+					experience_points: number;
 					focus_sessions: number;
 					focus_time: unknown;
 					habit_completion_rate: number | null;
 					id: string;
+					login_count: number;
 					task_completion_rate: number | null;
+					updated_at: string;
 					user_id: string;
 				};
 				Insert: {
 					avg_session_length?: unknown | null;
+					badges_earned?: number;
 					completed_habits?: number;
 					completed_tasks?: number;
 					created_at?: string;
 					date: string;
+					experience_points?: number;
 					focus_sessions?: number;
 					focus_time?: unknown;
 					habit_completion_rate?: number | null;
 					id?: string;
+					login_count?: number;
 					task_completion_rate?: number | null;
+					updated_at?: string;
 					user_id: string;
 				};
 				Update: {
 					avg_session_length?: unknown | null;
+					badges_earned?: number;
 					completed_habits?: number;
 					completed_tasks?: number;
 					created_at?: string;
 					date?: string;
+					experience_points?: number;
 					focus_sessions?: number;
 					focus_time?: unknown;
 					habit_completion_rate?: number | null;
 					id?: string;
+					login_count?: number;
 					task_completion_rate?: number | null;
+					updated_at?: string;
+					user_id?: string;
+				};
+				Relationships: [];
+			};
+			daily_statistics_2025_01: {
+				Row: {
+					avg_session_length: unknown | null;
+					badges_earned: number;
+					completed_habits: number;
+					completed_tasks: number;
+					created_at: string;
+					date: string;
+					experience_points: number;
+					focus_sessions: number;
+					focus_time: unknown;
+					habit_completion_rate: number | null;
+					id: string;
+					login_count: number;
+					task_completion_rate: number | null;
+					updated_at: string;
+					user_id: string;
+				};
+				Insert: {
+					avg_session_length?: unknown | null;
+					badges_earned?: number;
+					completed_habits?: number;
+					completed_tasks?: number;
+					created_at?: string;
+					date: string;
+					experience_points?: number;
+					focus_sessions?: number;
+					focus_time?: unknown;
+					habit_completion_rate?: number | null;
+					id?: string;
+					login_count?: number;
+					task_completion_rate?: number | null;
+					updated_at?: string;
+					user_id: string;
+				};
+				Update: {
+					avg_session_length?: unknown | null;
+					badges_earned?: number;
+					completed_habits?: number;
+					completed_tasks?: number;
+					created_at?: string;
+					date?: string;
+					experience_points?: number;
+					focus_sessions?: number;
+					focus_time?: unknown;
+					habit_completion_rate?: number | null;
+					id?: string;
+					login_count?: number;
+					task_completion_rate?: number | null;
+					updated_at?: string;
 					user_id?: string;
 				};
 				Relationships: [];
@@ -6444,43 +6887,55 @@ export type Database = {
 			monthly_statistics: {
 				Row: {
 					avg_session_length: unknown | null;
+					badges_earned: number;
 					completed_habits: number;
 					completed_tasks: number;
 					created_at: string;
+					experience_points: number;
 					focus_sessions: number;
 					focus_time: unknown;
 					habit_completion_rate: number | null;
 					id: string;
+					login_count: number;
 					month: number;
 					task_completion_rate: number | null;
+					updated_at: string;
 					user_id: string;
 					year: number;
 				};
 				Insert: {
 					avg_session_length?: unknown | null;
+					badges_earned?: number;
 					completed_habits?: number;
 					completed_tasks?: number;
 					created_at?: string;
+					experience_points?: number;
 					focus_sessions?: number;
 					focus_time?: unknown;
 					habit_completion_rate?: number | null;
 					id?: string;
+					login_count?: number;
 					month: number;
 					task_completion_rate?: number | null;
+					updated_at?: string;
 					user_id: string;
 					year: number;
 				};
 				Update: {
 					avg_session_length?: unknown | null;
+					badges_earned?: number;
 					completed_habits?: number;
 					completed_tasks?: number;
 					created_at?: string;
+					experience_points?: number;
 					focus_sessions?: number;
 					focus_time?: unknown;
 					habit_completion_rate?: number | null;
 					id?: string;
+					login_count?: number;
 					month?: number;
 					task_completion_rate?: number | null;
+					updated_at?: string;
 					user_id?: string;
 					year?: number;
 				};
@@ -6611,6 +7066,54 @@ export type Database = {
 					},
 				];
 			};
+			user_daily_activities: {
+				Row: {
+					activity_date: string;
+					activity_level: number;
+					completed_habits: number;
+					completed_tasks: number;
+					created_at: string;
+					focus_minutes: number;
+					focus_sessions: number;
+					id: string;
+					login_count: number;
+					total_habits: number;
+					total_tasks: number;
+					updated_at: string;
+					user_id: string;
+				};
+				Insert: {
+					activity_date: string;
+					activity_level?: number;
+					completed_habits?: number;
+					completed_tasks?: number;
+					created_at?: string;
+					focus_minutes?: number;
+					focus_sessions?: number;
+					id?: string;
+					login_count?: number;
+					total_habits?: number;
+					total_tasks?: number;
+					updated_at?: string;
+					user_id: string;
+				};
+				Update: {
+					activity_date?: string;
+					activity_level?: number;
+					completed_habits?: number;
+					completed_tasks?: number;
+					created_at?: string;
+					focus_minutes?: number;
+					focus_sessions?: number;
+					id?: string;
+					login_count?: number;
+					total_habits?: number;
+					total_tasks?: number;
+					updated_at?: string;
+					user_id?: string;
+				};
+				Relationships: [];
+			};
 			user_profiles: {
 				Row: {
 					bio: string | null;
@@ -6619,7 +7122,7 @@ export type Database = {
 					display_name: string | null;
 					email: string | null;
 					id: string;
-					languages: string[] | null;
+					languages: string | null;
 					location: string | null;
 					profile_image: string | null;
 					social_links: Json | null;
@@ -6636,7 +7139,7 @@ export type Database = {
 					display_name?: string | null;
 					email?: string | null;
 					id?: string;
-					languages?: string[] | null;
+					languages?: string | null;
 					location?: string | null;
 					profile_image?: string | null;
 					social_links?: Json | null;
@@ -6653,7 +7156,7 @@ export type Database = {
 					display_name?: string | null;
 					email?: string | null;
 					id?: string;
-					languages?: string[] | null;
+					languages?: string | null;
 					location?: string | null;
 					profile_image?: string | null;
 					social_links?: Json | null;
@@ -6773,9 +7276,6 @@ export type Database = {
 					completed_habits: number;
 					completed_tasks: number;
 					created_at: string;
-					current_focus_streak: number;
-					current_login_streak: number;
-					current_task_streak: number;
 					daily_completed_tasks: number;
 					daily_focus_sessions: number;
 					daily_focus_time: unknown;
@@ -6785,9 +7285,6 @@ export type Database = {
 					last_habit_date: string | null;
 					last_login_date: string | null;
 					last_task_date: string | null;
-					longest_focus_streak: number;
-					longest_login_streak: number;
-					longest_task_streak: number;
 					monthly_completed_tasks: number;
 					monthly_focus_sessions: number;
 					monthly_focus_time: unknown;
@@ -6810,9 +7307,6 @@ export type Database = {
 					completed_habits?: number;
 					completed_tasks?: number;
 					created_at?: string;
-					current_focus_streak?: number;
-					current_login_streak?: number;
-					current_task_streak?: number;
 					daily_completed_tasks?: number;
 					daily_focus_sessions?: number;
 					daily_focus_time?: unknown;
@@ -6822,9 +7316,6 @@ export type Database = {
 					last_habit_date?: string | null;
 					last_login_date?: string | null;
 					last_task_date?: string | null;
-					longest_focus_streak?: number;
-					longest_login_streak?: number;
-					longest_task_streak?: number;
 					monthly_completed_tasks?: number;
 					monthly_focus_sessions?: number;
 					monthly_focus_time?: unknown;
@@ -6847,9 +7338,6 @@ export type Database = {
 					completed_habits?: number;
 					completed_tasks?: number;
 					created_at?: string;
-					current_focus_streak?: number;
-					current_login_streak?: number;
-					current_task_streak?: number;
 					daily_completed_tasks?: number;
 					daily_focus_sessions?: number;
 					daily_focus_time?: unknown;
@@ -6859,9 +7347,6 @@ export type Database = {
 					last_habit_date?: string | null;
 					last_login_date?: string | null;
 					last_task_date?: string | null;
-					longest_focus_streak?: number;
-					longest_login_streak?: number;
-					longest_task_streak?: number;
 					monthly_completed_tasks?: number;
 					monthly_focus_sessions?: number;
 					monthly_focus_time?: unknown;
@@ -6978,42 +7463,111 @@ export type Database = {
 			weekly_statistics: {
 				Row: {
 					avg_session_length: unknown | null;
+					badges_earned: number;
 					completed_habits: number;
 					completed_tasks: number;
 					created_at: string;
+					experience_points: number;
 					focus_sessions: number;
 					focus_time: unknown;
 					habit_completion_rate: number | null;
 					id: string;
+					login_count: number;
 					task_completion_rate: number | null;
+					updated_at: string;
 					user_id: string;
 					week: number;
 					year: number;
 				};
 				Insert: {
 					avg_session_length?: unknown | null;
+					badges_earned?: number;
 					completed_habits?: number;
 					completed_tasks?: number;
 					created_at?: string;
+					experience_points?: number;
 					focus_sessions?: number;
 					focus_time?: unknown;
 					habit_completion_rate?: number | null;
 					id?: string;
+					login_count?: number;
 					task_completion_rate?: number | null;
+					updated_at?: string;
 					user_id: string;
 					week: number;
 					year: number;
 				};
 				Update: {
 					avg_session_length?: unknown | null;
+					badges_earned?: number;
 					completed_habits?: number;
 					completed_tasks?: number;
 					created_at?: string;
+					experience_points?: number;
 					focus_sessions?: number;
 					focus_time?: unknown;
 					habit_completion_rate?: number | null;
 					id?: string;
+					login_count?: number;
 					task_completion_rate?: number | null;
+					updated_at?: string;
+					user_id?: string;
+					week?: number;
+					year?: number;
+				};
+				Relationships: [];
+			};
+			weekly_statistics_2025_02: {
+				Row: {
+					avg_session_length: unknown | null;
+					badges_earned: number;
+					completed_habits: number;
+					completed_tasks: number;
+					created_at: string;
+					experience_points: number;
+					focus_sessions: number;
+					focus_time: unknown;
+					habit_completion_rate: number | null;
+					id: string;
+					login_count: number;
+					task_completion_rate: number | null;
+					updated_at: string;
+					user_id: string;
+					week: number;
+					year: number;
+				};
+				Insert: {
+					avg_session_length?: unknown | null;
+					badges_earned?: number;
+					completed_habits?: number;
+					completed_tasks?: number;
+					created_at?: string;
+					experience_points?: number;
+					focus_sessions?: number;
+					focus_time?: unknown;
+					habit_completion_rate?: number | null;
+					id?: string;
+					login_count?: number;
+					task_completion_rate?: number | null;
+					updated_at?: string;
+					user_id: string;
+					week: number;
+					year: number;
+				};
+				Update: {
+					avg_session_length?: unknown | null;
+					badges_earned?: number;
+					completed_habits?: number;
+					completed_tasks?: number;
+					created_at?: string;
+					experience_points?: number;
+					focus_sessions?: number;
+					focus_time?: unknown;
+					habit_completion_rate?: number | null;
+					id?: string;
+					login_count?: number;
+					task_completion_rate?: number | null;
+					updated_at?: string;
 					user_id?: string;
 					week?: number;
 					year?: number;
@@ -7025,6 +7579,21 @@ export type Database = {
 			[_ in never]: never;
 		};
 		Functions: {
+			assign_default_user_role: {
+				Args: {
+					new_user: unknown;
+				};
+				Returns: undefined;
+			};
+			calculate_activity_level: {
+				Args: {
+					p_login_count: number;
+					p_completed_tasks: number;
+					p_focus_minutes: number;
+					p_completed_habits: number;
+				};
+				Returns: number;
+			};
 			check_feature_limit: {
 				Args: {
 					p_user_id: string;
@@ -7038,6 +7607,37 @@ export type Database = {
 					p_session_id: string;
 				};
 				Returns: boolean;
+			};
+			cleanup_old_statistics: {
+				Args: Record<PropertyKey, never>;
+				Returns: undefined;
+			};
+			create_or_update_statistics: {
+				Args: {
+					target_user_id: string;
+				};
+				Returns: undefined;
+			};
+			ensure_user_statistics: {
+				Args: {
+					target_user_id: string;
+				};
+				Returns: undefined;
+			};
+			get_activity_heatmap: {
+				Args: {
+					p_user_id: string;
+					p_start_date: string;
+					p_end_date: string;
+				};
+				Returns: {
+					activity_date: string;
+					activity_level: number;
+					login_count: number;
+					completed_tasks: number;
+					focus_minutes: number;
+					completed_habits: number;
+				}[];
 			};
 			get_statistics_by_period: {
 				Args: {
@@ -7093,6 +7693,12 @@ export type Database = {
 				};
 				Returns: boolean;
 			};
+			initialize_user_statistics: {
+				Args: {
+					target_user_id: string;
+				};
+				Returns: undefined;
+			};
 			is_system_admin: {
 				Args: {
 					user_id: string;
@@ -7103,42 +7709,40 @@ export type Database = {
 				Args: Record<PropertyKey, never>;
 				Returns: undefined;
 			};
-			reset_daily_statistics: {
+			migrate_languages: {
 				Args: Record<PropertyKey, never>;
 				Returns: undefined;
 			};
-			reset_monthly_statistics: {
-				Args: Record<PropertyKey, never>;
-				Returns: undefined;
-			};
-			reset_weekly_statistics: {
-				Args: Record<PropertyKey, never>;
-				Returns: undefined;
+			record_daily_activity: {
+				Args: {
+					p_user_id: string;
+					p_activity_date?: string;
+					p_login_count?: number;
+					p_total_tasks?: number;
+					p_completed_tasks?: number;
+					p_focus_sessions?: number;
+					p_focus_minutes?: number;
+					p_total_habits?: number;
+					p_completed_habits?: number;
+				};
+				Returns: {
+					activity_date: string;
+					activity_level: number;
+					completed_habits: number;
+					completed_tasks: number;
+					created_at: string;
+					focus_minutes: number;
+					focus_sessions: number;
+					id: string;
+					login_count: number;
+					total_habits: number;
+					total_tasks: number;
+					updated_at: string;
+					user_id: string;
+				};
 			};
 			schedule_statistics_maintenance: {
 				Args: Record<PropertyKey, never>;
-				Returns: undefined;
-			};
-			update_focus_statistics: {
-				Args: {
-					p_user_id: string;
-					p_focus_time: unknown;
-					p_session_date?: string;
-				};
-				Returns: undefined;
-			};
-			update_login_statistics: {
-				Args: {
-					p_user_id: string;
-					p_login_date?: string;
-				};
-				Returns: undefined;
-			};
-			update_task_statistics: {
-				Args: {
-					p_user_id: string;
-					p_completed_date?: string;
-				};
 				Returns: undefined;
 			};
 			validate_timezone: {
@@ -7186,31 +7790,9 @@ export type Database = {
 					leveled_up: boolean;
 				}[];
 			};
-			calculate_focus_session_exp: {
-				Args: {
-					p_duration: unknown;
-					p_bonus_points: number;
-				};
-				Returns: number;
-			};
 			calculate_level: {
 				Args: {
 					p_exp: number;
-				};
-				Returns: number;
-			};
-			calculate_required_exp: {
-				Args: {
-					level: number;
-				};
-				Returns: number;
-			};
-			calculate_task_experience: {
-				Args: {
-					p_difficulty_level: number;
-					p_estimated_duration: unknown;
-					p_actual_duration: unknown;
-					p_current_level: number;
 				};
 				Returns: number;
 			};
@@ -7226,42 +7808,29 @@ export type Database = {
 					badge_description: string;
 				}[];
 			};
-			create_focus_session_partition: {
+			crosstab: {
 				Args: {
-					p_year: number;
-					p_month: number;
+					"": string;
 				};
-				Returns: undefined;
+				Returns: Record<string, unknown>[];
 			};
-			delete_unused_profile_images: {
-				Args: Record<PropertyKey, never>;
-				Returns: undefined;
-			};
-			generate_recurring_tasks: {
-				Args: Record<PropertyKey, never>;
-				Returns: undefined;
-			};
-			get_active_tasks: {
+			crosstab2: {
 				Args: {
-					p_user_id: string;
+					"": string;
 				};
-				Returns: {
-					id: string;
-					title: string;
-					description: string;
-					due_date: string;
-					priority: string;
-					category: string;
-					status: string;
-					difficulty_level: number;
-					estimated_duration: unknown;
-					actual_duration: unknown;
-					ai_generated: boolean;
-					parent_task_id: string;
-					path: unknown;
-					position: number;
-					depth: number;
-				}[];
+				Returns: Database["public"]["CompositeTypes"]["tablefunc_crosstab_2"][];
+			};
+			crosstab3: {
+				Args: {
+					"": string;
+				};
+				Returns: Database["public"]["CompositeTypes"]["tablefunc_crosstab_3"][];
+			};
+			crosstab4: {
+				Args: {
+					"": string;
+				};
+				Returns: Database["public"]["CompositeTypes"]["tablefunc_crosstab_4"][];
 			};
 			get_api_requests_by_hour: {
 				Args: {
@@ -7279,26 +7848,6 @@ export type Database = {
 					size_mb: number;
 				}[];
 			};
-			get_default_view_settings: {
-				Args: {
-					p_view_type: string;
-				};
-				Returns: Json;
-			};
-			get_focus_session_stats: {
-				Args: {
-					p_user_id: string;
-					p_start_date: string;
-					p_end_date: string;
-				};
-				Returns: {
-					total_sessions: number;
-					total_duration: unknown;
-					total_bonus_points: number;
-					average_duration: unknown;
-					completion_rate: number;
-				}[];
-			};
 			get_realtime_connections: {
 				Args: Record<PropertyKey, never>;
 				Returns: {
@@ -7309,35 +7858,6 @@ export type Database = {
 				Args: Record<PropertyKey, never>;
 				Returns: {
 					size_gb: number;
-				}[];
-			};
-			get_subtasks: {
-				Args: {
-					p_task_id: string;
-				};
-				Returns: {
-					id: string;
-					title: string;
-					description: string;
-					due_date: string;
-					priority: string;
-					status: string;
-					position: number;
-					path: unknown;
-					depth: number;
-				}[];
-			};
-			get_task_breakdowns: {
-				Args: {
-					p_task_id: string;
-				};
-				Returns: {
-					id: string;
-					title: string;
-					description: string;
-					estimated_duration: unknown;
-					order_index: number;
-					status: string;
 				}[];
 			};
 			get_task_completion_by_month: {
@@ -7358,6 +7878,19 @@ export type Database = {
 					month: string;
 					active_users: number;
 					new_users: number;
+				}[];
+			};
+			get_user_streaks: {
+				Args: {
+					p_user_id: string;
+				};
+				Returns: {
+					current_login_streak: number;
+					longest_login_streak: number;
+					current_focus_streak: number;
+					longest_focus_streak: number;
+					current_task_streak: number;
+					longest_task_streak: number;
 				}[];
 			};
 			gtrgm_compress: {
@@ -7389,13 +7922,6 @@ export type Database = {
 					"": unknown;
 				};
 				Returns: unknown;
-			};
-			has_role: {
-				Args: {
-					p_user_id: string;
-					p_role_name: string;
-				};
-				Returns: boolean;
 			};
 			lca: {
 				Args: {
@@ -7517,10 +8043,6 @@ export type Database = {
 				};
 				Returns: number;
 			};
-			pg_exception_context: {
-				Args: Record<PropertyKey, never>;
-				Returns: string;
-			};
 			set_limit: {
 				Args: {
 					"": number;
@@ -7543,10 +8065,6 @@ export type Database = {
 				};
 				Returns: unknown;
 			};
-			update_overdue_tasks: {
-				Args: Record<PropertyKey, never>;
-				Returns: undefined;
-			};
 			update_quest_progress: {
 				Args: {
 					p_user_id: string;
@@ -7555,43 +8073,29 @@ export type Database = {
 				};
 				Returns: undefined;
 			};
-			update_user_skill: {
-				Args: {
-					p_user_id: string;
-					p_skill_category: string;
-					p_exp_gained: number;
-				};
-				Returns: {
-					new_level: number;
-					exp_to_next_level: number;
-					total_exp: number;
-					gained_exp: number;
-				}[];
-			};
 		};
 		Enums: {
-			activity_type:
-				| "project_update"
-				| "task_create"
-				| "task_update"
-				| "task_delete"
-				| "member_update";
-			dependency_link_type:
-				| "finish_to_start"
-				| "start_to_start"
-				| "finish_to_finish"
-				| "start_to_finish";
-			dependency_status: "pending" | "satisfied" | "blocked" | "skipped";
-			dependency_type: "required" | "optional" | "conditional";
-			task_relationship_type:
-				| "related"
-				| "references"
-				| "derived_from"
-				| "blocks"
-				| "duplicates";
+			[_ in never]: never;
 		};
 		CompositeTypes: {
-			[_ in never]: never;
+			tablefunc_crosstab_2: {
+				row_name: string | null;
+				category_1: string | null;
+				category_2: string | null;
+			};
+			tablefunc_crosstab_3: {
+				row_name: string | null;
+				category_1: string | null;
+				category_2: string | null;
+				category_3: string | null;
+			};
+			tablefunc_crosstab_4: {
+				row_name: string | null;
+				category_1: string | null;
+				category_2: string | null;
+				category_3: string | null;
+				category_4: string | null;
+			};
 		};
 	};
 };

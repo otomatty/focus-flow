@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { ProfileForm } from "@/components/custom/profile/ProfileForm";
-import { StatisticsCard } from "./_components/StatisticsCard";
 import { BadgesList } from "./_components/BadgesList";
 import { ActivityTimeline } from "./_components/ActivityTimeline";
 import { getUserStatistics } from "@/app/_actions/users/statistics";
@@ -15,6 +14,10 @@ import {
 	calculateLevelInfo,
 	getUserLevel,
 } from "@/app/_actions/gamification/level";
+import { getUserStreaks } from "@/app/_actions/users/statistics";
+import { Trophy, Clock, CheckCircle2, Target } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { ActivityHeatmap } from "./_components/ActivityHeatmap";
 
 export const metadata: Metadata = {
 	title: "プロフィール - Focus Flow",
@@ -31,15 +34,23 @@ export default async function ProfilePage() {
 		throw new Error("User not authenticated");
 	}
 
-	const [statistics, badges, activeQuests, questHistory, profile, userLevel] =
-		await Promise.all([
-			getUserStatistics(user.id),
-			getUserBadges(user.id),
-			getActiveQuests(user.id),
-			getQuestHistory(user.id, 5),
-			getUserProfile(user.id),
-			getUserLevel(),
-		]);
+	const [
+		statistics,
+		streaks,
+		badges,
+		activeQuests,
+		questHistory,
+		profile,
+		userLevel,
+	] = await Promise.all([
+		getUserStatistics(user.id),
+		getUserStreaks(user.id),
+		getUserBadges(user.id),
+		getActiveQuests(user.id),
+		getQuestHistory(user.id, 5),
+		getUserProfile(user.id),
+		getUserLevel(),
+	]);
 
 	const levelInfo = await calculateLevelInfo(userLevel.total_exp);
 
@@ -71,6 +82,7 @@ export default async function ProfilePage() {
 	].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
 	const formattedStats = {
+		userId: user.id,
 		focusStats: {
 			totalSessions: statistics.total_focus_sessions,
 			totalTime: String(statistics.total_focus_time),
@@ -82,10 +94,8 @@ export default async function ProfilePage() {
 			completionRate: statistics.task_completion_rate,
 		},
 		streaks: {
-			currentLoginStreak: statistics.current_login_streak,
-			longestLoginStreak: statistics.longest_login_streak,
-			currentFocusStreak: statistics.current_focus_streak,
-			longestFocusStreak: statistics.longest_focus_streak,
+			currentLoginStreak: streaks.current,
+			longestLoginStreak: streaks.best,
 		},
 		level: levelInfo,
 	};
@@ -104,23 +114,108 @@ export default async function ProfilePage() {
 	return (
 		<div className="container mx-auto p-6 min-h-screen bg-gradient-to-b from-background to-background/80">
 			<div className="max-w-7xl mx-auto space-y-8">
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-					{/* メインコンテンツ：プロフィール情報 */}
-					<div className="lg:col-span-2">
-						<div className="bg-card rounded-lg shadow-lg border border-border/50 backdrop-blur-sm">
-							<div className="p-6">
-								<h2 className="text-2xl font-bold mb-6 text-primary">
-									冒険者プロフィール
-								</h2>
-								<ProfileForm initialProfile={profile} />
+				{/* 統計情報 */}
+				<div className="space-y-6">
+					{/* 基本統計 */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+						{/* レベル情報 */}
+						<div className="bg-card rounded-lg shadow-lg border border-border/50 backdrop-blur-sm p-6">
+							<div className="flex items-center gap-3 mb-3">
+								<Trophy className="w-5 h-5 text-primary" />
+								<h3 className="font-bold text-lg">レベル</h3>
+							</div>
+							<div className="space-y-2">
+								<p className="text-2xl font-bold">
+									{formattedStats.level.currentLevel}
+								</p>
+								<Progress
+									value={formattedStats.level.progress * 100}
+									className="h-2"
+								/>
+								<p className="text-sm text-muted-foreground">
+									次のレベルまで:{" "}
+									{formattedStats.level.nextLevelExp -
+										formattedStats.level.currentExp}{" "}
+									EXP
+								</p>
+							</div>
+						</div>
+
+						{/* フォーカス統計 */}
+						<div className="bg-card rounded-lg shadow-lg border border-border/50 backdrop-blur-sm p-6">
+							<div className="flex items-center gap-3 mb-3">
+								<Clock className="w-5 h-5 text-blue-500" />
+								<h3 className="font-bold text-lg">フォーカス</h3>
+							</div>
+							<div className="space-y-2">
+								<p className="text-2xl font-bold">
+									{formattedStats.focusStats.totalSessions}
+								</p>
+								<p className="text-sm text-muted-foreground">総セッション数</p>
+								<p className="text-sm">{formattedStats.focusStats.totalTime}</p>
+							</div>
+						</div>
+
+						{/* タスク統計 */}
+						<div className="bg-card rounded-lg shadow-lg border border-border/50 backdrop-blur-sm p-6">
+							<div className="flex items-center gap-3 mb-3">
+								<CheckCircle2 className="w-5 h-5 text-emerald-500" />
+								<h3 className="font-bold text-lg">タスク</h3>
+							</div>
+							<div className="space-y-2">
+								<p className="text-2xl font-bold">
+									{formattedStats.taskStats.completedTasks}/
+									{formattedStats.taskStats.totalTasks}
+								</p>
+								<p className="text-sm text-muted-foreground">完了タスク</p>
+								<p className="text-sm">
+									{formattedStats.taskStats.completionRate}% 完了率
+								</p>
+							</div>
+						</div>
+
+						{/* ストリーク */}
+						<div className="bg-card rounded-lg shadow-lg border border-border/50 backdrop-blur-sm p-6">
+							<div className="flex items-center gap-3 mb-3">
+								<Target className="w-5 h-5 text-purple-500" />
+								<h3 className="font-bold text-lg">ストリーク</h3>
+							</div>
+							<div className="space-y-2">
+								<p className="text-2xl font-bold">
+									{formattedStats.streaks.currentLoginStreak}日
+								</p>
+								<p className="text-sm text-muted-foreground">
+									現在のストリーク
+								</p>
+								<p className="text-sm">
+									最長: {formattedStats.streaks.longestLoginStreak}日
+								</p>
 							</div>
 						</div>
 					</div>
 
-					{/* サイドバー：統計情報とバッジ */}
-					<div className="space-y-8">
-						<StatisticsCard statistics={formattedStats} />
+					{/* アクティビティヒートマップ */}
+					<div className="bg-card rounded-lg shadow-lg border border-border/50 backdrop-blur-sm p-6">
+						<ActivityHeatmap userId={formattedStats.userId} />
+					</div>
+				</div>
+
+				{/* プロフィール設定 */}
+				<div className="bg-card rounded-lg shadow-lg border border-border/50 backdrop-blur-sm">
+					<div className="p-6">
+						<h2 className="text-2xl font-bold mb-6 text-primary">
+							プロフィール設定
+						</h2>
+						<ProfileForm initialProfile={profile || {}} userId={user.id} />
+					</div>
+				</div>
+
+				{/* バッジとアクティビティログ */}
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div className="bg-card rounded-lg shadow-lg border border-border/50 backdrop-blur-sm p-6">
 						<BadgesList badges={formattedBadges} />
+					</div>
+					<div className="bg-card rounded-lg shadow-lg border border-border/50 backdrop-blur-sm p-6">
 						<ActivityTimeline activities={activities} />
 					</div>
 				</div>

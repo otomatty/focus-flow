@@ -274,4 +274,29 @@
 
 .animate-shine {
   animation: shine 1s linear infinite;
+}
+
+/* Markdown Editor Styles */
+.w-md-editor {
+  --md-editor-bg-color: transparent !important;
+  --md-editor-border-color: transparent !important;
+}
+
+.w-md-editor-toolbar {
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+}
+
+.w-md-editor-text {
+  padding: 1rem !important;
+}
+
+.w-md-editor-preview {
+  padding: 1rem !important;
+  box-shadow: inset 1px 0 0 0 hsl(var(--border)) !important;
+}
+
+.wmde-markdown {
+  background-color: transparent !important;
 } 

@@ -7,14 +7,32 @@ export async function GET(request: Request) {
 		const code = searchParams.get("code");
 		const error = searchParams.get("error");
 		const errorDescription = searchParams.get("error_description");
+		const state = searchParams.get("state");
+
+		console.log("Auth callback received:", {
+			hasCode: !!code,
+			error,
+			errorDescription,
+			state,
+			url: request.url,
+			timestamp: new Date().toISOString(),
+		});
 
 		if (error) {
-			console.error("Auth error:", errorDescription);
+			console.error("Auth callback error:", {
+				error,
+				errorDescription,
+				state,
+				timestamp: new Date().toISOString(),
+			});
 			return Response.redirect(new URL("/auth/login?error=auth", request.url));
 		}
 
 		if (!code) {
-			console.error("No code provided");
+			console.error("No code provided in callback", {
+				searchParams: Object.fromEntries(searchParams.entries()),
+				timestamp: new Date().toISOString(),
+			});
 			return Response.redirect(
 				new URL("/auth/login?error=no_code", request.url),
 			);
@@ -24,7 +42,19 @@ export async function GET(request: Request) {
 		const { data, error: callbackError } = await handleAuthCallback(code);
 
 		if (callbackError || !data?.session) {
-			console.error("Session error:", callbackError?.message);
+			console.error("Session exchange error:", {
+				error: callbackError,
+				hasSession: !!data?.session,
+				timestamp: new Date().toISOString(),
+				details: callbackError
+					? {
+							code: callbackError.code,
+							status: callbackError.status,
+							name: callbackError.name,
+							stack: callbackError.stack,
+						}
+					: null,
+			});
 			return Response.redirect(new URL("/auth/login?error=auth", request.url));
 		}
 

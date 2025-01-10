@@ -104,18 +104,24 @@ export async function getWeeklyPartyData(): Promise<WeeklyPartyData> {
 			avatarUrl: profile.profileImage,
 			status: memberStatus,
 			weeklyStats: {
-				focusTime: weeklyStats.focusTime,
-				achievementCount: weeklyStats.completedTasks,
+				focusTime: weeklyStats.focusMinutes,
+				achievementCount: weeklyStats.tasksCompleted,
 				points: Math.floor(
-					weeklyStats.focusTime * 10 + weeklyStats.completedTasks * 5,
+					weeklyStats.focusMinutes * 10 + weeklyStats.tasksCompleted * 5,
 				),
-				streak: weeklyStats.taskCompletionRate,
-				growth: Math.floor(weeklyStats.taskCompletionRate),
+				streak: weeklyStats.tasksCompleted / weeklyStats.focusSessions || 0,
+				growth: Math.floor(
+					weeklyStats.tasksCompleted / weeklyStats.focusSessions || 0,
+				),
 				lastActive: new Date(status.last_activity_at || new Date()),
-				completedSessions: Math.floor(weeklyStats.focusTime / 25), // 25分を1セッションとして計算
-				plannedSessions: 20, // 仮の目標値
-				contribution: Math.floor(weeklyStats.taskCompletionRate / 10),
-				bestFocusTime: Math.floor(weeklyStats.avgSessionLength),
+				completedSessions: Math.floor(weeklyStats.focusMinutes / 25),
+				plannedSessions: 20,
+				contribution: Math.floor(
+					(weeklyStats.tasksCompleted / weeklyStats.focusSessions || 0) / 10,
+				),
+				bestFocusTime: Math.floor(
+					weeklyStats.focusMinutes / (weeklyStats.focusSessions || 1),
+				),
 			},
 		};
 	});

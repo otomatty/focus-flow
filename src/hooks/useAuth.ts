@@ -13,8 +13,6 @@ import {
 	login,
 	signup,
 	signOut as serverSignOut,
-	resetPassword as serverResetPassword,
-	updatePassword as serverUpdatePassword,
 	signInWithGoogle as serverSignInWithGoogle,
 	handleAuthCallback as serverHandleAuthCallback,
 } from "@/app/_actions/auth";
@@ -146,47 +144,6 @@ export const useAuth = () => {
 		}
 	}, []);
 
-	// パスワードリセット
-	const resetPassword = useCallback(async (email: string) => {
-		try {
-			const formData = new FormData();
-			formData.append("email", email);
-			const result = await serverResetPassword(formData);
-			if (result.error) {
-				return { error: { message: result.error.message } as AuthError };
-			}
-			return { error: null };
-		} catch (error) {
-			return {
-				error: error as AuthError,
-			};
-		}
-	}, []);
-
-	// パスワード更新
-	const updatePassword = useCallback(
-		async (newPassword: string) => {
-			try {
-				const formData = new FormData();
-				formData.append("password", newPassword);
-				const result = await serverUpdatePassword(formData);
-				if (result.error) {
-					return {
-						data: { user: null },
-						error: { message: result.error.message } as AuthError,
-					};
-				}
-				return { data: { user }, error: null };
-			} catch (error) {
-				return {
-					data: { user: null },
-					error: error as AuthError,
-				};
-			}
-		},
-		[user],
-	);
-
 	// Google認証
 	const signInWithGoogle = useCallback(async () => {
 		try {
@@ -237,8 +194,6 @@ export const useAuth = () => {
 		signUp,
 		signIn,
 		signOut,
-		resetPassword,
-		updatePassword,
 		signInWithGoogle,
 		handleAuthCallback,
 	} as const;

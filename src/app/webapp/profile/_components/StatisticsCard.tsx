@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { Trophy, Target, Clock, CheckCircle2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ActivityHeatmap } from "./ActivityHeatmap";
 
 interface Statistics {
+	userId: string;
 	focusStats: {
 		totalSessions: number;
 		totalTime: string;
@@ -20,8 +21,6 @@ interface Statistics {
 	streaks: {
 		currentLoginStreak: number;
 		longestLoginStreak: number;
-		currentFocusStreak: number;
-		longestFocusStreak: number;
 	};
 	level: {
 		currentLevel: number;
@@ -159,19 +158,17 @@ export function StatisticsCard({ statistics }: StatisticsCardProps) {
 									{statistics.streaks.longestLoginStreak}日
 								</dd>
 							</div>
-							<div className="space-y-1">
-								<dt className="text-muted-foreground">現在のフォーカス</dt>
-								<dd className="font-bold text-lg">
-									{statistics.streaks.currentFocusStreak}日
-								</dd>
-							</div>
-							<div className="space-y-1">
-								<dt className="text-muted-foreground">最長フォーカス</dt>
-								<dd className="font-bold text-lg">
-									{statistics.streaks.longestFocusStreak}日
-								</dd>
-							</div>
 						</dl>
+					</motion.div>
+
+					{/* アクティビ�ィヒートマップ */}
+					<motion.div
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ delay: 0.5 }}
+						className="relative p-4 rounded-lg bg-gradient-to-b from-background/50 to-background/20"
+					>
+						<ActivityHeatmap userId={statistics.userId} />
 					</motion.div>
 				</div>
 			</CardContent>

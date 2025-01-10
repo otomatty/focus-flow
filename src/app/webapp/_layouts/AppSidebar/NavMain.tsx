@@ -61,17 +61,16 @@ const useMainMenuItems = (): NavMainItem[] => {
 			isActive: pathname === "/webapp",
 		},
 		{
-			title: "プロジェクト",
-			url: "/webapp/projects",
-			icon: Briefcase,
-			isActive: pathname === "/webapp/projects",
-		},
-		{
 			title: "タスク",
 			url: "/webapp/tasks",
 			icon: ListTodo,
 			isActive: pathname.startsWith("/webapp/tasks"),
 			items: [
+				{
+					title: "プロジェクトを確認する",
+					url: "/webapp/projects",
+					isActive: pathname === "/webapp/projects",
+				},
 				{
 					title: "タスクを確認する",
 					url: "/webapp/tasks",
@@ -90,81 +89,120 @@ const useMainMenuItems = (): NavMainItem[] => {
 			],
 		},
 		{
-			title: "集中モード",
+			title: "集中セッション",
 			url: "/webapp/focus",
 			icon: Focus,
 			isActive: pathname.startsWith("/webapp/focus"),
 			isInDevelopment: false,
 			items: [
 				{
-					title: "集中トップ",
+					title: "セッションを開始する",
 					url: "/webapp/focus",
 					isActive: pathname === "/webapp/focus",
 				},
 				{
-					title: "統計",
+					title: "統計を確認する",
 					url: "/webapp/focus/statistics",
 					isActive: pathname === "/webapp/focus/statistics",
 				},
 				{
-					title: "タイマー",
-					url: "/webapp/focus/timer",
-					isActive: pathname === "/webapp/focus/timer",
-				},
-				{
-					title: "履歴",
+					title: "セッション履歴を確認する",
 					url: "/webapp/focus/history",
 					isActive: pathname === "/webapp/focus/history",
 				},
 				{
-					title: "設定",
+					title: "セッション設定を確認する",
 					url: "/webapp/focus/settings",
 					isActive: pathname === "/webapp/focus/settings",
 				},
 			],
 		},
 		{
-			title: "タイムテーブル",
-			url: "/webapp/time-table",
-			icon: Clock,
-			isActive: pathname === "/webapp/time-table",
-			isInDevelopment: false,
-		},
-		{
 			title: "スケジュール",
-			url: "/webapp/schedule",
+			url: "/webapp/schedules",
 			icon: Calendar,
-			isActive: pathname === "/webapp/schedule",
-			isInDevelopment: true,
+			isActive: pathname === "/webapp/schedules",
+			isInDevelopment: false,
+			items: [
+				{
+					title: "スケジュールを確認する",
+					url: "/webapp/schedules",
+					isActive: pathname === "/webapp/schedules",
+				},
+				{
+					title: "スケジュールを作成する",
+					url: "/webapp/schedules/create",
+					isActive: pathname === "/webapp/schedules/create",
+				},
+				{
+					title: "時間割を確認する",
+					url: "/webapp/schedules/time-table",
+					isActive: pathname === "/webapp/schedules/time-table",
+				},
+			],
 		},
 
 		{
-			title: "習慣トラッカー",
+			title: "習慣",
 			url: "/webapp/habits",
 			icon: Repeat,
 			isActive: pathname === "/webapp/habits",
-			isInDevelopment: true,
-		},
-		{
-			title: "チーム",
-			url: "/webapp/teams",
-			icon: Users,
-			isActive: pathname === "/webapp/teams",
-			isInDevelopment: true,
-		},
-		{
-			title: "目標設定",
-			url: "/webapp/goals",
-			icon: Target,
-			isActive: pathname === "/webapp/goals",
-			isInDevelopment: true,
-		},
-		{
-			title: "クエスト",
-			url: "/webapp/quests",
-			icon: Trophy,
-			isActive: pathname === "/webapp/quests",
 			isInDevelopment: false,
+			items: [
+				{
+					title: "目標を確認する",
+					url: "/webapp/habits/goals",
+					isActive: pathname === "/webapp/habits/goals",
+				},
+				{
+					title: "習慣を確認する",
+					url: "/webapp/habits",
+					isActive: pathname === "/webapp/habits",
+				},
+			],
+		},
+		{
+			title: "ノート",
+			url: "/webapp/notes",
+			icon: Target,
+			isActive: pathname === "/webapp/notes",
+			isInDevelopment: false,
+			items: [
+				{
+					title: "ノートを確認する",
+					url: "/webapp/notes",
+					isActive: pathname === "/webapp/notes",
+				},
+				{
+					title: "ノートを作成する",
+					url: "/webapp/notes/create",
+					isActive: pathname === "/webapp/notes/create",
+				},
+			],
+		},
+		{
+			title: "ステータス",
+			url: "/webapp/status",
+			icon: Trophy,
+			isActive: pathname === "/webapp/status",
+			isInDevelopment: false,
+			items: [
+				{
+					title: "ステータスを確認する",
+					url: "/webapp/status",
+					isActive: pathname === "/webapp/status",
+				},
+				{
+					title: "クエストを確認する",
+					url: "/webapp/quests",
+					isActive: pathname === "/webapp/quests",
+				},
+				{
+					title: "称号を確認する",
+					url: "/webapp/badges",
+					isActive: pathname === "/webapp/badges",
+				},
+			],
 		},
 		{
 			title: "設定",

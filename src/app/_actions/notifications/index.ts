@@ -240,3 +240,155 @@ export async function deleteExpiredNotifications() {
 		throw new Error(`Failed to delete expired notifications: ${error.message}`);
 	}
 }
+
+/**
+ * 複数のユーザーに通知を送信
+ */
+export async function sendNotificationToUsers(params: {
+	userIds: string[];
+	categoryName: string;
+	templateName: string;
+	templateData: Record<string, string>;
+}): Promise<{ success: string[]; failed: string[] }> {
+	const results = {
+		success: [] as string[],
+		failed: [] as string[],
+	};
+
+	for (const userId of params.userIds) {
+		try {
+			await createNotification({
+				userId,
+				categoryName: params.categoryName,
+				templateName: params.templateName,
+				templateData: params.templateData,
+			});
+			results.success.push(userId);
+		} catch (error) {
+			console.error(`Failed to send notification to user ${userId}:`, error);
+			results.failed.push(userId);
+		}
+	}
+
+	return results;
+}
+
+/**
+ * フィルター条件に基づいてユーザーに通知を送信
+ */
+export async function sendNotificationWithFilters(params: {
+	filters: {
+		roles?: string[];
+		lastActiveAfter?: Date;
+		lastActiveBefore?: Date;
+		createdAfter?: Date;
+		createdBefore?: Date;
+		hasCompletedOnboarding?: boolean;
+	};
+	categoryName: string;
+	templateName: string;
+	templateData: Record<string, string>;
+}): Promise<{ success: string[]; failed: string[] }> {
+	const supabase = await createClient();
+
+	try {
+		// ユーザーのフィルタリング
+		let query = supabase.from("users").select("id").not("id", "is", null);
+
+		if (params.filters.roles?.length) {
+			query = query.in("role", params.filters.roles);
+		}
+
+		if (params.filters.lastActiveAfter) {
+			query = query.gte(
+				"last_active_at",
+				params.filters.lastActiveAfter.toISOString(),
+			);
+		}
+
+		if (params.filters.lastActiveBefore) {
+			query = query.lte(
+				"last_active_at",
+				params.filters.lastActiveBefore.toISOString(),
+			);
+		}
+
+		if (params.filters.createdAfter) {
+			query = query.gte(
+				"created_at",
+				params.filters.createdAfter.toISOString(),
+			);
+		}
+
+		if (params.filters.createdBefore) {
+			query = query.lte(
+				"created_at",
+				params.filters.createdBefore.toISOString(),
+			);
+		}
+
+		if (params.filters.hasCompletedOnboarding !== undefined) {
+			query = query.eq(
+				"has_completed_onboarding",
+				params.filters.hasCompletedOnboarding,
+			);
+		}
+
+		const { data: users, error } = await query;
+
+		if (error) {
+			throw new Error(createErrorMessage("fetch filtered users", error));
+		}
+
+		// フィルタリングされたユーザーに通知を送信
+		return await sendNotificationToUsers({
+			userIds: users.map((user) => user.id),
+			categoryName: params.categoryName,
+			templateName: params.templateName,
+			templateData: params.templateData,
+		});
+	} catch (error) {
+		if (error instanceof Error) {
+			throw error;
+		}
+		throw new Error(
+			`Unexpected error while sending filtered notifications: ${error}`,
+		);
+	}
+}
+
+/**
+ * すべてのユーザーに通知を送信
+ */
+export async function sendNotificationToAllUsers(params: {
+	categoryName: string;
+	templateName: string;
+	templateData: Record<string, string>;
+}): Promise<{ success: string[]; failed: string[] }> {
+	const supabase = await createClient();
+
+	try {
+		const { data: users, error } = await supabase
+			.from("users")
+			.select("id")
+			.not("id", "is", null);
+
+		if (error) {
+			throw new Error(createErrorMessage("fetch all users", error));
+		}
+
+		return await sendNotificationToUsers({
+			userIds: users.map((user) => user.id),
+			categoryName: params.categoryName,
+			templateName: params.templateName,
+			templateData: params.templateData,
+		});
+	} catch (error) {
+		if (error instanceof Error) {
+			throw error;
+		}
+		throw new Error(
+			`Unexpected error while sending notifications to all users: ${error}`,
+		);
+	}
+}

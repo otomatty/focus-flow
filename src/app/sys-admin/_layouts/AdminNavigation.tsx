@@ -1,4 +1,4 @@
-import { Settings, Users, FileText, Trophy } from "lucide-react";
+import { Settings, Users, FileText, Trophy, Bell } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -27,6 +27,11 @@ const navigationItems = [
 		href: "/sys-admin/logs",
 		icon: FileText,
 		label: "システムログ",
+	},
+	{
+		href: "/sys-admin/notifications",
+		icon: Bell,
+		label: "通知設定",
 	},
 ] as const;
 

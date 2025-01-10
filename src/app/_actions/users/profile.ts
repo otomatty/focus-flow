@@ -36,36 +36,103 @@ export async function createUserProfile(
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile> {
-	const supabase = await createClient();
+	const MAX_RETRIES = 3;
+	const RETRY_DELAY = 1000; // 1秒
 
-	const { data, error } = await supabase
-		.schema("ff_users")
-		.from("user_profiles")
-		.select("*")
-		.eq("user_id", userId)
-		.single();
+	for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+		const startTime = performance.now();
+		try {
+			const supabase = await createClient();
 
-	if (error) {
-		if (error.code === "PGRST116") {
-			// 認証情報を取得
-			const { data: authData } = await supabase.auth.getUser();
+			const {
+				data: { session },
+				error: sessionError,
+			} = await supabase.auth.getSession();
 
-			// 認証情報を元に新しいプロフィールを作成
-			const newProfile = await createUserProfile(userId, {
-				displayName:
-					authData.user?.user_metadata?.name ||
-					authData.user?.email?.split("@")[0] ||
-					"Unknown User",
-				email: authData.user?.email,
-				profileImage: authData.user?.user_metadata?.avatar_url || null,
+			if (sessionError) {
+				console.error("Session error:", {
+					error: sessionError,
+					hasSession: !!session,
+					attempt,
+					timestamp: new Date().toISOString(),
+					elapsedMs: Math.round(performance.now() - startTime),
+				});
+				if (attempt === MAX_RETRIES) {
+					throw new Error("認証セッションが無効です");
+				}
+				await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+				continue;
+			}
+
+			const { data, error } = await supabase
+				.schema("ff_users")
+				.from("user_profiles")
+				.select("*")
+				.eq("user_id", userId)
+				.single();
+			if (error) {
+				console.error("Profile fetch error:", {
+					error,
+					userId,
+					attempt,
+					code: error.code,
+					details: error.details,
+					hint: error.hint,
+					timestamp: new Date().toISOString(),
+					elapsedMs: Math.round(performance.now() - startTime),
+				});
+
+				if (error.code === "PGRST116") {
+					console.log("Profile not found, creating new profile...", {
+						userId,
+						timestamp: new Date().toISOString(),
+						elapsedMs: Math.round(performance.now() - startTime),
+					});
+
+					// 認証情報を取得
+					const { data: authData } = await supabase.auth.getUser();
+
+					if (!authData.user) {
+						throw new Error("ユーザー情報の取得に失敗しました");
+					}
+
+					// 新しいプロフィールを作成
+					const newProfile = await createUserProfile(userId, {
+						displayName:
+							authData.user?.user_metadata?.name ||
+							authData.user?.email?.split("@")[0] ||
+							"Unknown User",
+						email: authData.user?.email,
+						profileImage: authData.user?.user_metadata?.avatar_url || null,
+					});
+
+					return newProfile;
+				}
+
+				if (attempt === MAX_RETRIES) {
+					throw new Error(`プロファイルの取得に失敗しました: ${error.message}`);
+				}
+				await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+				continue;
+			}
+			return convertToUserProfile(data);
+		} catch (error) {
+			console.error("Profile error:", {
+				error,
+				attempt,
+				stack: error instanceof Error ? error.stack : undefined,
+				timestamp: new Date().toISOString(),
+				elapsedMs: Math.round(performance.now() - startTime),
 			});
 
-			return newProfile;
+			if (attempt === MAX_RETRIES) {
+				throw error;
+			}
+			await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
 		}
-		throw new Error(`Failed to fetch user profile: ${error.message}`);
 	}
 
-	return convertToUserProfile(data);
+	throw new Error("予期せぬエラーが発生しました");
 }
 
 export async function updateUserProfile(
@@ -136,7 +203,7 @@ function convertToUserProfile(data: UserProfileRow): UserProfile {
 					facebook: null,
 					instagram: null,
 				},
-		languages: data.languages || [],
+		languages: data.languages,
 		timezone: data.timezone || "Asia/Tokyo",
 		cacheVersion: data.cache_version,
 		createdAt: data.created_at,

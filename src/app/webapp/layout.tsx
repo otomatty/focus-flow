@@ -38,15 +38,18 @@ export default async function WebAppLayout({ children }: WebAppLayoutProps) {
 			redirect("/auth/login");
 		}
 
+		// 次のレベルの設定を取得
+		const nextLevelSetting = levelSettings.find(
+			(setting) => setting.level === level.current_level + 1,
+		);
+
 		// 現在のレベルの設定を取得
 		const levelSetting = levelSettings.find(
 			(setting) => setting.level === level.current_level,
 		);
 
-		// 次のレベルまでの必要経験値を計算
-		const nextLevelExp = levelSetting
-			? level.current_exp + levelSetting.required_exp
-			: null;
+		// 次のレベルまでの必要経験値を取得
+		const nextLevelExp = nextLevelSetting ? nextLevelSetting.required_exp : 100;
 
 		// ユーザーデータを準備
 		const userData = {
